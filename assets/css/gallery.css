@@ -1,21 +1,23 @@
-/* Gallery Styles */
+/* Gallery Styles - Emotional Memorial Design */
 
 .gallery-section {
-    padding: 60px 0;
-    background: linear-gradient(135deg, #f8faff 0%, #e8f4ff 100%);
+    padding: 80px 0;
+    background: linear-gradient(180deg, var(--sky-gradient-start, #E8F4FF) 0%, var(--cream-white, #F8FBFF) 100%);
 }
 
 .gallery-section h2 {
     text-align: center;
-    color: var(--dark-text);
-    margin-bottom: 40px;
-    font-size: 2em;
+    color: var(--kanata-blue, #2894FF);
+    margin-bottom: 50px;
+    font-size: 2.2em;
+    font-weight: 300;
+    letter-spacing: 0.05em;
 }
 
 #gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
@@ -23,30 +25,49 @@
 
 .gallery-item {
     position: relative;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 20px rgba(40, 148, 255, 0.15);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
     aspect-ratio: 16 / 9;
-    background: #e0e0e0;
+    background: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
+}
+
+/* Gradient border effect on hover */
+.gallery-item::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    bottom: -3px;
+    left: -3px;
+    background: linear-gradient(45deg, var(--kanata-blue, #2894FF), var(--gold, #FFD700), var(--kanata-blue-light, #5AAFFF));
+    border-radius: 18px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
 }
 
 .gallery-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.25);
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(40, 148, 255, 0.3);
+}
+
+.gallery-item:hover::before {
+    opacity: 1;
 }
 
 .gallery-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s ease, filter 0.4s ease;
 }
 
 .gallery-image.lazy {
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.5s ease;
 }
 
 .gallery-image:not(.lazy) {
@@ -54,7 +75,8 @@
 }
 
 .gallery-item:hover .gallery-image {
-    transform: scale(1.05);
+    transform: scale(1.08);
+    filter: brightness(1.05) saturate(1.1);
 }
 
 .gallery-overlay {
@@ -62,11 +84,11 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 15px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    padding: 20px;
+    background: linear-gradient(transparent, rgba(45, 45, 68, 0.9));
     color: white;
     transform: translateY(100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
 }
 
 .gallery-item:hover .gallery-overlay {
@@ -74,41 +96,48 @@
 }
 
 .gallery-artist {
-    font-weight: 600;
-    margin-bottom: 5px;
+    font-weight: 500;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .gallery-artist a {
-    color: var(--light-blue);
+    color: var(--gold, #FFD700);
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 .gallery-artist a:hover {
+    color: white;
     text-decoration: underline;
 }
 
 .gallery-caption {
     font-size: 0.9em;
-    opacity: 0.9;
+    opacity: 0.85;
+    font-style: italic;
 }
 
 .official-badge {
-    background: var(--gold);
-    color: #000;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
     font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 10px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .no-content {
     text-align: center;
-    color: #666;
+    color: var(--kanata-blue, #2894FF);
     grid-column: 1 / -1;
-    padding: 40px;
+    padding: 60px 20px;
+    font-style: italic;
+    font-size: 1.1em;
 }
 
 /* Lightbox Styles */
@@ -118,14 +147,14 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.95);
+    background: rgba(26, 26, 46, 0.98);
     z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
 .lightbox.active {
@@ -154,116 +183,144 @@
     max-width: 100%;
     max-height: 70vh;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
 }
 
 .lightbox-info {
     color: white;
     text-align: center;
-    padding: 20px;
-    max-width: 600px;
+    padding: 25px;
+    max-width: 650px;
 }
 
 .lightbox-artist {
-    font-size: 1.1em;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: 500;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .lightbox-artist a {
-    color: var(--light-blue);
+    color: var(--gold, #FFD700);
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 .lightbox-artist a:hover {
+    color: white;
     text-decoration: underline;
 }
 
 .lightbox-caption {
-    font-size: 1em;
+    font-size: 1.05em;
     opacity: 0.9;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-style: italic;
 }
 
 .lightbox-date {
-    font-size: 0.85em;
-    opacity: 0.7;
+    font-size: 0.9em;
+    opacity: 0.6;
+    color: var(--kanata-blue-light, #5AAFFF);
 }
 
 .lightbox-close {
     position: absolute;
-    top: -40px;
+    top: -50px;
     right: 0;
     background: none;
     border: none;
     color: white;
-    font-size: 2em;
+    font-size: 2.5em;
     cursor: pointer;
     padding: 10px;
     line-height: 1;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    opacity: 0.6;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .lightbox-close:hover {
     opacity: 1;
+    transform: rotate(90deg);
 }
 
 .lightbox-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(40, 148, 255, 0.2);
     border: none;
     color: white;
     font-size: 2em;
     cursor: pointer;
     padding: 20px 15px;
     opacity: 0.7;
-    transition: opacity 0.2s ease, background 0.2s ease;
+    transition: opacity 0.3s ease, background 0.3s ease;
+    border-radius: 8px;
 }
 
 .lightbox-nav:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(40, 148, 255, 0.4);
 }
 
 .lightbox-prev {
     left: 20px;
-    border-radius: 0 8px 8px 0;
 }
 
 .lightbox-next {
     right: 20px;
-    border-radius: 8px 0 0 8px;
 }
 
 /* Contribute notice in gallery section */
 .gallery-contribute {
     text-align: center;
-    margin-top: 40px;
-    padding: 20px;
+    margin-top: 50px;
+    padding: 30px 20px;
 }
 
 .gallery-contribute p {
     color: #666;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    font-style: italic;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+    .gallery-section {
+        padding: 50px 0;
+    }
+
+    .gallery-section h2 {
+        font-size: 1.8em;
+        margin-bottom: 35px;
+    }
+
     #gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+    }
+
+    .gallery-item {
+        border-radius: 12px;
+    }
+
+    .gallery-item::before {
+        top: -2px;
+        right: -2px;
+        bottom: -2px;
+        left: -2px;
+        border-radius: 14px;
     }
 
     .gallery-overlay {
         transform: translateY(0);
-        background: linear-gradient(transparent 30%, rgba(0, 0, 0, 0.8));
+        background: linear-gradient(transparent 40%, rgba(45, 45, 68, 0.9));
+        padding: 15px;
     }
 
     .lightbox-nav {
@@ -283,9 +340,15 @@
 @media (max-width: 480px) {
     #gallery-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
 
     .gallery-item {
         aspect-ratio: 4 / 3;
+    }
+
+    .lightbox-close {
+        top: -40px;
+        font-size: 2em;
     }
 }

@@ -6,13 +6,26 @@
 }
 
 :root {
-    --primary-blue: #4A90E2;
-    --light-blue: #87CEEB;
-    --dark-blue: #2C5282;
+    /* Kanata's representative colors */
+    --kanata-blue: #2894FF;
+    --kanata-blue-light: #5AAFFF;
+    --kanata-blue-dark: #1A6FCC;
     --white: #FFFFFF;
-    --light-gray: #F5F5F5;
-    --text-dark: #333333;
     --gold: #FFD700;
+    --gold-light: #FFE44D;
+
+    /* Supporting colors */
+    --light-blue: #87CEEB;
+    --sky-gradient-start: #E8F4FF;
+    --sky-gradient-end: #B8DCFF;
+    --text-dark: #333333;
+    --text-light: #666666;
+
+    /* Legacy aliases for compatibility */
+    --primary-blue: #2894FF;
+    --dark-blue: #1A6FCC;
+    --light-gray: #F5F5F5;
+    --cream-white: #F8FBFF;
 }
 
 /* Language-specific fonts */
@@ -31,11 +44,13 @@ html[lang="en"] {
 body {
     line-height: 1.6;
     color: var(--text-dark);
-    background-color: var(--light-gray);
+    background-color: var(--cream-white);
     min-height: 100vh;
 }
 
-/* Language Selector */
+/* ==================== */
+/* Language Selector    */
+/* ==================== */
 .language-selector {
     position: fixed;
     top: 15px;
@@ -57,20 +72,23 @@ body {
 }
 
 .lang-btn:hover {
-    background: var(--light-blue);
+    background: var(--gold-light);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(40, 148, 255, 0.2);
 }
 
 .lang-btn.active {
-    background: var(--primary-blue);
+    background: var(--kanata-blue);
     color: white;
 }
 
-/* Main Header */
+/* ==================== */
+/* Main Header          */
+/* ==================== */
 .main-header {
     position: relative;
-    height: 400px;
+    height: 70vh;
+    min-height: 500px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -90,6 +108,21 @@ body {
     z-index: -1;
 }
 
+/* Gradient overlay for emotional depth */
+.header-bg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(40, 148, 255, 0.1) 0%,
+        rgba(26, 111, 204, 0.25) 100%
+    );
+}
+
 .header-content {
     text-align: center;
     color: white;
@@ -97,22 +130,48 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
+/* Title fade-in animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .header-content h1 {
-    font-size: 2.5em;
-    margin-bottom: 20px;
+    font-size: 2.8em;
+    margin-bottom: 25px;
     font-weight: 700;
+    animation: fadeInUp 1.2s ease-out;
+    letter-spacing: 0.02em;
+}
+
+/* Counter with gentle pulse (breathing light) */
+@keyframes gentlePulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(40, 148, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(40, 148, 255, 0.6);
+    }
 }
 
 .counter-container {
-    background: rgba(74, 144, 226, 0.9);
-    padding: 20px 40px;
-    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(40, 148, 255, 0.9) 0%, rgba(26, 111, 204, 0.9) 100%);
+    padding: 25px 50px;
+    border-radius: 15px;
     display: inline-block;
+    animation: fadeInUp 1.2s ease-out 0.3s both, gentlePulse 4s ease-in-out infinite 1.5s;
 }
 
 #day-counter-text {
-    font-size: 2em;
+    font-size: 2.2em;
     margin-bottom: 10px;
+    font-weight: 300;
 }
 
 .graduation-date {
@@ -120,14 +179,16 @@ body {
     opacity: 0.95;
 }
 
-/* Navigation */
+/* ==================== */
+/* Navigation           */
+/* ==================== */
 .main-nav {
-    background: var(--primary-blue);
+    background: linear-gradient(90deg, var(--kanata-blue) 0%, var(--kanata-blue-dark) 100%);
     padding: 0;
     position: sticky;
     top: 0;
     z-index: 900;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 15px rgba(40, 148, 255, 0.3);
 }
 
 .main-nav ul {
@@ -146,14 +207,17 @@ body {
     padding: 15px 25px;
     color: white;
     text-decoration: none;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .main-nav a:hover {
-    background: var(--dark-blue);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
 }
 
-/* Content Sections */
+/* ==================== */
+/* Content Sections     */
+/* ==================== */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -161,7 +225,7 @@ body {
 }
 
 .content-section {
-    padding: 60px 0;
+    padding: 80px 0;
 }
 
 .content-section h2 {
@@ -171,7 +235,52 @@ body {
     text-align: center;
 }
 
-/* Messages Section */
+/* ==================== */
+/* Intro Section        */
+/* ==================== */
+.intro-section {
+    background: linear-gradient(180deg, var(--cream-white) 0%, var(--sky-gradient-start) 100%);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Large decorative quote */
+.intro-section::before {
+    content: '"';
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 150px;
+    color: rgba(40, 148, 255, 0.12);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.intro-section h2 {
+    font-size: 2.2em;
+    color: var(--kanata-blue);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    margin-bottom: 35px;
+}
+
+.intro-section p {
+    max-width: 750px;
+    margin: 0 auto;
+    font-size: 1.15em;
+    line-height: 2.2;
+    color: #555;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==================== */
+/* Messages Section     */
+/* ==================== */
 .messages-container {
     display: grid;
     gap: 20px;
@@ -182,13 +291,13 @@ body {
     background: white;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border-left: 4px solid var(--primary-blue);
+    box-shadow: 0 2px 10px rgba(40, 148, 255, 0.1);
+    border-left: 4px solid var(--kanata-blue);
 }
 
 .message-author {
     font-weight: bold;
-    color: var(--primary-blue);
+    color: var(--kanata-blue);
     margin-bottom: 10px;
 }
 
@@ -203,11 +312,13 @@ body {
     text-align: right;
 }
 
-/* Contribute Notice */
+/* ==================== */
+/* Contribute Notice    */
+/* ==================== */
 .contribute-notice {
     text-align: center;
     padding: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--kanata-blue) 0%, var(--kanata-blue-dark) 100%);
     border-radius: 10px;
     color: white;
 }
@@ -215,9 +326,9 @@ body {
 .github-link {
     display: inline-block;
     margin-top: 15px;
-    padding: 10px 30px;
+    padding: 12px 35px;
     background: white;
-    color: var(--primary-blue);
+    color: var(--kanata-blue);
     text-decoration: none;
     border-radius: 25px;
     font-weight: bold;
@@ -225,23 +336,33 @@ body {
 }
 
 .github-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(40, 148, 255, 0.3);
+    background: var(--gold-light);
+    color: var(--kanata-blue-dark);
 }
 
-/* Footer */
+/* ==================== */
+/* Footer               */
+/* ==================== */
 footer {
-    background: var(--text-dark);
+    background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%);
     color: white;
-    padding: 40px 0;
-    margin-top: 80px;
+    padding: 50px 0;
+    margin-top: 0;
+    position: relative;
 }
 
 .forever-kanata {
-    font-size: 1.5em;
+    font-size: 2.2em;
     text-align: center;
-    margin-bottom: 30px;
-    color: var(--light-blue);
+    margin-bottom: 35px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    background: linear-gradient(90deg, var(--kanata-blue-light), var(--gold), var(--kanata-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .credits {
@@ -260,81 +381,211 @@ footer {
 }
 
 .credits a {
-    color: var(--light-blue);
+    color: var(--kanata-blue-light);
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 .credits a:hover {
+    color: var(--gold);
     text-decoration: underline;
 }
 
 .footer-links {
     text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .footer-links a {
-    color: var(--light-blue);
+    color: var(--kanata-blue-light);
     text-decoration: none;
-    margin: 0 10px;
+    margin: 0 15px;
+    transition: color 0.3s ease;
 }
 
 .footer-links a:hover {
-    text-decoration: underline;
+    color: var(--gold);
 }
 
 .footer-links span {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.3);
 }
 
-/* Intro Section - Memorial Style */
-.intro-section {
-    background: linear-gradient(180deg, #f0f4f8 0%, #e8f0f8 100%);
-    text-align: center;
+/* ==================== */
+/* Scroll Reveal        */
+/* ==================== */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
-.intro-section h2 {
-    font-size: 2.2em;
-    color: var(--dark-blue);
-    font-weight: 300;
-    letter-spacing: 0.05em;
+.reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
 }
 
-.intro-section p {
-    max-width: 800px;
-    margin: 0 auto;
-    font-size: 1.1em;
-    line-height: 2;
-    color: #555;
+/* ==================== */
+/* Feather Effects      */
+/* ==================== */
+.feather-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
 }
 
-/* Responsive Design */
+/* White feather SVG for mouse trail - Feather Icons style */
+.feather {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z'/%3E%3Cline x1='16' y1='8' x2='2' y2='22'/%3E%3Cline x1='17.5' y1='15' x2='9' y2='15'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+/* Mouse trail feather - only effect */
+.feather.trail {
+    animation: featherTrail 1.5s ease-out forwards;
+}
+
+@keyframes featherTrail {
+    0% {
+        opacity: 0.85;
+        transform: scale(0.4) rotate(0deg);
+    }
+    50% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.2) rotate(90deg) translateY(50px);
+    }
+}
+
+/* ==================== */
+/* Responsive Design    */
+/* ==================== */
 @media (max-width: 768px) {
+    .main-header {
+        height: 60vh;
+        min-height: 400px;
+    }
+
     .header-content h1 {
         font-size: 1.8em;
+        padding: 0 15px;
     }
-    
+
+    .counter-container {
+        padding: 20px 30px;
+    }
+
     #day-counter-text {
-        font-size: 1.5em;
+        font-size: 1.6em;
     }
-    
+
     .language-selector {
         top: 10px;
         right: 10px;
     }
-    
+
     .lang-btn {
         padding: 6px 10px;
         font-size: 12px;
     }
-    
+
     .main-nav ul {
         flex-direction: column;
     }
-    
+
     .main-nav a {
         text-align: center;
+        padding: 12px 20px;
+    }
+
+    .intro-section::before {
+        font-size: 100px;
+        top: 20px;
+    }
+
+    .intro-section h2 {
+        font-size: 1.6em;
+    }
+
+    .intro-section p {
+        font-size: 1em;
+        padding: 0 15px;
+        line-height: 2;
+    }
+
+    .content-section {
+        padding: 50px 0;
+    }
+
+    .feather {
+        width: 16px;
+        height: 16px;
+    }
+
+    .forever-kanata {
+        font-size: 1.6em;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-header {
+        height: 50vh;
+        min-height: 350px;
+    }
+
+    .header-content h1 {
+        font-size: 1.5em;
+    }
+
+    .counter-container {
+        padding: 15px 25px;
+    }
+
+    #day-counter-text {
+        font-size: 1.3em;
+    }
+
+    .intro-section::before {
+        font-size: 70px;
+    }
+
+    .feather {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .reveal-on-scroll {
+        opacity: 1;
+        transform: none;
+    }
+
+    .feather-container {
+        display: none;
     }
 }

@@ -34,10 +34,11 @@
     white-space: nowrap;
     color: white;
     font-size: 1.1em;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(74, 144, 226, 0.5);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(40, 148, 255, 0.5);
     padding: 8px 15px;
     border-radius: 20px;
-    background: rgba(74, 144, 226, 0.15);
+    background: rgba(40, 148, 255, 0.15);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     animation: danmaku-scroll linear forwards;
     top: calc(var(--track) * 38px);
@@ -57,7 +58,7 @@
 }
 
 .danmaku-author {
-    color: var(--light-blue);
+    color: var(--gold, #FFD700);
     font-weight: 600;
     margin-right: 8px;
 }
@@ -91,7 +92,7 @@
 
 .danmaku-play-pause:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: var(--light-blue);
+    border-color: var(--kanata-blue, #2894FF);
     transform: scale(1.1);
 }
 
@@ -117,17 +118,17 @@
 
 .danmaku-contribute .github-link {
     display: inline-block;
-    background: rgba(74, 144, 226, 0.3);
+    background: rgba(40, 148, 255, 0.3);
     color: white;
     padding: 10px 20px;
     border-radius: 25px;
     text-decoration: none;
     transition: all 0.3s ease;
-    border: 1px solid rgba(74, 144, 226, 0.5);
+    border: 1px solid rgba(40, 148, 255, 0.5);
 }
 
 .danmaku-contribute .github-link:hover {
-    background: var(--primary-blue);
+    background: var(--kanata-blue, #2894FF);
     transform: translateY(-2px);
 }
 
