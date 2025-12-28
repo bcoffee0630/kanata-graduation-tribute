@@ -15,9 +15,11 @@
     "intro_text": "このサイトは、天音かなたさんの思い出を共有し、彼女と過ごした時間を永遠に記憶するためのへい民メモリアルです。かなたんが残してくれた歌声、笑顔、そして数え切れない思い出は、私たちの心の中で生き続けます。",
     "fan_messages": "へい民からの想い",
     "gallery_title": "思い出のギャラリー",
-    "contribute_message": "あなたの想いを届けませんか？GitHubでPRを送ってください。",
-    "contribute_art": "あなたの作品を共有しませんか？GitHubでPRを送ってください。",
-    "contribute_button": "想いを届ける"
+    "contribute_message": "あなたの想いを届けませんか？下のボタンをクリックしてください。",
+    "contribute_art": "あなたの作品を共有しませんか？下のボタンをクリックしてください。",
+    "contribute_button": "想いを届ける",
+    "submit_message_button": "メッセージを投稿",
+    "submit_art_button": "イラストを投稿"
   },
   "gallery": {
     "no_content": "まだ投稿がありません"

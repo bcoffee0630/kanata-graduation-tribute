@@ -1,0 +1,124 @@
+name: Process Message Submission
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  process-message:
+    if: contains(github.event.issue.labels.*.name, 'approved') && contains(github.event.issue.labels.*.name, 'message')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Parse issue and update messages.json
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue = context.payload.issue;
+            const body = issue.body;
+
+            // Parse form fields from issue body
+            function parseField(body, fieldName) {
+              const regex = new RegExp(`### ${fieldName}[\\s\\S]*?\\n\\n([\\s\\S]*?)(?=\\n###|$)`, 'i');
+              const match = body.match(regex);
+              return match ? match[1].trim() : '';
+            }
+
+            const author = parseField(body, 'Your Name');
+            const authorLink = parseField(body, 'Social Link');
+            const languageRaw = parseField(body, 'Message Language');
+            const message = parseField(body, 'Your Message');
+
+            // Validate required fields
+            if (!author || !message || !languageRaw) {
+              core.setFailed('Missing required fields');
+              return;
+            }
+
+            // Map language selection to content key
+            let langKey;
+            if (languageRaw.includes('日本語') || languageRaw.includes('Japanese')) {
+              langKey = 'ja';
+            } else if (languageRaw.includes('繁體中文') || languageRaw.includes('Traditional Chinese')) {
+              langKey = 'zh-TW';
+            } else if (languageRaw.includes('English')) {
+              langKey = 'en';
+            } else {
+              core.setFailed('Invalid language selection');
+              return;
+            }
+
+            // Read existing messages
+            const messagesPath = 'memories/messages/messages.json';
+            const data = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+
+            // Generate new ID
+            const existingIds = data.messages.map(m => parseInt(m.id));
+            const newId = String(Math.max(...existingIds, 0) + 1).padStart(3, '0');
+
+            // Create new message object
+            const newMessage = {
+              id: newId,
+              author: author,
+              date: new Date().toISOString().split('T')[0],
+              content: {}
+            };
+
+            // Add author link if provided
+            if (authorLink && authorLink !== '_No response_') {
+              newMessage.authorLink = authorLink;
+            }
+
+            // Add message content for the selected language
+            newMessage.content[langKey] = message;
+
+            // Add to messages array
+            data.messages.push(newMessage);
+
+            // Write back
+            fs.writeFileSync(messagesPath, JSON.stringify(data, null, 2) + '\n');
+
+            // Export for commit message
+            core.exportVariable('AUTHOR_NAME', author);
+            core.exportVariable('ISSUE_NUMBER', issue.number);
+            core.exportVariable('NEW_ID', newId);
+
+            console.log(`Added message ${newId} from ${author} in ${langKey}`);
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add message from ${{ env.AUTHOR_NAME }} (#${{ env.ISSUE_NUMBER }})"
+          title: "Add message: ${{ env.AUTHOR_NAME }}"
+          body: |
+            ## New Message Submission
+
+            This PR adds a new message from **${{ env.AUTHOR_NAME }}**.
+
+            - Message ID: `${{ env.NEW_ID }}`
+            - Source: Issue #${{ env.ISSUE_NUMBER }}
+
+            ---
+
+            Closes #${{ env.ISSUE_NUMBER }}
+
+            ---
+            *Auto-generated from issue submission.*
+          branch: submission/message-${{ env.ISSUE_NUMBER }}
+          labels: automated,message
+          delete-branch: true

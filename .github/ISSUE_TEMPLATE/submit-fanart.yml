@@ -1,0 +1,90 @@
+name: "Submit Fan Art / ファンアート投稿 / 粉絲創作投稿"
+description: "Share your artwork for Kanata / かなたへのファンアートを投稿 / 投稿給彼方的粉絲創作"
+labels: ["submission", "fanart", "pending"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Submit Your Artwork / ファンアートを投稿 / 投稿粉絲創作
+
+        Thank you for sharing your artwork! Please fill out the form below.
+
+        ファンアートを投稿いただきありがとうございます！以下のフォームにご記入ください。
+
+        感謝您投稿粉絲創作！請填寫以下表單。
+
+        ---
+
+        **Image Requirements / 画像の要件 / 圖片要求:**
+        - Format: PNG or JPG / 形式: PNG または JPG / 格式: PNG 或 JPG
+        - Max size: 2MB / 最大サイズ: 2MB / 最大大小: 2MB
+        - Recommended: 1920x1080 (16:9) / 推奨: 1920x1080 (16:9) / 建議: 1920x1080 (16:9)
+
+  - type: input
+    id: artist
+    attributes:
+      label: "Artist Name / 作者名 / 繪師名稱"
+      description: "How would you like to be credited? / どのように表示しますか？ / 您希望如何顯示？"
+      placeholder: "e.g., ArtistName"
+    validations:
+      required: true
+
+  - type: input
+    id: artist_link
+    attributes:
+      label: "Artist Link (optional) / 作者リンク（任意）/ 繪師連結（選填）"
+      description: "Your Twitter/X, Pixiv, or other art platform link / あなたのTwitter/X、Pixiv等のリンク / 您的 Twitter/X、Pixiv 或其他平台連結"
+      placeholder: "https://twitter.com/yourhandle"
+    validations:
+      required: false
+
+  - type: textarea
+    id: artwork
+    attributes:
+      label: "Upload Artwork / 作品アップロード / 上傳作品"
+      description: "Drag and drop or paste your image here / 画像をドラッグ＆ドロップまたは貼り付けてください / 拖曳或貼上您的圖片"
+      placeholder: |
+        Drag and drop your image here or paste from clipboard...
+        画像をここにドラッグ＆ドロップまたはクリップボードから貼り付けてください...
+        將圖片拖曳到這裡或從剪貼簿貼上...
+    validations:
+      required: true
+
+  - type: input
+    id: caption_ja
+    attributes:
+      label: "Caption (Japanese) / キャプション（日本語）"
+      description: "Optional caption in Japanese / 日本語のキャプション（任意）"
+      placeholder: "作品の説明..."
+    validations:
+      required: false
+
+  - type: input
+    id: caption_zh
+    attributes:
+      label: "Caption (Traditional Chinese) / 說明（繁體中文）"
+      description: "Optional caption in Traditional Chinese / 繁體中文の説明（任意）"
+      placeholder: "作品說明..."
+    validations:
+      required: false
+
+  - type: input
+    id: caption_en
+    attributes:
+      label: "Caption (English) / キャプション（英語）"
+      description: "Optional caption in English / 英語のキャプション（任意）"
+      placeholder: "Artwork description..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: "Consent / 同意事項 / 同意事項"
+      options:
+        - label: "This is my original artwork or I have permission from the original artist to share it. / これは私のオリジナル作品、または原作者の許可を得ています。/ 這是我的原創作品，或我已獲得原作者的授權。"
+          required: true
+        - label: "I grant permission for this artwork to be displayed on the memorial website. / この作品を記念サイトで表示することを許可します。/ 我同意將此作品展示在紀念網站上。"
+          required: true
+        - label: "My artwork is respectful and appropriate. / 私の作品は敬意を持ち、適切な内容です。/ 我的作品內容適當且尊重他人。"
+          required: true

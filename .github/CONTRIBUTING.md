@@ -10,50 +10,45 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 
 ## Table of Contents / 目次 / 目錄
 
-- [How to Contribute / 貢献方法 / 如何貢獻](#how-to-contribute--貢献方法--如何貢獻)
-- [Fan Art Submission / ファンアート投稿 / 粉絲繪圖投稿](#fan-art-submission--ファンアート投稿--粉絲繪圖投稿)
-- [Message Submission / メッセージ投稿 / 留言投稿](#message-submission--メッセージ投稿--留言投稿)
+- [Easy Submission (Recommended) / 簡単投稿（推奨）/ 簡易投稿（推薦）](#easy-submission-recommended--簡単投稿推奨--簡易投稿推薦)
+- [Advanced: PR Submission / 上級者向け：PR投稿 / 進階：PR 投稿](#advanced-pr-submission--上級者向けpr投稿--進階pr-投稿)
 - [Code Contribution / コード貢献 / 程式碼貢獻](#code-contribution--コード貢献--程式碼貢獻)
 
 ---
 
-## How to Contribute / 貢献方法 / 如何貢獻
+## Easy Submission (Recommended) / 簡単投稿（推奨）/ 簡易投稿（推薦）
 
-### English
+The easiest way to submit your message or fan art is through our GitHub Issue forms. No Git knowledge required!
 
-1. **Fork** this repository
-2. **Clone** your fork to your local machine
-3. **Create a branch** for your contribution
-4. **Make your changes**
-5. **Commit** your changes
-6. **Push** to your fork
-7. **Create a Pull Request**
+最も簡単な投稿方法は、GitHub Issue フォームを使用することです。Git の知識は不要です！
 
-### 日本語
+最簡單的投稿方式是使用 GitHub Issue 表單，不需要 Git 知識！
 
-1. このリポジトリを **Fork** する
-2. フォークしたリポジトリをローカルに **Clone** する
-3. 貢献用の **ブランチを作成** する
-4. **変更を加える**
-5. 変更を **Commit** する
-6. フォークに **Push** する
-7. **Pull Request を作成** する
+### Submit a Message / メッセージを投稿 / 投稿留言
 
-### 繁體中文
+Click the button below to submit your message:
 
-1. **Fork** 這個儲存庫
-2. **Clone** 您的 fork 到本機
-3. **建立分支** 進行您的貢獻
-4. **進行修改**
-5. **Commit** 您的修改
-6. **Push** 到您的 fork
-7. **建立 Pull Request**
+下のボタンをクリックしてメッセージを投稿：
 
----
+點擊下方按鈕投稿留言：
 
-## Fan Art Submission / ファンアート投稿 / 粉絲繪圖投稿
+**[Submit Message / メッセージを投稿 / 投稿留言](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)**
 
-### Guidelines / ガイドライン / 規範
+- Fill out the simple form
+- Choose your language (Japanese, Traditional Chinese, or English)
+- Your message will appear on the site after review
+
+### Submit Fan Art / ファンアートを投稿 / 投稿粉絲創作
+
+Click the button below to submit your artwork:
+
+下のボタンをクリックしてファンアートを投稿：
+
+點擊下方按鈕投稿粉絲創作：
+
+**[Submit Fan Art / ファンアートを投稿 / 投稿粉絲創作](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)**
+
+#### Image Requirements / 画像の要件 / 圖片要求
 
 | | English | 日本語 | 繁體中文 |
 |---|---------|--------|----------|
@@ -62,9 +57,26 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 | Resolution | 1920x1080 recommended | 1920x1080推奨 | 建議 1920x1080 |
 | Content | Original artwork | オリジナル作品 | 原創作品 |
 
-### Steps / 手順 / 步驟
+---
 
-#### English
+## Advanced: PR Submission / 上級者向け：PR投稿 / 進階：PR 投稿
+
+For those familiar with Git, you can also submit via Pull Request:
+
+Gitに慣れている方は、Pull Requestでも投稿できます：
+
+熟悉 Git 的使用者也可以透過 Pull Request 投稿：
+
+### How to Contribute / 貢献方法 / 如何貢獻
+
+1. **Fork** this repository / このリポジトリを **Fork** する / **Fork** 這個儲存庫
+2. **Clone** your fork / フォークを **Clone** する / **Clone** 您的 fork
+3. **Create a branch** / **ブランチを作成** / **建立分支**
+4. **Make your changes** / **変更を加える** / **進行修改**
+5. **Commit & Push** / **Commit & Push** / **Commit & Push**
+6. **Create a Pull Request** / **Pull Request を作成** / **建立 Pull Request**
+
+### Fan Art via PR / ファンアート（PR）/ 粉絲創作（PR）
 
 1. Add your image to `memories/fanart/images/`
 2. Update `memories/fanart/index.json`:
@@ -73,7 +85,7 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 {
   "id": "XXX",
   "filename": "your-image.png",
-  "path": "memories/fanart/images/your-image.png",
+  "path": "images/your-image.png",
   "artist": "Your Name",
   "artistLink": "https://twitter.com/yourhandle",
   "date": "YYYY-MM-DD",
@@ -86,29 +98,9 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 }
 ```
 
-3. Create a Pull Request using the "Fan Art Submission" template
+### Message via PR / メッセージ（PR）/ 留言（PR）
 
-#### 日本語
-
-1. 画像を `memories/fanart/images/` に追加
-2. `memories/fanart/index.json` を更新（上記フォーマット参照）
-3. 「ファンアート投稿」テンプレートを使用してPull Requestを作成
-
-#### 繁體中文
-
-1. 將圖片新增至 `memories/fanart/images/`
-2. 更新 `memories/fanart/index.json`（參考上方格式）
-3. 使用「粉絲繪圖投稿」模板建立 Pull Request
-
----
-
-## Message Submission / メッセージ投稿 / 留言投稿
-
-### Steps / 手順 / 步驟
-
-#### English
-
-1. Update `memories/messages/messages.json`:
+Update `memories/messages/messages.json`:
 
 ```json
 {
@@ -124,23 +116,11 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 }
 ```
 
-2. Create a Pull Request using the "Message Submission" template
+**Note:** Messages only appear when the viewer's language matches. You can provide one or more languages.
 
-**Note:** You only need to provide at least one language. We welcome multilingual messages!
+**注意:** メッセージは閲覧者の言語と一致する場合のみ表示されます。1つ以上の言語を提供できます。
 
-#### 日本語
-
-1. `memories/messages/messages.json` を更新（上記フォーマット参照）
-2. 「メッセージ投稿」テンプレートを使用してPull Requestを作成
-
-**注意:** 少なくとも1つの言語で記入してください。多言語でのメッセージも歓迎します！
-
-#### 繁體中文
-
-1. 更新 `memories/messages/messages.json`（參考上方格式）
-2. 使用「留言投稿」模板建立 Pull Request
-
-**注意：** 您只需要提供至少一種語言。歡迎多語言留言！
+**注意：** 留言只會在瀏覽者的語言相符時顯示。您可以提供一種或多種語言。
 
 ---
 
@@ -180,29 +160,11 @@ kanata-graduation-tribute/
 
 ### Development Guidelines / 開発ガイドライン / 開發指南
 
-#### English
-
 - Keep it simple - no build tools or frameworks required
 - Test in multiple browsers (Chrome, Firefox, Safari, Edge)
 - Test responsive design on mobile devices
 - Follow existing code style
 - Add translations for all three languages when adding new text
-
-#### 日本語
-
-- シンプルに保つ - ビルドツールやフレームワークは不要
-- 複数のブラウザでテスト（Chrome、Firefox、Safari、Edge）
-- モバイルデバイスでレスポンシブデザインをテスト
-- 既存のコードスタイルに従う
-- 新しいテキストを追加する際は3つの言語すべてに翻訳を追加
-
-#### 繁體中文
-
-- 保持簡單 - 不需要建置工具或框架
-- 在多個瀏覽器測試（Chrome、Firefox、Safari、Edge）
-- 在行動裝置上測試響應式設計
-- 遵循現有的程式碼風格
-- 新增文字時請為三種語言都新增翻譯
 
 ---
 

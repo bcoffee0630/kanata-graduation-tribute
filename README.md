@@ -29,31 +29,23 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 
 ---
 
-### ファンアートの投稿方法
+### 投稿方法（簡単！）
 
-#### 手順
-1. このリポジトリをフォーク
-2. 画像を `memories/fanart/images/` に追加
-3. `memories/fanart/index.json` にエントリを追加:
+#### メッセージを投稿
+**[こちらをクリック](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** してフォームに記入するだけ！
 
-```json
-{
-  "id": "XXX",
-  "filename": "your-image.png",
-  "path": "memories/fanart/images/your-image.png",
-  "artist": "あなたの名前",
-  "artistLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "isOfficial": false,
-  "caption": {
-    "ja": "作品の説明",
-    "zh-TW": "作品說明",
-    "en": "Description"
-  }
-}
-```
+- GitHub アカウントが必要です
+- 言語を選択して、メッセージを入力
+- 審査後にサイトに表示されます
 
-4. Pull Requestを作成
+> **注意:** メッセージは選択した言語でのみ表示されます。
+
+#### ファンアートを投稿
+**[こちらをクリック](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** してフォームに記入するだけ！
+
+- GitHub アカウントが必要です
+- 画像をドラッグ＆ドロップでアップロード
+- 審査後にサイトに表示されます
 
 #### 画像規格
 | 項目 | 要件 |
@@ -62,30 +54,12 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 | サイズ | 2MB以下 |
 | 解像度 | 1920x1080 推奨 |
 
----
+<details>
+<summary>上級者向け：Pull Request で投稿</summary>
 
-### メッセージの投稿方法
+Git に慣れている方は、直接 Pull Request で投稿することもできます。詳細は [貢献ガイド](.github/CONTRIBUTING.md) をご覧ください。
 
-1. このリポジトリをフォーク
-2. `memories/messages/messages.json` にエントリを追加:
-
-```json
-{
-  "id": "XXX",
-  "author": "あなたの名前",
-  "authorLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "content": {
-    "ja": "日本語のメッセージ",
-    "zh-TW": "中文訊息（可選）",
-    "en": "English message (optional)"
-  }
-}
-```
-
-3. Pull Requestを作成
-
-**注意:** 少なくとも1つの言語で記入してください。
+</details>
 
 ---
 
@@ -112,31 +86,23 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 
 ---
 
-### 如何投稿繪圖
+### 投稿方式（超簡單！）
 
-#### 步驟
-1. Fork 此專案
-2. 將圖片新增至 `memories/fanart/images/`
-3. 在 `memories/fanart/index.json` 新增條目：
+#### 投稿留言
+**[點此連結](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** 填寫表單即可！
 
-```json
-{
-  "id": "XXX",
-  "filename": "your-image.png",
-  "path": "memories/fanart/images/your-image.png",
-  "artist": "您的名稱",
-  "artistLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "isOfficial": false,
-  "caption": {
-    "ja": "作品說明（日文）",
-    "zh-TW": "作品說明",
-    "en": "Description"
-  }
-}
-```
+- 需要 GitHub 帳號
+- 選擇語言，輸入留言內容
+- 審核通過後會顯示在網站上
 
-4. 建立 Pull Request
+> **注意：** 留言只會在對應語言的網頁上顯示。
+
+#### 投稿繪圖
+**[點此連結](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** 填寫表單即可！
+
+- 需要 GitHub 帳號
+- 拖曳上傳圖片
+- 審核通過後會顯示在網站上
 
 #### 圖片規格
 | 項目 | 要求 |
@@ -145,30 +111,12 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 | 大小 | 2MB 以下 |
 | 解析度 | 建議 1920x1080 |
 
----
+<details>
+<summary>進階：透過 Pull Request 投稿</summary>
 
-### 如何投稿留言
+熟悉 Git 的使用者可以直接透過 Pull Request 投稿。詳情請參閱 [貢獻指南](.github/CONTRIBUTING.md)。
 
-1. Fork 此專案
-2. 在 `memories/messages/messages.json` 新增條目：
-
-```json
-{
-  "id": "XXX",
-  "author": "您的名稱",
-  "authorLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "content": {
-    "ja": "日文訊息（可選）",
-    "zh-TW": "中文訊息",
-    "en": "English message (optional)"
-  }
-}
-```
-
-3. 建立 Pull Request
-
-**注意：** 請至少提供一種語言的內容。
+</details>
 
 ---
 
@@ -195,31 +143,23 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 
 ---
 
-### How to Submit Fan Art
+### How to Submit (Easy!)
 
-#### Steps
-1. Fork this repository
-2. Add your image to `memories/fanart/images/`
-3. Add an entry to `memories/fanart/index.json`:
+#### Submit a Message
+**[Click here](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** and fill out the form!
 
-```json
-{
-  "id": "XXX",
-  "filename": "your-image.png",
-  "path": "memories/fanart/images/your-image.png",
-  "artist": "Your Name",
-  "artistLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "isOfficial": false,
-  "caption": {
-    "ja": "Japanese description",
-    "zh-TW": "Chinese description",
-    "en": "English description"
-  }
-}
-```
+- GitHub account required
+- Select your language and write your message
+- Your message will appear after review
 
-4. Create a Pull Request
+> **Note:** Messages only appear when the viewer's language matches.
+
+#### Submit Fan Art
+**[Click here](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** and fill out the form!
+
+- GitHub account required
+- Drag and drop to upload your image
+- Your artwork will appear after review
 
 #### Image Guidelines
 | Item | Requirement |
@@ -228,30 +168,12 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 | Size | Under 2MB |
 | Resolution | 1920x1080 recommended |
 
----
+<details>
+<summary>Advanced: Submit via Pull Request</summary>
 
-### How to Submit a Message
+For those familiar with Git, you can submit directly via Pull Request. See the [Contributing Guide](.github/CONTRIBUTING.md) for details.
 
-1. Fork this repository
-2. Add an entry to `memories/messages/messages.json`:
-
-```json
-{
-  "id": "XXX",
-  "author": "Your Name",
-  "authorLink": "https://twitter.com/yourhandle",
-  "date": "YYYY-MM-DD",
-  "content": {
-    "ja": "Japanese message (optional)",
-    "zh-TW": "Chinese message (optional)",
-    "en": "Your message"
-  }
-}
-```
-
-3. Create a Pull Request
-
-**Note:** Please provide content in at least one language.
+</details>
 
 ---
 

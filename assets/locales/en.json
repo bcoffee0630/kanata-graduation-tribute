@@ -15,9 +15,11 @@
     "intro_text": "This is a Heimin memorial dedicated to sharing memories of Amane Kanata and preserving the time we spent with her forever. Her voice, her smile, and countless memories she left us will live on in our hearts.",
     "fan_messages": "Messages From Heimin",
     "gallery_title": "Memory Gallery",
-    "contribute_message": "Want to share your thoughts? Please submit a PR on GitHub.",
-    "contribute_art": "Want to share your artwork? Please submit a PR on GitHub.",
-    "contribute_button": "Share Your Thoughts"
+    "contribute_message": "Want to share your thoughts? Click the button below.",
+    "contribute_art": "Want to share your artwork? Click the button below.",
+    "contribute_button": "Share Your Thoughts",
+    "submit_message_button": "Submit Message",
+    "submit_art_button": "Submit Artwork"
   },
   "gallery": {
     "no_content": "No submissions yet"

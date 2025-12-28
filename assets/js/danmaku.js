@@ -118,7 +118,10 @@ const Danmaku = {
 
         // Create message element
         const lang = window.i18n ? i18n.currentLang : 'ja';
-        const content = message.content[lang] || message.content.ja;
+        const content = message.content[lang];
+
+        // Skip if no content for current language
+        if (!content) return;
 
         const el = document.createElement('div');
         el.className = 'danmaku-message';

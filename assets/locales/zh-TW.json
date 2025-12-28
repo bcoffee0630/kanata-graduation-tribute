@@ -15,9 +15,11 @@
     "intro_text": "這是一個為了分享天音彼方的回憶，並永遠銘記與她共度時光的嘿民紀念網站。彼方留給我們的歌聲、笑容，以及無數的回憶，將永遠活在我們心中。",
     "fan_messages": "嘿民的心意",
     "gallery_title": "回憶畫廊",
-    "contribute_message": "想傳達您的心意嗎？請在 GitHub 提交 PR。",
-    "contribute_art": "想分享您的作品嗎？請在 GitHub 提交 PR。",
-    "contribute_button": "傳達心意"
+    "contribute_message": "想傳達您的心意嗎？請點擊下方按鈕。",
+    "contribute_art": "想分享您的作品嗎？請點擊下方按鈕。",
+    "contribute_button": "傳達心意",
+    "submit_message_button": "投稿留言",
+    "submit_art_button": "投稿繪圖"
   },
   "gallery": {
     "no_content": "目前還沒有投稿"

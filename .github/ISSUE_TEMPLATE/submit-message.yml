@@ -1,0 +1,66 @@
+name: "Submit Message / メッセージ投稿 / 留言投稿"
+description: "Share your message for Kanata / かなたへのメッセージを投稿 / 投稿給彼方的留言"
+labels: ["submission", "message", "pending"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Submit Your Message / メッセージを投稿 / 投稿留言
+
+        Thank you for sharing your message! Please fill out the form below.
+
+        メッセージを投稿いただきありがとうございます！以下のフォームにご記入ください。
+
+        感謝您投稿留言！請填寫以下表單。
+
+  - type: input
+    id: author
+    attributes:
+      label: "Your Name / お名前 / 您的名稱"
+      description: "How would you like to be credited? / どのように表示しますか？ / 您希望如何顯示？"
+      placeholder: "e.g., KanataTomo"
+    validations:
+      required: true
+
+  - type: input
+    id: author_link
+    attributes:
+      label: "Social Link (optional) / SNSリンク（任意）/ 社群連結（選填）"
+      description: "Your Twitter/X or other social media link / あなたのTwitter/Xや他のSNSリンク / 您的 Twitter/X 或其他社群連結"
+      placeholder: "https://twitter.com/yourhandle"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: "Message Language / メッセージの言語 / 留言語言"
+      description: "Select the language of your message / メッセージの言語を選択 / 選擇您的留言語言"
+      options:
+        - "日本語 (Japanese)"
+        - "繁體中文 (Traditional Chinese)"
+        - "English"
+    validations:
+      required: true
+
+  - type: textarea
+    id: message
+    attributes:
+      label: "Your Message / メッセージ / 留言內容"
+      description: "Write your message for Kanata / かなたへのメッセージ / 寫下您給彼方的留言"
+      placeholder: |
+        Write your heartfelt message here...
+        ここにメッセージを書いてください...
+        在這裡寫下您的留言...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: "Consent / 同意事項 / 同意事項"
+      options:
+        - label: "I understand this message will be publicly displayed on the memorial website. / このメッセージが記念サイトで公開されることを理解しています。/ 我了解此留言將公開展示在紀念網站上。"
+          required: true
+        - label: "My message is respectful and appropriate. / 私のメッセージは敬意を持ち、適切な内容です。/ 我的留言內容適當且尊重他人。"
+          required: true
