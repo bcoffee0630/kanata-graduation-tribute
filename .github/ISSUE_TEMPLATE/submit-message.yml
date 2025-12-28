@@ -1,5 +1,6 @@
 name: "Submit Message / メッセージ投稿 / 留言投稿"
 description: "Share your message for Kanata / かなたへのメッセージを投稿 / 投稿給彼方的留言"
+title: "[Message] Your Name / お名前 / 您的名字"
 labels: ["submission", "message", "pending"]
 body:
   - type: markdown

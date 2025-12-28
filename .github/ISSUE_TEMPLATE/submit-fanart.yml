@@ -1,5 +1,6 @@
 name: "Submit Fan Art / ファンアート投稿 / 粉絲創作投稿"
 description: "Share your artwork for Kanata / かなたへのファンアートを投稿 / 投稿給彼方的粉絲創作"
+title: "[Fan Art] Your Name / お名前 / 您的名字"
 labels: ["submission", "fanart", "pending"]
 body:
   - type: markdown
