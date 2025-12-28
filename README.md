@@ -5,7 +5,7 @@
 
 A community-driven memorial website for Amane Kanata, celebrating her journey and preserving memories forever.
 
-**Live Site**: [https://bcoffee0630.github.io/kanata-graduation-tribute/](https://bcoffee0630.github.io/kanata-graduation-tribute/)
+**Live Site**: [http://eienkanata.com/](http://eienkanata.com/)
 
 ---
 
