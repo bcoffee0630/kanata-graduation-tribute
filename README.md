@@ -296,4 +296,48 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 ---
 
+## 開発について | Development | 開發說明
+
+このウェブサイトは [Claude Code](https://claude.com/claude-code) を使用して開発されました。
+
+This website was developed with the assistance of [Claude Code](https://claude.com/claude-code).
+
+此網站使用 [Claude Code](https://claude.com/claude-code) 協助開發。
+
+---
+
+## 素材の著作権 | Asset Copyright | 素材版權聲明
+
+### 日本語
+- 当サイトで使用している画像・動画のスクリーンショットは、**hololive プロダクション / COVER株式会社** に帰属します
+- ファンアートの著作権は各アーティストに帰属します
+- 当サイトは非公式のファンプロジェクトであり、COVER株式会社とは一切関係ありません
+
+### English
+- Screenshots of images and videos used on this site belong to **hololive production / COVER Corporation**
+- Fan art copyrights belong to their respective artists
+- This is an unofficial fan project and is not affiliated with COVER Corporation
+
+### 繁體中文
+- 本站使用的圖片及影片截圖版權歸屬於 **hololive production / COVER 株式會社**
+- 粉絲繪圖的版權歸屬於各創作者
+- 本站為非官方粉絲專案，與 COVER 株式會社無任何關聯
+
+---
+
+## 免責事項 | Disclaimer | 免責聲明
+
+### 日本語
+このウェブサイトはファンによる追悼目的のみで作成されており、商業目的はありません。著作権侵害等の懸念がある場合は、Issueまたはメールにてご連絡ください。速やかに対応いたします。
+
+### English
+This website was created solely for fan memorial purposes and has no commercial intent. If you have any concerns regarding copyright infringement or other issues, please contact us via Issue or email. We will respond promptly.
+
+### 繁體中文
+本網站僅為粉絲紀念用途而建立，不具任何商業目的。若有任何侵權疑慮或其他問題，請透過 Issue 或電子郵件聯繫我們，我們將盡速處理。
+
+**Contact / 聯絡方式:** [GitHub Issues](https://github.com/bcoffee0630/kanata-graduation-tribute/issues)
+
+---
+
 **Forever Kanata | 永遠にかなた | 永遠的彼方**
