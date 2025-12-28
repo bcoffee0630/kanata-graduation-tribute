@@ -51,7 +51,7 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 | 項目 | 要件 |
 |------|------|
 | 形式 | PNG または JPG |
-| サイズ | 2MB以下 |
+| サイズ | 2MB以下推奨（最大10MB） |
 | 解像度 | 1920x1080 推奨 |
 
 <details>
@@ -108,7 +108,7 @@ Git に慣れている方は、直接 Pull Request で投稿することもで�
 | 項目 | 要求 |
 |------|------|
 | 格式 | PNG 或 JPG |
-| 大小 | 2MB 以下 |
+| 大小 | 建議 2MB 以下（最大 10MB） |
 | 解析度 | 建議 1920x1080 |
 
 <details>
@@ -165,7 +165,7 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 | Item | Requirement |
 |------|-------------|
 | Format | PNG or JPG |
-| Size | Under 2MB |
+| Size | Under 2MB recommended (max 10MB) |
 | Resolution | 1920x1080 recommended |
 
 <details>

@@ -53,7 +53,8 @@ Click the button below to submit your artwork:
 | | English | 日本語 | 繁體中文 |
 |---|---------|--------|----------|
 | Format | PNG or JPG | PNGまたはJPG | PNG 或 JPG |
-| Size | Under 2MB | 2MB以下 | 2MB 以下 |
+| Recommended | Under 2MB | 2MB以下推奨 | 建議 2MB 以下 |
+| Max size | 10MB | 最大10MB | 最大 10MB |
 | Resolution | 1920x1080 recommended | 1920x1080推奨 | 建議 1920x1080 |
 | Content | Original artwork | オリジナル作品 | 原創作品 |
 

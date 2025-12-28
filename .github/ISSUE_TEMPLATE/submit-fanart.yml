@@ -17,8 +17,9 @@ body:
 
         **Image Requirements / 画像の要件 / 圖片要求:**
         - Format: PNG or JPG / 形式: PNG または JPG / 格式: PNG 或 JPG
-        - Max size: 2MB / 最大サイズ: 2MB / 最大大小: 2MB
-        - Recommended: 1920x1080 (16:9) / 推奨: 1920x1080 (16:9) / 建議: 1920x1080 (16:9)
+        - Recommended size: Under 2MB for faster loading / 推奨サイズ: 2MB以下（読み込み速度向上）/ 建議大小: 2MB 以下（加快載入速度）
+        - Max size: 10MB / 最大サイズ: 10MB / 最大大小: 10MB
+        - Recommended resolution: 1920x1080 (16:9) / 推奨解像度: 1920x1080 (16:9) / 建議解析度: 1920x1080 (16:9)
 
   - type: input
     id: artist
