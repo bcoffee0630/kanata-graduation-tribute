@@ -117,7 +117,7 @@ const Danmaku = {
         }
 
         // Create message element
-        const lang = window.i18n ? i18n.currentLang : 'ja';
+        const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'ja';
         const content = message.content[lang];
 
         // Skip if no content for current language
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Danmaku.init();
 });
 
-// Update on language change
-document.addEventListener('languageChanged', () => {
+// Update on language change (i18n dispatches on window)
+window.addEventListener('languageChanged', () => {
     Danmaku.onLanguageChange();
 });
