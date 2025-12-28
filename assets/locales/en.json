@@ -1,0 +1,35 @@
+{
+  "site_title": "Amane Kanata Graduation Memorial",
+  "header_title": "Amane Kanata Graduation Memorial Site",
+  "day_counter": "Day {{days}} Since Graduation",
+  "graduation_date": "December 27, 2025 - Forever Remembered",
+  "nav": {
+    "home": "Home",
+    "messages": "Messages",
+    "gallery": "Gallery",
+    "youtube": "YouTube",
+    "twitter": "Twitter"
+  },
+  "sections": {
+    "intro_title": "Forever With Kanata",
+    "intro_text": "This is a fan memorial dedicated to sharing memories of Amane Kanata and preserving the time we spent with her forever. Her voice, her smile, and countless memories she left us will live on in our hearts.",
+    "fan_messages": "Messages From Fans",
+    "gallery_title": "Memory Gallery",
+    "contribute_message": "Want to share your thoughts? Please submit a PR on GitHub.",
+    "contribute_art": "Want to share your artwork? Please submit a PR on GitHub.",
+    "contribute_button": "Share Your Thoughts"
+  },
+  "gallery": {
+    "no_content": "No submissions yet"
+  },
+  "danmaku": {
+    "pause": "⏸",
+    "play": "▶"
+  },
+  "footer": {
+    "forever_kanata": "Forever Kanata",
+    "credits_title": "Credits:",
+    "github": "GitHub",
+    "contribute": "Contributing Guide"
+  }
+}

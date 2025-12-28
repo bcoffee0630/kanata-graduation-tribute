@@ -1,0 +1,32 @@
+{
+  "fanart": [
+    {
+      "id": "001",
+      "filename": "kanata-header.png",
+      "path": "images/kanata-header.png",
+      "artist": "hololive / COVER Corp.",
+      "artistLink": "https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg",
+      "date": "2025-12-27",
+      "isOfficial": true,
+      "caption": {
+        "ja": "「誰も見てない夢を見ろ」MVより",
+        "zh-TW": "「誰も見てない夢を見ろ」MV 截圖",
+        "en": "From \"Dare mo Mitenai Yume wo Miro\" MV"
+      }
+    },
+    {
+      "id": "002",
+      "filename": "kanata-graduation-live.png",
+      "path": "images/kanata-graduation-live.png",
+      "artist": "hololive / COVER Corp.",
+      "artistLink": "https://www.youtube.com/watch?v=8iGGL_0CEpc",
+      "date": "2025-12-27",
+      "isOfficial": true,
+      "caption": {
+        "ja": "卒業ライブより",
+        "zh-TW": "畢業演唱會截圖",
+        "en": "From Graduation Live Concert"
+      }
+    }
+  ]
+}

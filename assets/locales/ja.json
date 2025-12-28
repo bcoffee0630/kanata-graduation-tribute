@@ -1,0 +1,35 @@
+{
+  "site_title": "天音かなた 卒業メモリアル",
+  "header_title": "天音かなた 卒業記念サイト",
+  "day_counter": "卒業から{{days}}日目",
+  "graduation_date": "2025年12月27日 - ずっと覚えている",
+  "nav": {
+    "home": "ホーム",
+    "messages": "メッセージ",
+    "gallery": "ギャラリー",
+    "youtube": "YouTube",
+    "twitter": "Twitter"
+  },
+  "sections": {
+    "intro_title": "永遠に、かなたと共に",
+    "intro_text": "このサイトは、天音かなたさんの思い出を共有し、彼女と過ごした時間を永遠に記憶するためのファンメモリアルです。かなたんが残してくれた歌声、笑顔、そして数え切れない思い出は、私たちの心の中で生き続けます。",
+    "fan_messages": "ファンからの想い",
+    "gallery_title": "思い出のギャラリー",
+    "contribute_message": "あなたの想いを届けませんか？GitHubでPRを送ってください。",
+    "contribute_art": "あなたの作品を共有しませんか？GitHubでPRを送ってください。",
+    "contribute_button": "想いを届ける"
+  },
+  "gallery": {
+    "no_content": "まだ投稿がありません"
+  },
+  "danmaku": {
+    "pause": "⏸",
+    "play": "▶"
+  },
+  "footer": {
+    "forever_kanata": "永遠にかなた",
+    "credits_title": "クレジット：",
+    "github": "GitHub",
+    "contribute": "貢献ガイド"
+  }
+}
