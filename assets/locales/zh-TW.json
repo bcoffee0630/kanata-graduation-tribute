@@ -1,8 +1,8 @@
 {
   "site_title": "天音彼方 畢業紀念",
-  "header_title": "天音彼方 畢業紀念網站",
-  "day_counter": "畢業第 {{days}} 天",
-  "graduation_date": "2025年12月27日 - 永遠記得",
+  "header_title": "天音彼方 畢業紀念",
+  "day_counter_prefix": "自畢業日 2025/12/27 後過了",
+  "day_counter_unit": "天",
   "nav": {
     "home": "首頁",
     "messages": "留言",
@@ -11,9 +11,9 @@
     "twitter": "Twitter"
   },
   "sections": {
-    "intro_title": "永遠與彼方同在",
-    "intro_text": "這是一個為了分享天音彼方的回憶，並永遠銘記與她共度時光的粉絲紀念網站。彼方留給我們的歌聲、笑容，以及無數的回憶，將永遠活在我們心中。",
-    "fan_messages": "粉絲的心意",
+    "intro_title": "最強最完美的PP天使",
+    "intro_text": "這是一個為了分享天音彼方的回憶，並永遠銘記與她共度時光的嘿民紀念網站。彼方留給我們的歌聲、笑容，以及無數的回憶，將永遠活在我們心中。",
+    "fan_messages": "嘿民的心意",
     "gallery_title": "回憶畫廊",
     "contribute_message": "想傳達您的心意嗎？請在 GitHub 提交 PR。",
     "contribute_art": "想分享您的作品嗎？請在 GitHub 提交 PR。",
@@ -27,7 +27,7 @@
     "play": "▶"
   },
   "footer": {
-    "forever_kanata": "永遠的彼方",
+    "forever_kanata": "絶対的アイドル",
     "credits_title": "圖片來源：",
     "github": "GitHub",
     "contribute": "貢獻指南"

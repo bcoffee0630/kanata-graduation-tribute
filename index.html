@@ -21,7 +21,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- 語言選擇器 -->
@@ -41,10 +41,13 @@
     <header class="main-header">
         <div class="header-bg"></div>
         <div class="header-content">
-            <h1 data-i18n="header_title">天音かなた 卒業記念サイト</h1>
+            <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
             <div class="counter-container">
-                <h2 id="day-counter-text">卒業から0日目</h2>
-                <p class="graduation-date" data-i18n="graduation_date">2025年12月27日 - ずっと覚えている</p>
+                <p class="counter-prefix" data-i18n="day_counter_prefix">卒業日 2025/12/27 から</p>
+                <h2 class="counter-number">
+                    <span id="day-counter-number">0</span>
+                    <span class="counter-unit" data-i18n="day_counter_unit">日</span>
+                </h2>
             </div>
         </div>
     </header>

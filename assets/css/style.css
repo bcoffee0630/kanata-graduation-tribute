@@ -41,6 +41,11 @@ html[lang="en"] {
     font-family: 'Roboto', 'Arial', sans-serif;
 }
 
+/* Zen Maru Gothic for headings - warm, rounded feel */
+h1, h2, .forever-kanata, .counter-number {
+    font-family: 'Zen Maru Gothic', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
+}
+
 body {
     line-height: 1.6;
     color: var(--text-dark);
@@ -108,6 +113,24 @@ body {
     z-index: -1;
 }
 
+/* Golden glow layer for emotional warmth */
+.header-bg::before {
+    content: '';
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(
+        circle,
+        rgba(255, 215, 0, 0.12) 0%,
+        transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
 /* Gradient overlay for emotional depth */
 .header-bg::after {
     content: '';
@@ -168,15 +191,38 @@ body {
     animation: fadeInUp 1.2s ease-out 0.3s both, gentlePulse 4s ease-in-out infinite 1.5s;
 }
 
-#day-counter-text {
-    font-size: 2.2em;
+/* Counter prefix - small text */
+.counter-prefix {
+    font-size: 0.95em;
+    opacity: 0.9;
     margin-bottom: 10px;
+    letter-spacing: 0.02em;
     font-weight: 300;
 }
 
-.graduation-date {
-    font-size: 1.1em;
+/* Counter number - large emphasis */
+.counter-number {
+    font-size: 3.5em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin: 0;
+    line-height: 1.1;
+}
+
+/* Ethereal glow - soft luminous effect */
+#day-counter-number {
+    color: white;
+    text-shadow:
+        0 0 20px rgba(255, 215, 0, 0.5),
+        0 0 40px rgba(40, 148, 255, 0.3);
+}
+
+.counter-unit {
+    font-size: 0.4em;
     opacity: 0.95;
+    margin-left: 0.15em;
+    vertical-align: middle;
+    -webkit-text-fill-color: white;
 }
 
 /* ==================== */
@@ -256,6 +302,18 @@ body {
     color: rgba(40, 148, 255, 0.12);
     font-family: Georgia, 'Times New Roman', serif;
     line-height: 1;
+    pointer-events: none;
+}
+
+/* Infinity symbol - eternity decoration */
+.intro-section::after {
+    content: '∞';
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 50px;
+    color: rgba(40, 148, 255, 0.08);
     pointer-events: none;
 }
 
@@ -354,15 +412,35 @@ footer {
 }
 
 .forever-kanata {
-    font-size: 2.2em;
+    font-size: 2.8em;
     text-align: center;
     margin-bottom: 35px;
-    font-weight: 300;
-    letter-spacing: 0.1em;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    padding: 20px 0;
+    position: relative;
     background: linear-gradient(90deg, var(--kanata-blue-light), var(--gold), var(--kanata-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* Golden glow behind footer text */
+.forever-kanata::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 250%;
+    background: radial-gradient(
+        ellipse,
+        rgba(255, 215, 0, 0.08) 0%,
+        transparent 60%
+    );
+    pointer-events: none;
+    z-index: -1;
 }
 
 .credits {
@@ -427,6 +505,34 @@ footer {
     transform: translateY(0);
 }
 
+/* Staggered entrance animations for rhythm */
+.reveal-on-scroll.revealed h2 {
+    animation: fadeInUp 0.8s ease-out both;
+}
+
+.reveal-on-scroll.revealed p {
+    animation: fadeInUp 0.8s ease-out 0.12s both;
+}
+
+.reveal-on-scroll.revealed .github-link,
+.reveal-on-scroll.revealed .gallery-contribute,
+.reveal-on-scroll.revealed .danmaku-contribute {
+    animation: fadeInUp 0.8s ease-out 0.24s both;
+}
+
+/* Gallery items staggered entrance */
+.gallery-item {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out both;
+}
+
+.gallery-item:nth-child(1) { animation-delay: 0s; }
+.gallery-item:nth-child(2) { animation-delay: 0.08s; }
+.gallery-item:nth-child(3) { animation-delay: 0.16s; }
+.gallery-item:nth-child(4) { animation-delay: 0.24s; }
+.gallery-item:nth-child(5) { animation-delay: 0.32s; }
+.gallery-item:nth-child(6) { animation-delay: 0.40s; }
+
 /* ==================== */
 /* Feather Effects      */
 /* ==================== */
@@ -490,8 +596,12 @@ footer {
         padding: 20px 30px;
     }
 
-    #day-counter-text {
-        font-size: 1.6em;
+    .counter-number {
+        font-size: 2.5em;
+    }
+
+    .counter-prefix {
+        font-size: 0.9em;
     }
 
     .language-selector {
@@ -538,7 +648,18 @@ footer {
     }
 
     .forever-kanata {
-        font-size: 1.6em;
+        font-size: 2em;
+    }
+
+    /* Header glow responsive */
+    .header-bg::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    /* Intro infinity symbol responsive */
+    .intro-section::after {
+        font-size: 40px;
     }
 }
 
@@ -556,8 +677,12 @@ footer {
         padding: 15px 25px;
     }
 
-    #day-counter-text {
-        font-size: 1.3em;
+    .counter-number {
+        font-size: 2em;
+    }
+
+    .counter-prefix {
+        font-size: 0.85em;
     }
 
     .intro-section::before {
@@ -567,6 +692,18 @@ footer {
     .feather {
         width: 14px;
         height: 14px;
+    }
+
+    /* Header glow - smaller on mobile */
+    .header-bg::before {
+        width: 200px;
+        height: 200px;
+    }
+
+    /* Infinity symbol - smaller */
+    .intro-section::after {
+        font-size: 30px;
+        bottom: 15px;
     }
 }
 

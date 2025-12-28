@@ -5,23 +5,16 @@ function updateDayCounter() {
     const now = new Date();
     const diffTime = Math.abs(now - graduationDate);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Wait for i18n to be ready
-    if (typeof i18n !== 'undefined' && i18n.translations && i18n.translations.day_counter) {
-        const counterText = i18n.t('day_counter', { days: diffDays });
-        const counterElement = document.getElementById('day-counter-text');
-        if (counterElement) {
-            counterElement.textContent = counterText;
-        }
-        
-        // Update page title with day count
+
+    // Update the day number
+    const numberElement = document.getElementById('day-counter-number');
+    if (numberElement) {
+        numberElement.textContent = diffDays;
+    }
+
+    // Update page title with day count
+    if (typeof i18n !== 'undefined' && i18n.translations && i18n.translations.site_title) {
         document.title = `${i18n.t('site_title')} - Day ${diffDays}`;
-    } else {
-        // Fallback display
-        const counterElement = document.getElementById('day-counter-text');
-        if (counterElement) {
-            counterElement.textContent = `卒業から${diffDays}日目`;
-        }
     }
 }
 
