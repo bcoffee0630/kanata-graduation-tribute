@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="天音かなた卒業記念サイト | Amane Kanata Memorial Website">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="天音かなた卒業記念 | Amane Kanata Memorial">
+    <meta property="og:description" content="Forever Kanata - 永遠にかなた">
+    <meta property="og:image" content="images/kanata-graduation-live.png">
+    <meta property="og:url" content="https://bcoffee0630.github.io/kanata-graduation-tribute/">
+
+    <title>天音かなた 卒業メモリアル</title>
+
+    <link rel="icon" type="image/png" href="shooting-star.png">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/gallery.css">
+    <link rel="stylesheet" href="assets/css/danmaku.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 語言選擇器 -->
+    <div class="language-selector">
+        <button onclick="i18n.switchLanguage('ja')" class="lang-btn" data-lang="ja">
+            JP
+        </button>
+        <button onclick="i18n.switchLanguage('zh-TW')" class="lang-btn" data-lang="zh-TW">
+            TW
+        </button>
+        <button onclick="i18n.switchLanguage('en')" class="lang-btn" data-lang="en">
+            EN
+        </button>
+    </div>
+
+    <!-- 主要 Header -->
+    <header class="main-header">
+        <div class="header-bg"></div>
+        <div class="header-content">
+            <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
+            <div class="counter-container">
+                <p class="counter-prefix" data-i18n="day_counter_prefix">卒業日 2025/12/27 から</p>
+                <h2 class="counter-number">
+                    <span id="day-counter-number">0</span>
+                    <span class="counter-unit" data-i18n="day_counter_unit">日</span>
+                </h2>
+            </div>
+        </div>
+    </header>
+
+    <!-- 導航 -->
+    <nav class="main-nav">
+        <ul>
+            <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
+            <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
+            <li><a href="#gallery-section" data-i18n="nav.gallery">ギャラリー</a></li>
+            <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
+            <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
+        </ul>
+    </nav>
+
+    <!-- 主要內容 -->
+    <main>
+        <!-- 紀念介紹區塊 -->
+        <section id="intro" class="content-section intro-section reveal-on-scroll">
+            <div class="container">
+                <h2 data-i18n="sections.intro_title">永遠に、かなたと共に</h2>
+                <p data-i18n="sections.intro_text">
+                    このサイトは、天音かなたさんの思い出を共有し、彼女と過ごした時間を永遠に記憶するためのファンメモリアルです。かなたんが残してくれた歌声、笑顔、そして数え切れない思い出は、私たちの心の中で生き続けます。
+                </p>
+            </div>
+        </section>
+
+        <!-- 彈幕留言區 -->
+        <section id="danmaku-section" class="danmaku-section reveal-on-scroll">
+            <h2 data-i18n="sections.fan_messages">ファンからのメッセージ</h2>
+            <div id="danmaku-container"></div>
+            <div id="danmaku-controls">
+                <button class="danmaku-play-pause" data-i18n="danmaku.pause">⏸</button>
+            </div>
+            <div class="danmaku-contribute">
+                <p data-i18n="sections.contribute_message">メッセージを追加したい方は、下のボタンをクリックしてください。</p>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml" class="github-link" target="_blank">
+                    <span data-i18n="sections.submit_message_button">メッセージを投稿</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- 粉絲畫廊區 -->
+        <section id="gallery-section" class="gallery-section reveal-on-scroll">
+            <div class="container">
+                <h2 data-i18n="sections.gallery_title">ファンアートギャラリー</h2>
+                <div id="gallery-grid"></div>
+                <div class="gallery-contribute">
+                    <p data-i18n="sections.contribute_art">イラストを投稿したい方は、下のボタンをクリックしてください。</p>
+                    <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml" class="github-link" target="_blank">
+                        <span data-i18n="sections.submit_art_button">イラストを投稿</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close">&times;</button>
+            <button class="lightbox-nav lightbox-prev">&#10094;</button>
+            <button class="lightbox-nav lightbox-next">&#10095;</button>
+            <div class="lightbox-image"></div>
+            <div class="lightbox-info"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="forever-kanata" data-i18n="footer.forever_kanata">永遠にかなた</p>
+            <div class="credits">
+                <p data-i18n="footer.credits_title">Credits:</p>
+                <ul>
+                    <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank">誰も見てない夢を見ろ - 天音かなた</a></li>
+                    <li>Background: <a href="https://www.youtube.com/watch?v=8iGGL_0CEpc" target="_blank">天音かなた卒業ライブ</a></li>
+                    <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank">Star icons created by Freepik - Flaticon</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute" target="_blank" data-i18n="footer.github">GitHub</a>
+                <span>|</span>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/blob/main/.github/CONTRIBUTING.md" target="_blank" data-i18n="footer.contribute">貢献ガイド</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/i18n.js"></script>
+    <script src="assets/js/counter.js"></script>
+    <script src="assets/js/gallery.js"></script>
+    <script src="assets/js/danmaku.js"></script>
+    <script src="assets/js/effects.js"></script>
+    <script src="assets/js/animations.js"></script>
+</body>
+</html>

@@ -3,125 +3,463 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="天音かなた卒業記念サイト | Amane Kanata Memorial Website">
-
-    <!-- Open Graph -->
-    <meta property="og:title" content="天音かなた卒業記念 | Amane Kanata Memorial">
-    <meta property="og:description" content="Forever Kanata - 永遠にかなた">
-    <meta property="og:image" content="images/kanata-graduation-live.png">
-    <meta property="og:url" content="https://bcoffee0630.github.io/kanata-graduation-tribute/">
-
-    <title>天音かなた 卒業メモリアル</title>
-
+    <meta name="description" content="天音かなた卒業記念サイト - メンテナンス中">
+    <title>メンテナンス中 | 天音かなた 卒業メモリアル</title>
     <link rel="icon" type="image/png" href="shooting-star.png">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/gallery.css">
-    <link rel="stylesheet" href="assets/css/danmaku.css">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --kanata-blue: #2894FF;
+            --kanata-blue-light: #5AAFFF;
+            --kanata-blue-dark: #1A6FCC;
+            --white: #FFFFFF;
+            --gold: #FFD700;
+            --gold-light: #FFE44D;
+            --cream-white: #F8FBFF;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Noto Sans TC', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: var(--cream-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Zen Maru Gothic for headings */
+        h1, h2, .forever-kanata, .maintenance-title {
+            font-family: 'Zen Maru Gothic', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
+        }
+
+        /* ==================== */
+        /* Language Selector    */
+        /* ==================== */
+        .language-selector {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--kanata-blue);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .lang-btn:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 148, 255, 0.2);
+        }
+
+        .lang-btn.active {
+            background: var(--kanata-blue);
+            color: white;
+        }
+
+        /* ==================== */
+        /* Main Header          */
+        /* ==================== */
+        .main-header {
+            position: relative;
+            height: 70vh;
+            min-height: 500px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/kanata-header.png');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.7);
+            z-index: -1;
+        }
+
+        /* Golden glow layer */
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(
+                circle,
+                rgba(255, 215, 0, 0.12) 0%,
+                transparent 70%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Gradient overlay */
+        .header-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(
+                180deg,
+                rgba(40, 148, 255, 0.1) 0%,
+                rgba(26, 111, 204, 0.25) 100%
+            );
+        }
+
+        .header-content {
+            text-align: center;
+            color: white;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Title animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-content h1 {
+            font-size: 2.8em;
+            margin-bottom: 25px;
+            font-weight: 700;
+            animation: fadeInUp 1.2s ease-out;
+            letter-spacing: 0.02em;
+        }
+
+        /* Maintenance container */
+        @keyframes gentlePulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(40, 148, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 35px rgba(40, 148, 255, 0.6);
+            }
+        }
+
+        .maintenance-container {
+            background: linear-gradient(135deg, rgba(40, 148, 255, 0.9) 0%, rgba(26, 111, 204, 0.9) 100%);
+            padding: 30px 50px;
+            border-radius: 15px;
+            display: inline-block;
+            animation: fadeInUp 1.2s ease-out 0.3s both, gentlePulse 4s ease-in-out infinite 1.5s;
+        }
+
+        .maintenance-prefix {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            letter-spacing: 0.02em;
+            font-weight: 300;
+        }
+
+        .maintenance-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin: 0;
+            line-height: 1.2;
+            color: white;
+            text-shadow:
+                0 0 20px rgba(255, 215, 0, 0.5),
+                0 0 40px rgba(40, 148, 255, 0.3);
+        }
+
+        .maintenance-subtitle {
+            font-size: 1em;
+            margin-top: 15px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* ==================== */
+        /* Content Section      */
+        /* ==================== */
+        .content-section {
+            flex: 1;
+            padding: 80px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--cream-white) 0%, #E8F4FF 100%);
+        }
+
+        .content-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: var(--kanata-blue);
+            font-weight: 300;
+            letter-spacing: 0.08em;
+        }
+
+        .message-block {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(40, 148, 255, 0.1);
+            border-left: 4px solid var(--kanata-blue);
+        }
+
+        .message-block p {
+            color: #555;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+
+        /* ==================== */
+        /* Footer               */
+        /* ==================== */
+        footer {
+            background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%);
+            color: white;
+            padding: 50px 0;
+        }
+
+        .forever-kanata {
+            font-size: 2.8em;
+            text-align: center;
+            margin-bottom: 35px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            padding: 20px 0;
+            position: relative;
+            background: linear-gradient(90deg, var(--kanata-blue-light), var(--gold), var(--kanata-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .forever-kanata::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 250%;
+            background: radial-gradient(
+                ellipse,
+                rgba(255, 215, 0, 0.08) 0%,
+                transparent 60%
+            );
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .credits {
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .credits ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .credits li {
+            margin: 5px 0;
+        }
+
+        .credits a {
+            color: var(--kanata-blue-light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .credits a:hover {
+            color: var(--gold);
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-links a {
+            color: var(--kanata-blue-light);
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--gold);
+        }
+
+        .footer-links span {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ==================== */
+        /* Responsive Design    */
+        /* ==================== */
+        @media (max-width: 768px) {
+            .language-selector {
+                top: 10px;
+                right: 10px;
+            }
+
+            .lang-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .main-header {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .header-content h1 {
+                font-size: 1.8em;
+                padding: 0 15px;
+            }
+
+            .maintenance-container {
+                padding: 20px 30px;
+            }
+
+            .maintenance-title {
+                font-size: 1.8em;
+            }
+
+            .maintenance-prefix,
+            .maintenance-subtitle {
+                font-size: 0.9em;
+            }
+
+            .content-section {
+                padding: 50px 15px;
+            }
+
+            .content-section h2 {
+                font-size: 1.6em;
+            }
+
+            .forever-kanata {
+                font-size: 2em;
+            }
+
+            .header-bg::before {
+                width: 300px;
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-header {
+                height: 50vh;
+                min-height: 350px;
+            }
+
+            .header-content h1 {
+                font-size: 1.5em;
+            }
+
+            .maintenance-container {
+                padding: 15px 25px;
+            }
+
+            .maintenance-title {
+                font-size: 1.5em;
+            }
+
+            .header-bg::before {
+                width: 200px;
+                height: 200px;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 語言選擇器 -->
+    <!-- Language Selector -->
     <div class="language-selector">
-        <button onclick="i18n.switchLanguage('ja')" class="lang-btn" data-lang="ja">
-            JP
-        </button>
-        <button onclick="i18n.switchLanguage('zh-TW')" class="lang-btn" data-lang="zh-TW">
-            TW
-        </button>
-        <button onclick="i18n.switchLanguage('en')" class="lang-btn" data-lang="en">
-            EN
-        </button>
+        <button onclick="switchLanguage('ja')" class="lang-btn" data-lang="ja">JP</button>
+        <button onclick="switchLanguage('zh-TW')" class="lang-btn" data-lang="zh-TW">TW</button>
+        <button onclick="switchLanguage('en')" class="lang-btn" data-lang="en">EN</button>
     </div>
 
-    <!-- 主要 Header -->
+    <!-- Main Header -->
     <header class="main-header">
         <div class="header-bg"></div>
         <div class="header-content">
             <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
-            <div class="counter-container">
-                <p class="counter-prefix" data-i18n="day_counter_prefix">卒業日 2025/12/27 から</p>
-                <h2 class="counter-number">
-                    <span id="day-counter-number">0</span>
-                    <span class="counter-unit" data-i18n="day_counter_unit">日</span>
-                </h2>
+            <div class="maintenance-container">
+                <p class="maintenance-prefix" data-i18n="maintenance_prefix">サイトをアップデート中</p>
+                <h2 class="maintenance-title" data-i18n="maintenance_title">メンテナンス中</h2>
+                <p class="maintenance-subtitle" data-i18n="maintenance_subtitle">しばらくお待ちください</p>
             </div>
         </div>
     </header>
 
-    <!-- 導航 -->
-    <nav class="main-nav">
-        <ul>
-            <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
-            <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
-            <li><a href="#gallery-section" data-i18n="nav.gallery">ギャラリー</a></li>
-            <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
-            <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
-        </ul>
-    </nav>
-
-    <!-- 主要內容 -->
-    <main>
-        <!-- 紀念介紹區塊 -->
-        <section id="intro" class="content-section intro-section reveal-on-scroll">
-            <div class="container">
-                <h2 data-i18n="sections.intro_title">永遠に、かなたと共に</h2>
-                <p data-i18n="sections.intro_text">
-                    このサイトは、天音かなたさんの思い出を共有し、彼女と過ごした時間を永遠に記憶するためのファンメモリアルです。かなたんが残してくれた歌声、笑顔、そして数え切れない思い出は、私たちの心の中で生き続けます。
-                </p>
-            </div>
-        </section>
-
-        <!-- 彈幕留言區 -->
-        <section id="danmaku-section" class="danmaku-section reveal-on-scroll">
-            <h2 data-i18n="sections.fan_messages">ファンからのメッセージ</h2>
-            <div id="danmaku-container"></div>
-            <div id="danmaku-controls">
-                <button class="danmaku-play-pause" data-i18n="danmaku.pause">⏸</button>
-            </div>
-            <div class="danmaku-contribute">
-                <p data-i18n="sections.contribute_message">メッセージを追加したい方は、下のボタンをクリックしてください。</p>
-                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml" class="github-link" target="_blank">
-                    <span data-i18n="sections.submit_message_button">メッセージを投稿</span>
-                </a>
-            </div>
-        </section>
-
-        <!-- 粉絲畫廊區 -->
-        <section id="gallery-section" class="gallery-section reveal-on-scroll">
-            <div class="container">
-                <h2 data-i18n="sections.gallery_title">ファンアートギャラリー</h2>
-                <div id="gallery-grid"></div>
-                <div class="gallery-contribute">
-                    <p data-i18n="sections.contribute_art">イラストを投稿したい方は、下のボタンをクリックしてください。</p>
-                    <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml" class="github-link" target="_blank">
-                        <span data-i18n="sections.submit_art_button">イラストを投稿</span>
-                    </a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Lightbox Modal -->
-    <div id="lightbox" class="lightbox">
-        <div class="lightbox-content">
-            <button class="lightbox-close">&times;</button>
-            <button class="lightbox-nav lightbox-prev">&#10094;</button>
-            <button class="lightbox-nav lightbox-next">&#10095;</button>
-            <div class="lightbox-image"></div>
-            <div class="lightbox-info"></div>
+    <!-- Content -->
+    <section class="content-section">
+        <h2 data-i18n="coming_back">Coming Back Soon</h2>
+        <div class="message-block">
+            <p data-i18n="maintenance_message">サイトをアップデートしています。しばらくお待ちください。</p>
         </div>
-    </div>
+    </section>
 
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p class="forever-kanata" data-i18n="footer.forever_kanata">永遠にかなた</p>
+            <p class="forever-kanata">絶対的アイドル</p>
             <div class="credits">
-                <p data-i18n="footer.credits_title">Credits:</p>
+                <p>Credits:</p>
                 <ul>
                     <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank">誰も見てない夢を見ろ - 天音かなた</a></li>
                     <li>Background: <a href="https://www.youtube.com/watch?v=8iGGL_0CEpc" target="_blank">天音かなた卒業ライブ</a></li>
@@ -129,18 +467,97 @@
                 </ul>
             </div>
             <div class="footer-links">
-                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute" target="_blank" data-i18n="footer.github">GitHub</a>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute" target="_blank">GitHub</a>
                 <span>|</span>
-                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/blob/main/.github/CONTRIBUTING.md" target="_blank" data-i18n="footer.contribute">貢献ガイド</a>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/blob/main/.github/CONTRIBUTING.md" target="_blank" data-i18n="contribute_guide">貢献ガイド</a>
             </div>
         </div>
     </footer>
 
-    <script src="assets/js/i18n.js"></script>
-    <script src="assets/js/counter.js"></script>
-    <script src="assets/js/gallery.js"></script>
-    <script src="assets/js/danmaku.js"></script>
-    <script src="assets/js/effects.js"></script>
-    <script src="assets/js/animations.js"></script>
+    <script>
+        // Translations
+        const translations = {
+            'ja': {
+                header_title: '天音かなた 卒業記念',
+                maintenance_prefix: 'サイトをアップデート中',
+                maintenance_title: 'メンテナンス中',
+                maintenance_subtitle: 'しばらくお待ちください',
+                coming_back: 'Coming Back Soon',
+                maintenance_message: 'サイトをアップデートしています。しばらくお待ちください。',
+                contribute_guide: '貢献ガイド'
+            },
+            'zh-TW': {
+                header_title: '天音彼方 畢業紀念',
+                maintenance_prefix: '網站更新中',
+                maintenance_title: '維護中',
+                maintenance_subtitle: '請稍候',
+                coming_back: '即將回歸',
+                maintenance_message: '網站正在更新中，請稍候。',
+                contribute_guide: '貢獻指南'
+            },
+            'en': {
+                header_title: 'Amane Kanata Graduation Memorial',
+                maintenance_prefix: 'Updating the site',
+                maintenance_title: 'Under Maintenance',
+                maintenance_subtitle: 'Please wait',
+                coming_back: 'Coming Back Soon',
+                maintenance_message: "We're updating the site. Please check back soon.",
+                contribute_guide: 'Contribution Guide'
+            }
+        };
+
+        let currentLang = 'ja';
+
+        // Detect browser language
+        function detectLanguage() {
+            const stored = localStorage.getItem('preferred-language');
+            if (stored && translations[stored]) {
+                return stored;
+            }
+
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('ja')) return 'ja';
+            if (browserLang.startsWith('zh')) return 'zh-TW';
+            return 'en';
+        }
+
+        // Switch language
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred-language', lang);
+            updateContent();
+            updateButtons();
+            document.documentElement.lang = lang;
+        }
+
+        // Update page content
+        function updateContent() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+        }
+
+        // Update active button
+        function updateButtons() {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-lang') === currentLang) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            currentLang = detectLanguage();
+            updateContent();
+            updateButtons();
+            document.documentElement.lang = currentLang;
+        });
+    </script>
 </body>
 </html>
