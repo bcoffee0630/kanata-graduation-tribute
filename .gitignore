@@ -1,1 +1,42 @@
+# Claude
 /.claude
+
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc
+firebase.json
+firestore.rules
+firestore.indexes.json
+storage.rules
+
+# Firebase 敏感設定（絕對不能上傳）
+**/firebase-config.js
+**/firebase-config.local.js
+.env
+.env.local
+.env.*.local
+
+# Firebase Emulator
+.firebase/
+firebase-export-*/
+
+# Firebase Admin SDK
+**/serviceAccountKey.json
+**/service-account-key.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Migration scripts (本地執行用)
+migrate-data.js
