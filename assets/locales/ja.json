@@ -28,6 +28,21 @@
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "login_to_submit": "投稿するにはログインしてください"
+  },
+  "modal": {
+    "message_title": "メッセージを投稿",
+    "fanart_title": "イラストを投稿",
+    "language": "言語",
+    "message": "メッセージ",
+    "upload_image": "画像をアップロード",
+    "artist_link": "SNSリンク（任意）",
+    "artist_link_hint": "Twitter, Pixiv など",
+    "submit": "送信"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "credits_title": "クレジット：",

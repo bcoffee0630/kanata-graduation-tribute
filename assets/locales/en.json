@@ -28,6 +28,21 @@
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "login_to_submit": "Please log in to submit"
+  },
+  "modal": {
+    "message_title": "Submit Message",
+    "fanart_title": "Submit Artwork",
+    "language": "Language",
+    "message": "Message",
+    "upload_image": "Upload Image",
+    "artist_link": "Social Link (optional)",
+    "artist_link_hint": "Twitter, Pixiv, etc.",
+    "submit": "Submit"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "credits_title": "Credits:",

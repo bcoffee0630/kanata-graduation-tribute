@@ -1,5 +1,6 @@
 /**
  * Gallery functionality for fan art display
+ * Supports both Firestore and local JSON fallback
  */
 
 const Gallery = {
@@ -7,6 +8,8 @@ const Gallery = {
     container: null,
     lightbox: null,
     currentIndex: 0,
+    useFirestore: false,
+    unsubscribe: null,
 
     async init() {
         this.container = document.getElementById('gallery-grid');
@@ -14,14 +17,89 @@ const Gallery = {
 
         if (!this.container) return;
 
+        this.setupLightbox();
+
+        // Try to load from Firestore first, fall back to JSON
+        window.addEventListener('firebaseReady', () => {
+            this.loadFromFirestore();
+        });
+
+        // Also try loading from JSON as fallback
+        setTimeout(() => {
+            if (!this.useFirestore && !this.data) {
+                this.loadFromJSON();
+            }
+        }, 2000);
+    },
+
+    async loadFromJSON() {
         try {
             const response = await fetch('memories/fanart/index.json');
-            this.data = await response.json();
+            const jsonData = await response.json();
+
+            this.data = {
+                fanart: jsonData.fanart.map(item => ({
+                    id: item.id || item.path,
+                    artist: item.artist,
+                    artistLink: item.artistLink,
+                    path: item.path,
+                    imageUrl: item.path, // Use same path for local files
+                    caption: item.caption,
+                    date: item.date,
+                    isOfficial: item.isOfficial
+                }))
+            };
+
             this.render();
-            this.setupLightbox();
             this.setupLazyLoading();
         } catch (error) {
-            console.error('Failed to load gallery data:', error);
+            console.error('Failed to load gallery from JSON:', error);
+            this.container.innerHTML = `<p class="no-content" data-i18n="gallery.no_content">まだ投稿がありません</p>`;
+        }
+    },
+
+    async loadFromFirestore() {
+        try {
+            const db = window.FirebaseApp.getDb();
+            if (!db) return;
+
+            this.useFirestore = true;
+
+            // Set up real-time listener
+            this.unsubscribe = db.collection('fanart')
+                .orderBy('createdAt', 'desc')
+                .limit(50)
+                .onSnapshot((snapshot) => {
+                    const fanart = [];
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        fanart.push({
+                            id: doc.id,
+                            artist: data.artist,
+                            artistLink: data.artistLink,
+                            artistAvatar: data.artistAvatar,
+                            path: data.imagePath,
+                            imageUrl: data.imageUrl,
+                            caption: data.caption,
+                            date: data.createdAt?.toDate?.()?.toLocaleDateString() || '',
+                            isOfficial: false
+                        });
+                    });
+
+                    this.data = { fanart };
+                    this.render();
+                    this.setupLazyLoading();
+
+                }, (error) => {
+                    console.error('Firestore listener error:', error);
+                    this.useFirestore = false;
+                    this.loadFromJSON();
+                });
+
+        } catch (error) {
+            console.error('Failed to set up Firestore:', error);
+            this.loadFromJSON();
         }
     },
 
@@ -34,30 +112,43 @@ const Gallery = {
 
         const lang = window.i18n ? i18n.currentLang : 'ja';
 
-        this.container.innerHTML = this.data.fanart.map((item, index) => `
-            <div class="gallery-item" data-index="${index}">
-                <img
-                    data-src="${item.path}"
-                    alt="${item.caption[lang] || item.caption.ja}"
-                    class="gallery-image lazy"
-                    loading="lazy"
-                >
-                <div class="gallery-overlay">
-                    <p class="gallery-artist">
-                        ${item.artistLink
-                            ? `<a href="${item.artistLink}" target="_blank" rel="noopener">${item.artist}</a>`
-                            : item.artist}
-                        ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
-                    </p>
-                    <p class="gallery-caption">${item.caption[lang] || item.caption.ja}</p>
+        this.container.innerHTML = this.data.fanart.map((item, index) => {
+            const imageSrc = item.imageUrl || item.path;
+            const caption = item.caption?.[lang] || item.caption?.ja || '';
+            const artist = this.escapeHtml(item.artist || 'Anonymous');
+
+            // Report button (only for Firestore entries)
+            let reportBtn = '';
+            if (this.useFirestore && window.Report && item.id) {
+                reportBtn = window.Report.createReportButton(item.id, 'fanart');
+            }
+
+            return `
+                <div class="gallery-item" data-index="${index}">
+                    <img
+                        data-src="${imageSrc}"
+                        alt="${this.escapeHtml(caption)}"
+                        class="gallery-image lazy"
+                        loading="lazy"
+                    >
+                    <div class="gallery-overlay">
+                        <p class="gallery-artist">
+                            ${item.artistLink
+                                ? `<a href="${this.escapeHtml(item.artistLink)}" target="_blank" rel="noopener">${artist}</a>`
+                                : artist}
+                            ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
+                        </p>
+                        <p class="gallery-caption">${this.escapeHtml(caption)}</p>
+                        ${reportBtn}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Add click handlers
         this.container.querySelectorAll('.gallery-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                if (e.target.tagName !== 'A') {
+                if (e.target.tagName !== 'A' && !e.target.closest('.report-btn')) {
                     this.openLightbox(parseInt(item.dataset.index));
                 }
             });
@@ -150,20 +241,24 @@ const Gallery = {
         const imgContainer = this.lightbox.querySelector('.lightbox-image');
         const infoContainer = this.lightbox.querySelector('.lightbox-info');
 
+        const imageSrc = item.imageUrl || item.path;
+        const caption = item.caption?.[lang] || item.caption?.ja || '';
+        const artist = this.escapeHtml(item.artist || 'Anonymous');
+
         if (imgContainer) {
-            imgContainer.innerHTML = `<img src="${item.path}" alt="${item.caption[lang] || item.caption.ja}">`;
+            imgContainer.innerHTML = `<img src="${imageSrc}" alt="${this.escapeHtml(caption)}">`;
         }
 
         if (infoContainer) {
             infoContainer.innerHTML = `
                 <p class="lightbox-artist">
                     ${item.artistLink
-                        ? `<a href="${item.artistLink}" target="_blank" rel="noopener">${item.artist}</a>`
-                        : item.artist}
+                        ? `<a href="${this.escapeHtml(item.artistLink)}" target="_blank" rel="noopener">${artist}</a>`
+                        : artist}
                     ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
                 </p>
-                <p class="lightbox-caption">${item.caption[lang] || item.caption.ja}</p>
-                <p class="lightbox-date">${item.date}</p>
+                <p class="lightbox-caption">${this.escapeHtml(caption)}</p>
+                <p class="lightbox-date">${item.date || ''}</p>
             `;
         }
 
@@ -179,8 +274,24 @@ const Gallery = {
     onLanguageChange() {
         this.render();
         this.setupLazyLoading();
-        if (this.lightbox.classList.contains('active')) {
+        if (this.lightbox?.classList.contains('active')) {
             this.updateLightboxContent();
+        }
+    },
+
+    // Escape HTML to prevent XSS
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    // Cleanup when leaving page
+    destroy() {
+        if (this.unsubscribe) {
+            this.unsubscribe();
+            this.unsubscribe = null;
         }
     }
 };

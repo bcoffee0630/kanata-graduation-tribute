@@ -28,6 +28,21 @@
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "登入",
+    "logout": "登出",
+    "login_to_submit": "請先登入才能投稿"
+  },
+  "modal": {
+    "message_title": "投稿留言",
+    "fanart_title": "投稿繪圖",
+    "language": "語言",
+    "message": "留言內容",
+    "upload_image": "上傳圖片",
+    "artist_link": "社群連結（選填）",
+    "artist_link_hint": "Twitter, Pixiv 等",
+    "submit": "送出"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "credits_title": "圖片來源：",

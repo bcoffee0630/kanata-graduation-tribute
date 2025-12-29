@@ -1,5 +1,6 @@
 /**
  * Danmaku (bullet comments) system for fan messages
+ * Supports both Firestore and local JSON fallback
  */
 
 const Danmaku = {
@@ -12,19 +13,95 @@ const Danmaku = {
     currentIndex: 0,
     animationInterval: null,
     baseSpeed: 15000, // Base duration in ms for message to cross screen
+    useFirestore: false,
+    unsubscribe: null, // Firestore listener
 
     async init() {
         this.container = document.getElementById('danmaku-container');
         if (!this.container) return;
 
+        this.setupTracks();
+        this.setupControls();
+
+        // Try to load from Firestore first, fall back to JSON
+        window.addEventListener('firebaseReady', () => {
+            this.loadFromFirestore();
+        });
+
+        // Also try loading from JSON as fallback
+        setTimeout(() => {
+            if (!this.useFirestore && !this.data) {
+                this.loadFromJSON();
+            }
+        }, 2000);
+    },
+
+    async loadFromJSON() {
         try {
             const response = await fetch('memories/messages/messages.json');
-            this.data = await response.json();
-            this.setupTracks();
-            this.setupControls();
+            const jsonData = await response.json();
+
+            // Convert JSON format to unified format
+            this.data = {
+                messages: jsonData.messages.map(msg => ({
+                    id: msg.id,
+                    author: msg.author,
+                    content: msg.content, // Already has language keys
+                    authorLink: msg.authorLink
+                }))
+            };
+
             this.start();
         } catch (error) {
-            console.error('Failed to load messages:', error);
+            console.error('Failed to load messages from JSON:', error);
+        }
+    },
+
+    async loadFromFirestore() {
+        try {
+            const db = window.FirebaseApp.getDb();
+            if (!db) return;
+
+            this.useFirestore = true;
+
+            // Set up real-time listener
+            this.unsubscribe = db.collection('messages')
+                .orderBy('createdAt', 'desc')
+                .limit(100)
+                .onSnapshot((snapshot) => {
+                    const messages = [];
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Convert Firestore format to unified format
+                        messages.push({
+                            id: doc.id,
+                            author: data.author,
+                            content: {
+                                [data.language]: data.content
+                            },
+                            authorLink: data.authorLink,
+                            authorAvatar: data.authorAvatar
+                        });
+                    });
+
+                    this.data = { messages };
+
+                    // Restart if already running
+                    if (this.animationInterval) {
+                        this.stop();
+                    }
+                    this.start();
+                }, (error) => {
+                    console.error('Firestore listener error:', error);
+                    // Fall back to JSON
+                    this.useFirestore = false;
+                    this.loadFromJSON();
+                });
+
+        } catch (error) {
+            console.error('Failed to set up Firestore:', error);
+            this.loadFromJSON();
         }
     },
 
@@ -126,9 +203,17 @@ const Danmaku = {
         const el = document.createElement('div');
         el.className = 'danmaku-message';
         el.style.setProperty('--track', trackIndex);
+
+        // Build HTML with optional report button (only if logged in and using Firestore)
+        let reportBtn = '';
+        if (this.useFirestore && window.Report && message.id) {
+            reportBtn = window.Report.createReportButton(message.id, 'message');
+        }
+
         el.innerHTML = `
-            <span class="danmaku-author">${message.author}:</span>
-            <span class="danmaku-text">${content}</span>
+            <span class="danmaku-author">${this.escapeHtml(message.author)}:</span>
+            <span class="danmaku-text">${this.escapeHtml(content)}</span>
+            ${reportBtn}
         `;
 
         // Calculate animation duration based on content length
@@ -167,6 +252,22 @@ const Danmaku = {
         }
         // Reset tracks
         this.tracks = Array(this.trackCount).fill(0);
+    },
+
+    // Escape HTML to prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    // Cleanup when leaving page
+    destroy() {
+        this.stop();
+        if (this.unsubscribe) {
+            this.unsubscribe();
+            this.unsubscribe = null;
+        }
     }
 };
 

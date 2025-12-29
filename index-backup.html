@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/gallery.css">
     <link rel="stylesheet" href="assets/css/danmaku.css">
+    <link rel="stylesheet" href="assets/css/modal.css">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,8 +25,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- 語言選擇器 -->
+    <!-- 語言選擇器 & 認證 -->
     <div class="language-selector">
+        <div class="auth-container">
+            <button id="login-button">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                <span data-i18n="auth.login">ログイン</span>
+            </button>
+            <div id="user-display">
+                <img class="user-avatar" src="" alt="">
+                <span class="user-name"></span>
+                <button id="logout-button" data-i18n="auth.logout">ログアウト</button>
+            </div>
+        </div>
         <button onclick="i18n.switchLanguage('ja')" class="lang-btn" data-lang="ja">
             JP
         </button>
@@ -84,9 +96,13 @@
             </div>
             <div class="danmaku-contribute">
                 <p data-i18n="sections.contribute_message">メッセージを追加したい方は、下のボタンをクリックしてください。</p>
-                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml" class="github-link" target="_blank">
+                <button id="submit-message-btn" class="submit-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                     <span data-i18n="sections.submit_message_button">メッセージを投稿</span>
-                </a>
+                </button>
+                <div class="login-prompt">
+                    <p data-i18n="auth.login_to_submit">投稿するにはログインしてください</p>
+                </div>
             </div>
         </section>
 
@@ -97,9 +113,13 @@
                 <div id="gallery-grid"></div>
                 <div class="gallery-contribute">
                     <p data-i18n="sections.contribute_art">イラストを投稿したい方は、下のボタンをクリックしてください。</p>
-                    <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml" class="github-link" target="_blank">
+                    <button id="submit-fanart-btn" class="submit-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                         <span data-i18n="sections.submit_art_button">イラストを投稿</span>
-                    </a>
+                    </button>
+                    <div class="login-prompt">
+                        <p data-i18n="auth.login_to_submit">投稿するにはログインしてください</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -113,6 +133,77 @@
             <button class="lightbox-nav lightbox-next">&#10095;</button>
             <div class="lightbox-image"></div>
             <div class="lightbox-info"></div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="modal.message_title">メッセージを投稿</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="message-form">
+                    <div class="form-group">
+                        <label for="message-language" data-i18n="modal.language">言語</label>
+                        <select id="message-language" required>
+                            <option value="ja">日本語</option>
+                            <option value="zh-TW">繁體中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="message-content" data-i18n="modal.message">メッセージ</label>
+                        <textarea id="message-content" maxlength="500" required placeholder=""></textarea>
+                        <div id="char-count">0/500</div>
+                    </div>
+                    <button type="submit" class="submit-form-btn" data-i18n="modal.submit">送信</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fanart Modal -->
+    <div id="fanart-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="modal.fanart_title">イラストを投稿</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="fanart-form">
+                    <div class="form-group">
+                        <div class="upload-area">
+                            <input type="file" id="fanart-image" accept="image/png,image/jpeg" required>
+                            <label for="fanart-image">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-text" data-i18n="modal.upload_image">画像をアップロード</div>
+                                <div class="upload-hint">PNG, JPG (10MB以下)</div>
+                            </label>
+                        </div>
+                        <div id="image-preview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="caption-ja">キャプション (日本語)</label>
+                        <input type="text" id="caption-ja" placeholder="任意">
+                    </div>
+                    <div class="form-group">
+                        <label for="caption-zh">標題 (繁體中文)</label>
+                        <input type="text" id="caption-zh" placeholder="選填">
+                    </div>
+                    <div class="form-group">
+                        <label for="caption-en">Caption (English)</label>
+                        <input type="text" id="caption-en" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="artist-link" data-i18n="modal.artist_link">SNSリンク (任意)</label>
+                        <input type="url" id="artist-link" placeholder="https://twitter.com/...">
+                        <small data-i18n="modal.artist_link_hint">Twitter, Pixiv, etc.</small>
+                    </div>
+                    <button type="submit" class="submit-form-btn" data-i18n="modal.submit">送信</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -136,8 +227,23 @@
         </div>
     </footer>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+
+    <!-- Core Scripts -->
     <script src="assets/js/i18n.js"></script>
     <script src="assets/js/counter.js"></script>
+
+    <!-- Firebase Integration -->
+    <script src="assets/js/firebase-init.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/submit.js"></script>
+    <script src="assets/js/report.js"></script>
+
+    <!-- Features -->
     <script src="assets/js/gallery.js"></script>
     <script src="assets/js/danmaku.js"></script>
     <script src="assets/js/effects.js"></script>
