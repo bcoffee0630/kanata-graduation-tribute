@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Reset and Base */
+        /* Reset and Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -27,23 +27,75 @@
             --white: #FFFFFF;
             --gold: #FFD700;
             --gold-light: #FFE44D;
+            --cream-white: #F8FBFF;
         }
 
         body {
             font-family: 'Noto Sans JP', 'Noto Sans TC', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: var(--cream-white);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+        }
+
+        /* Zen Maru Gothic for headings */
+        h1, h2, .forever-kanata, .maintenance-title {
+            font-family: 'Zen Maru Gothic', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
+        }
+
+        /* ==================== */
+        /* Language Selector    */
+        /* ==================== */
+        .language-selector {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--kanata-blue);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .lang-btn:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 148, 255, 0.2);
+        }
+
+        .lang-btn.active {
+            background: var(--kanata-blue);
             color: white;
         }
 
-        /* Full-screen background */
-        .background {
-            position: fixed;
+        /* ==================== */
+        /* Main Header          */
+        /* ==================== */
+        .main-header {
+            position: relative;
+            height: 70vh;
+            min-height: 500px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-bg {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
@@ -51,77 +103,55 @@
             background-image: url('images/kanata-header.png');
             background-size: cover;
             background-position: center;
-            filter: brightness(0.5);
-            z-index: -2;
+            filter: brightness(0.7);
+            z-index: -1;
         }
 
-        /* Gradient overlay for depth */
-        .background::after {
+        /* Golden glow layer */
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(
+                circle,
+                rgba(255, 215, 0, 0.12) 0%,
+                transparent 70%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Gradient overlay */
+        .header-bg::after {
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
             right: 0;
             bottom: 0;
+            left: 0;
             background: linear-gradient(
                 180deg,
-                rgba(40, 148, 255, 0.15) 0%,
-                rgba(26, 111, 204, 0.35) 100%
+                rgba(40, 148, 255, 0.1) 0%,
+                rgba(26, 111, 204, 0.25) 100%
             );
         }
 
-        /* Golden glow - emotional warmth */
-        .golden-glow {
-            position: fixed;
-            top: 35%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(
-                circle,
-                rgba(255, 215, 0, 0.15) 0%,
-                transparent 60%
-            );
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        /* Main content container */
-        .maintenance-container {
+        .header-content {
             text-align: center;
-            padding: 50px 40px;
-            background: linear-gradient(135deg, rgba(40, 148, 255, 0.85) 0%, rgba(26, 111, 204, 0.9) 100%);
-            border-radius: 20px;
-            max-width: 600px;
-            margin: 20px;
-            animation: fadeInUp 1.2s ease-out, gentlePulse 4s ease-in-out infinite 1.2s;
-            box-shadow:
-                0 0 30px rgba(40, 148, 255, 0.4),
-                0 20px 60px rgba(0, 0, 0, 0.3);
-            position: relative;
+            color: white;
             z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
 
-        /* Decorative border glow */
-        .maintenance-container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--kanata-blue-light) 50%, var(--gold) 100%);
-            border-radius: 22px;
-            z-index: -1;
-            opacity: 0.5;
-        }
-
-        /* Animations */
+        /* Title animation */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -129,109 +159,116 @@
             }
         }
 
+        .header-content h1 {
+            font-size: 2.8em;
+            margin-bottom: 25px;
+            font-weight: 700;
+            animation: fadeInUp 1.2s ease-out;
+            letter-spacing: 0.02em;
+        }
+
+        /* Maintenance container */
         @keyframes gentlePulse {
             0%, 100% {
-                box-shadow:
-                    0 0 30px rgba(40, 148, 255, 0.4),
-                    0 20px 60px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 0 20px rgba(40, 148, 255, 0.4);
             }
             50% {
-                box-shadow:
-                    0 0 50px rgba(40, 148, 255, 0.6),
-                    0 20px 60px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 0 35px rgba(40, 148, 255, 0.6);
             }
         }
 
-        /* Icon */
-        .maintenance-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-
-        @keyframes floatIcon {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        /* Headings - Zen Maru Gothic */
-        h1 {
-            font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
-            font-size: 2.2em;
-            font-weight: 700;
-            margin-bottom: 30px;
-            letter-spacing: 0.05em;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Language sections */
-        .message-section {
-            margin-bottom: 25px;
-            padding-bottom: 25px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .message-section:last-of-type {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .lang-label {
+        .maintenance-container {
+            background: linear-gradient(135deg, rgba(40, 148, 255, 0.9) 0%, rgba(26, 111, 204, 0.9) 100%);
+            padding: 30px 50px;
+            border-radius: 15px;
             display: inline-block;
-            font-size: 0.75em;
-            padding: 4px 12px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            margin-bottom: 12px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            animation: fadeInUp 1.2s ease-out 0.3s both, gentlePulse 4s ease-in-out infinite 1.5s;
         }
 
-        .message-title {
-            font-family: 'Zen Maru Gothic', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
-            font-size: 1.5em;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--gold-light);
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-        }
-
-        .message-text {
-            font-size: 1em;
-            line-height: 1.8;
-            opacity: 0.95;
+        .maintenance-prefix {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            letter-spacing: 0.02em;
             font-weight: 300;
         }
 
-        /* Footer */
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 30px 20px;
+        .maintenance-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin: 0;
+            line-height: 1.2;
+            color: white;
+            text-shadow:
+                0 0 20px rgba(255, 215, 0, 0.5),
+                0 0 40px rgba(40, 148, 255, 0.3);
+        }
+
+        .maintenance-subtitle {
+            font-size: 1em;
+            margin-top: 15px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* ==================== */
+        /* Content Section      */
+        /* ==================== */
+        .content-section {
+            flex: 1;
+            padding: 80px 20px;
             text-align: center;
-            background: linear-gradient(0deg, rgba(26, 26, 46, 0.9) 0%, transparent 100%);
+            background: linear-gradient(180deg, var(--cream-white) 0%, #E8F4FF 100%);
+        }
+
+        .content-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: var(--kanata-blue);
+            font-weight: 300;
+            letter-spacing: 0.08em;
+        }
+
+        .message-block {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(40, 148, 255, 0.1);
+            border-left: 4px solid var(--kanata-blue);
+        }
+
+        .message-block p {
+            color: #555;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+
+        /* ==================== */
+        /* Footer               */
+        /* ==================== */
+        footer {
+            background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%);
+            color: white;
+            padding: 50px 0;
         }
 
         .forever-kanata {
-            font-family: 'Zen Maru Gothic', sans-serif;
-            font-size: 1.8em;
+            font-size: 2.8em;
+            text-align: center;
+            margin-bottom: 35px;
             font-weight: 500;
             letter-spacing: 0.15em;
+            padding: 20px 0;
+            position: relative;
             background: linear-gradient(90deg, var(--kanata-blue-light), var(--gold), var(--kanata-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            position: relative;
         }
 
-        /* Golden glow behind footer text */
         .forever-kanata::before {
             content: '';
             position: absolute;
@@ -239,119 +276,140 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 120%;
-            height: 300%;
+            height: 250%;
             background: radial-gradient(
                 ellipse,
-                rgba(255, 215, 0, 0.1) 0%,
+                rgba(255, 215, 0, 0.08) 0%,
                 transparent 60%
             );
             pointer-events: none;
             z-index: -1;
         }
 
-        /* Decorative floating feathers */
-        .feather {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            opacity: 0.4;
-            pointer-events: none;
-            animation: floatFeather 15s ease-in-out infinite;
+        .credits {
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.8;
         }
 
-        .feather svg {
-            width: 100%;
-            height: 100%;
-            fill: none;
-            stroke: white;
-            stroke-width: 1.5;
+        .credits ul {
+            list-style: none;
+            margin-top: 10px;
         }
 
-        .feather:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
-        .feather:nth-child(2) { left: 85%; top: 15%; animation-delay: -3s; }
-        .feather:nth-child(3) { left: 15%; top: 70%; animation-delay: -6s; }
-        .feather:nth-child(4) { left: 80%; top: 75%; animation-delay: -9s; }
-        .feather:nth-child(5) { left: 50%; top: 10%; animation-delay: -12s; }
-
-        @keyframes floatFeather {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 0.4;
-            }
-            25% {
-                transform: translateY(-20px) rotate(10deg);
-                opacity: 0.6;
-            }
-            50% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 0.4;
-            }
-            75% {
-                transform: translateY(20px) rotate(-10deg);
-                opacity: 0.6;
-            }
+        .credits li {
+            margin: 5px 0;
         }
 
-        /* Responsive */
+        .credits a {
+            color: var(--kanata-blue-light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .credits a:hover {
+            color: var(--gold);
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-links a {
+            color: var(--kanata-blue-light);
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--gold);
+        }
+
+        .footer-links span {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ==================== */
+        /* Responsive Design    */
+        /* ==================== */
         @media (max-width: 768px) {
-            .maintenance-container {
-                padding: 35px 25px;
-                margin: 15px;
+            .language-selector {
+                top: 10px;
+                right: 10px;
             }
 
-            h1 {
+            .lang-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .main-header {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .header-content h1 {
+                font-size: 1.8em;
+                padding: 0 15px;
+            }
+
+            .maintenance-container {
+                padding: 20px 30px;
+            }
+
+            .maintenance-title {
+                font-size: 1.8em;
+            }
+
+            .maintenance-prefix,
+            .maintenance-subtitle {
+                font-size: 0.9em;
+            }
+
+            .content-section {
+                padding: 50px 15px;
+            }
+
+            .content-section h2 {
                 font-size: 1.6em;
             }
 
-            .message-title {
-                font-size: 1.3em;
-            }
-
-            .message-text {
-                font-size: 0.95em;
-            }
-
-            .maintenance-icon {
-                font-size: 3em;
-            }
-
             .forever-kanata {
-                font-size: 1.4em;
+                font-size: 2em;
             }
 
-            .golden-glow {
-                width: 400px;
-                height: 400px;
+            .header-bg::before {
+                width: 300px;
+                height: 300px;
             }
         }
 
         @media (max-width: 480px) {
+            .main-header {
+                height: 50vh;
+                min-height: 350px;
+            }
+
+            .header-content h1 {
+                font-size: 1.5em;
+            }
+
             .maintenance-container {
-                padding: 30px 20px;
-                border-radius: 15px;
+                padding: 15px 25px;
             }
 
-            h1 {
-                font-size: 1.4em;
-                margin-bottom: 25px;
+            .maintenance-title {
+                font-size: 1.5em;
             }
 
-            .message-title {
-                font-size: 1.15em;
-            }
-
-            .message-section {
-                margin-bottom: 20px;
-                padding-bottom: 20px;
-            }
-
-            .forever-kanata {
-                font-size: 1.2em;
-                letter-spacing: 0.1em;
-            }
-
-            .feather {
-                display: none;
+            .header-bg::before {
+                width: 200px;
+                height: 200px;
             }
         }
 
@@ -362,66 +420,144 @@
             *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
-            }
-
-            .feather {
-                display: none;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Background -->
-    <div class="background"></div>
-    <div class="golden-glow"></div>
-
-    <!-- Decorative feathers -->
-    <div class="feather">
-        <svg viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
-    </div>
-    <div class="feather">
-        <svg viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
-    </div>
-    <div class="feather">
-        <svg viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
-    </div>
-    <div class="feather">
-        <svg viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
-    </div>
-    <div class="feather">
-        <svg viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <button onclick="switchLanguage('ja')" class="lang-btn" data-lang="ja">JP</button>
+        <button onclick="switchLanguage('zh-TW')" class="lang-btn" data-lang="zh-TW">TW</button>
+        <button onclick="switchLanguage('en')" class="lang-btn" data-lang="en">EN</button>
     </div>
 
-    <!-- Main Content -->
-    <main class="maintenance-container">
-        <div class="maintenance-icon">🔧</div>
-        <h1>Site Maintenance</h1>
-
-        <!-- Japanese -->
-        <div class="message-section">
-            <span class="lang-label">日本語</span>
-            <p class="message-title">メンテナンス中</p>
-            <p class="message-text">サイトをアップデートしています。<br>しばらくお待ちください。</p>
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="header-bg"></div>
+        <div class="header-content">
+            <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
+            <div class="maintenance-container">
+                <p class="maintenance-prefix" data-i18n="maintenance_prefix">サイトをアップデート中</p>
+                <h2 class="maintenance-title" data-i18n="maintenance_title">メンテナンス中</h2>
+                <p class="maintenance-subtitle" data-i18n="maintenance_subtitle">しばらくお待ちください</p>
+            </div>
         </div>
+    </header>
 
-        <!-- Traditional Chinese -->
-        <div class="message-section">
-            <span class="lang-label">繁體中文</span>
-            <p class="message-title">維護中</p>
-            <p class="message-text">網站正在更新中，請稍候。</p>
+    <!-- Content -->
+    <section class="content-section">
+        <h2 data-i18n="coming_back">Coming Back Soon</h2>
+        <div class="message-block">
+            <p data-i18n="maintenance_message">サイトをアップデートしています。しばらくお待ちください。</p>
         </div>
-
-        <!-- English -->
-        <div class="message-section">
-            <span class="lang-label">English</span>
-            <p class="message-title">Under Maintenance</p>
-            <p class="message-text">We're updating the site.<br>Please check back soon.</p>
-        </div>
-    </main>
+    </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <p class="forever-kanata">Forever Kanata | 永遠にかなた | 永遠的彼方</p>
+    <footer>
+        <div class="container">
+            <p class="forever-kanata">絶対的アイドル</p>
+            <div class="credits">
+                <p>Credits:</p>
+                <ul>
+                    <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank">誰も見てない夢を見ろ - 天音かなた</a></li>
+                    <li>Background: <a href="https://www.youtube.com/watch?v=8iGGL_0CEpc" target="_blank">天音かなた卒業ライブ</a></li>
+                    <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank">Star icons created by Freepik - Flaticon</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute" target="_blank">GitHub</a>
+                <span>|</span>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/blob/main/.github/CONTRIBUTING.md" target="_blank" data-i18n="contribute_guide">貢献ガイド</a>
+            </div>
+        </div>
     </footer>
+
+    <script>
+        // Translations
+        const translations = {
+            'ja': {
+                header_title: '天音かなた 卒業記念',
+                maintenance_prefix: 'サイトをアップデート中',
+                maintenance_title: 'メンテナンス中',
+                maintenance_subtitle: 'しばらくお待ちください',
+                coming_back: 'Coming Back Soon',
+                maintenance_message: 'サイトをアップデートしています。しばらくお待ちください。',
+                contribute_guide: '貢献ガイド'
+            },
+            'zh-TW': {
+                header_title: '天音彼方 畢業紀念',
+                maintenance_prefix: '網站更新中',
+                maintenance_title: '維護中',
+                maintenance_subtitle: '請稍候',
+                coming_back: '即將回歸',
+                maintenance_message: '網站正在更新中，請稍候。',
+                contribute_guide: '貢獻指南'
+            },
+            'en': {
+                header_title: 'Amane Kanata Graduation Memorial',
+                maintenance_prefix: 'Updating the site',
+                maintenance_title: 'Under Maintenance',
+                maintenance_subtitle: 'Please wait',
+                coming_back: 'Coming Back Soon',
+                maintenance_message: "We're updating the site. Please check back soon.",
+                contribute_guide: 'Contribution Guide'
+            }
+        };
+
+        let currentLang = 'ja';
+
+        // Detect browser language
+        function detectLanguage() {
+            const stored = localStorage.getItem('preferred-language');
+            if (stored && translations[stored]) {
+                return stored;
+            }
+
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('ja')) return 'ja';
+            if (browserLang.startsWith('zh')) return 'zh-TW';
+            return 'en';
+        }
+
+        // Switch language
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred-language', lang);
+            updateContent();
+            updateButtons();
+            document.documentElement.lang = lang;
+        }
+
+        // Update page content
+        function updateContent() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+        }
+
+        // Update active button
+        function updateButtons() {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-lang') === currentLang) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            currentLang = detectLanguage();
+            updateContent();
+            updateButtons();
+            document.documentElement.lang = currentLang;
+        });
+    </script>
 </body>
 </html>
