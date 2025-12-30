@@ -10,7 +10,7 @@ firestore.rules
 firestore.indexes.json
 storage.rules
 
-# Firebase 敏感設定（絕對不能上傳）
+# Firebase 設定（不上傳，部署時才加入）
 **/firebase-config.js
 **/firebase-config.local.js
 .env

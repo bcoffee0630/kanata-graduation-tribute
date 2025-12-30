@@ -6,11 +6,14 @@
 // Initialize Firebase
 let app, auth, db, storage;
 
-async function initializeFirebase() {
+function initializeFirebase() {
     try {
-        // Import Firebase config (must be created from firebase-config.example.js)
-        const configModule = await import('./firebase-config.js');
-        const firebaseConfig = configModule.default;
+        // Get Firebase config from window (loaded from firebase-config.js)
+        const firebaseConfig = window.firebaseConfig;
+
+        if (!firebaseConfig) {
+            throw new Error('Firebase config not found. Please create firebase-config.js from firebase-config.example.js');
+        }
 
         // Initialize Firebase app
         app = firebase.initializeApp(firebaseConfig);

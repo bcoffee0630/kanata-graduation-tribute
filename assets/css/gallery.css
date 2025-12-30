@@ -276,6 +276,37 @@
     right: 20px;
 }
 
+/* Load More Button */
+.load-more-btn {
+    display: block;
+    margin: 40px auto 0;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, var(--kanata-blue, #2894FF) 0%, var(--kanata-blue-dark, #1a7acc) 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 148, 255, 0.3);
+}
+
+.load-more-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(40, 148, 255, 0.4);
+}
+
+.load-more-btn:active {
+    transform: translateY(-1px);
+}
+
+.load-more-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Contribute notice in gallery section */
 .gallery-contribute {
     text-align: center;

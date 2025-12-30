@@ -9,9 +9,10 @@ const Submit = {
 
     // Rate limiting
     limits: {
-        messagesPerDay: 10,
-        fanartPerDay: 3,
-        messageMaxLength: 500
+        messagesPerDay: 3,
+        fanartPerDay: 2,
+        messageMaxLength: 500,
+        messageMinLength: 5
     },
 
     init() {
@@ -76,6 +77,126 @@ const Submit = {
         if (imageInput) {
             imageInput.addEventListener('change', (e) => this.previewImage(e));
         }
+
+        // Confirmation checkbox validation
+        this.setupConfirmationCheckboxes();
+    },
+
+    setupConfirmationCheckboxes() {
+        // Message modal
+        const messageModal = document.getElementById('message-modal');
+        if (messageModal) {
+            const checkboxes = messageModal.querySelectorAll('.confirm-checkbox');
+            const submitBtn = messageModal.querySelector('.submit-form-btn');
+            const messageInput = document.getElementById('message-content');
+
+            if (checkboxes.length > 0 && submitBtn) {
+                const updateSubmitState = () => {
+                    const allChecked = [...checkboxes].every(cb => cb.checked);
+                    const contentLength = messageInput ? messageInput.value.trim().length : 0;
+                    const hasEnoughContent = contentLength >= this.limits.messageMinLength;
+
+                    // Determine why button is disabled and set tooltip
+                    let tooltip = '';
+                    if (contentLength === 0) {
+                        tooltip = this.getValidationTooltip('message_empty');
+                    } else if (!hasEnoughContent) {
+                        tooltip = this.getValidationTooltip('message_too_short', this.limits.messageMinLength);
+                    } else if (!allChecked) {
+                        tooltip = this.getValidationTooltip('checkboxes_required');
+                    }
+
+                    submitBtn.disabled = !(allChecked && hasEnoughContent);
+                    submitBtn.title = submitBtn.disabled ? tooltip : '';
+                };
+
+                checkboxes.forEach(cb => cb.addEventListener('change', updateSubmitState));
+                if (messageInput) {
+                    messageInput.addEventListener('input', updateSubmitState);
+                }
+
+                // Reset when modal opens
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(mutation => {
+                        if (mutation.attributeName === 'class' && messageModal.classList.contains('active')) {
+                            checkboxes.forEach(cb => cb.checked = false);
+                            submitBtn.disabled = true;
+                            submitBtn.title = this.getValidationTooltip('message_empty');
+                        }
+                    });
+                });
+                observer.observe(messageModal, { attributes: true });
+            }
+        }
+
+        // Fanart modal
+        const fanartModal = document.getElementById('fanart-modal');
+        if (fanartModal) {
+            const checkboxes = fanartModal.querySelectorAll('.confirm-checkbox');
+            const submitBtn = fanartModal.querySelector('.submit-form-btn');
+            const imageInput = document.getElementById('fanart-image');
+
+            if (checkboxes.length > 0 && submitBtn) {
+                const updateSubmitState = () => {
+                    const allChecked = [...checkboxes].every(cb => cb.checked);
+                    const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+
+                    // Determine why button is disabled and set tooltip
+                    let tooltip = '';
+                    if (!hasImage) {
+                        tooltip = this.getValidationTooltip('image_required');
+                    } else if (!allChecked) {
+                        tooltip = this.getValidationTooltip('checkboxes_required');
+                    }
+
+                    submitBtn.disabled = !(allChecked && hasImage);
+                    submitBtn.title = submitBtn.disabled ? tooltip : '';
+                };
+
+                checkboxes.forEach(cb => cb.addEventListener('change', updateSubmitState));
+                if (imageInput) {
+                    imageInput.addEventListener('change', updateSubmitState);
+                }
+
+                // Reset when modal opens
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(mutation => {
+                        if (mutation.attributeName === 'class' && fanartModal.classList.contains('active')) {
+                            checkboxes.forEach(cb => cb.checked = false);
+                            submitBtn.disabled = true;
+                            submitBtn.title = this.getValidationTooltip('image_required');
+                        }
+                    });
+                });
+                observer.observe(fanartModal, { attributes: true });
+            }
+        }
+    },
+
+    getValidationTooltip(key, param) {
+        const tooltips = {
+            'ja': {
+                message_empty: 'メッセージを入力してください',
+                message_too_short: `最低${param}文字以上入力してください`,
+                image_required: '画像を選択してください',
+                checkboxes_required: 'すべての確認項目にチェックしてください'
+            },
+            'zh-TW': {
+                message_empty: '請輸入留言內容',
+                message_too_short: `請輸入至少 ${param} 個字元`,
+                image_required: '請選擇圖片',
+                checkboxes_required: '請勾選所有確認項目'
+            },
+            'en': {
+                message_empty: 'Please enter a message',
+                message_too_short: `Please enter at least ${param} characters`,
+                image_required: 'Please select an image',
+                checkboxes_required: 'Please check all confirmation items'
+            }
+        };
+
+        const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'ja';
+        return tooltips[lang]?.[key] || tooltips['en'][key] || '';
     },
 
     openMessageModal() {
@@ -162,12 +283,14 @@ const Submit = {
             submitBtn.disabled = true;
             submitBtn.textContent = this.getTranslation('submitting');
 
-            const language = document.getElementById('message-language').value;
             const content = document.getElementById('message-content').value.trim();
 
             // Validate
             if (!content) {
                 throw new Error(this.getTranslation('empty_message'));
+            }
+            if (content.length < this.limits.messageMinLength) {
+                throw new Error(this.getTranslation('message_too_short'));
             }
             if (content.length > this.limits.messageMaxLength) {
                 throw new Error(this.getTranslation('message_too_long'));
@@ -185,11 +308,12 @@ const Submit = {
                 authorId: user.uid,
                 authorLink: `https://github.com/${user.displayName || ''}`,
                 authorAvatar: user.photoURL || '',
-                language: language,
                 content: content,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 reported: false,
-                reportCount: 0
+                reportCount: 0,
+                reportedBy: [],
+                hidden: false
             });
 
             // Update user stats
@@ -209,7 +333,7 @@ const Submit = {
             console.error('Message submission error:', error);
             alert(error.message || this.getTranslation('submit_error'));
         } finally {
-            submitBtn.disabled = false;
+            submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
             submitBtn.textContent = originalText;
         }
     },
@@ -231,9 +355,7 @@ const Submit = {
             submitBtn.textContent = this.getTranslation('uploading');
 
             const imageInput = document.getElementById('fanart-image');
-            const captionJa = document.getElementById('caption-ja')?.value.trim() || '';
-            const captionZh = document.getElementById('caption-zh')?.value.trim() || '';
-            const captionEn = document.getElementById('caption-en')?.value.trim() || '';
+            const caption = document.getElementById('fanart-caption')?.value.trim() || '';
             const artistLink = document.getElementById('artist-link')?.value.trim() || '';
 
             if (!imageInput.files[0]) {
@@ -271,14 +393,12 @@ const Submit = {
                 artistAvatar: user.photoURL || '',
                 imagePath: path,
                 imageUrl: imageUrl,
-                caption: {
-                    ja: captionJa,
-                    'zh-TW': captionZh,
-                    en: captionEn
-                },
+                caption: caption,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 reported: false,
-                reportCount: 0
+                reportCount: 0,
+                reportedBy: [],
+                hidden: false
             });
 
             // Update user stats
@@ -299,7 +419,7 @@ const Submit = {
             console.error('Fanart submission error:', error);
             alert(error.message || this.getTranslation('submit_error'));
         } finally {
-            submitBtn.disabled = false;
+            submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
             submitBtn.textContent = originalText;
         }
     },
@@ -396,6 +516,7 @@ const Submit = {
                 submitting: '送信中...',
                 uploading: 'アップロード中...',
                 empty_message: 'メッセージを入力してください',
+                message_too_short: `最低${this.limits.messageMinLength}文字以上入力してください`,
                 message_too_long: 'メッセージが長すぎます',
                 no_image: '画像を選択してください',
                 invalid_image_type: 'PNG または JPG 画像のみ対応しています',
@@ -403,14 +524,15 @@ const Submit = {
                 message_submitted: 'メッセージを投稿しました！',
                 fanart_submitted: 'イラストを投稿しました！',
                 submit_error: '投稿に失敗しました。もう一度お試しください。',
-                rate_limit_message: '本日の投稿上限に達しました（1日10件まで）',
-                rate_limit_fanart: '本日の投稿上限に達しました（1日3件まで）'
+                rate_limit_message: '本日の投稿上限に達しました（1日3件まで）',
+                rate_limit_fanart: '本日の投稿上限に達しました（1日2件まで）'
             },
             'zh-TW': {
                 login_required: '請先登入',
                 submitting: '送出中...',
                 uploading: '上傳中...',
                 empty_message: '請輸入留言內容',
+                message_too_short: `請輸入至少 ${this.limits.messageMinLength} 個字元`,
                 message_too_long: '留言內容過長',
                 no_image: '請選擇圖片',
                 invalid_image_type: '僅支援 PNG 或 JPG 圖片',
@@ -418,14 +540,15 @@ const Submit = {
                 message_submitted: '留言已送出！',
                 fanart_submitted: '繪圖已送出！',
                 submit_error: '送出失敗，請再試一次。',
-                rate_limit_message: '今日已達投稿上限（每日10則）',
-                rate_limit_fanart: '今日已達投稿上限（每日3張）'
+                rate_limit_message: '今日已達投稿上限（每日3則）',
+                rate_limit_fanart: '今日已達投稿上限（每日2張）'
             },
             'en': {
                 login_required: 'Please log in first',
                 submitting: 'Submitting...',
                 uploading: 'Uploading...',
                 empty_message: 'Please enter a message',
+                message_too_short: `Please enter at least ${this.limits.messageMinLength} characters`,
                 message_too_long: 'Message is too long',
                 no_image: 'Please select an image',
                 invalid_image_type: 'Only PNG or JPG images are supported',
@@ -433,8 +556,8 @@ const Submit = {
                 message_submitted: 'Message submitted!',
                 fanart_submitted: 'Fan art submitted!',
                 submit_error: 'Submission failed. Please try again.',
-                rate_limit_message: 'Daily limit reached (10 messages per day)',
-                rate_limit_fanart: 'Daily limit reached (3 images per day)'
+                rate_limit_message: 'Daily limit reached (3 messages per day)',
+                rate_limit_fanart: 'Daily limit reached (2 images per day)'
             }
         };
 

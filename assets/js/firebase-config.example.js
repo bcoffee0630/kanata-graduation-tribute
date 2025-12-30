@@ -20,7 +20,7 @@
  * 5. Copy the firebaseConfig object / 複製 firebaseConfig 物件
  */
 
-const firebaseConfig = {
+window.firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
   projectId: "YOUR_PROJECT_ID",
@@ -28,6 +28,3 @@ const firebaseConfig = {
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
-
-// Do not modify below this line / 請勿修改以下內容
-export default firebaseConfig;

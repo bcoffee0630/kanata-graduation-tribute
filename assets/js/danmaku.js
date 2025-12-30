@@ -23,10 +23,15 @@ const Danmaku = {
         this.setupTracks();
         this.setupControls();
 
-        // Try to load from Firestore first, fall back to JSON
-        window.addEventListener('firebaseReady', () => {
+        // Check if Firebase is already initialized
+        if (window.FirebaseApp && window.FirebaseApp.getDb()) {
             this.loadFromFirestore();
-        });
+        } else {
+            // Listen for Firebase ready event
+            window.addEventListener('firebaseReady', () => {
+                this.loadFromFirestore();
+            });
+        }
 
         // Also try loading from JSON as fallback
         setTimeout(() => {
@@ -73,13 +78,13 @@ const Danmaku = {
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Convert Firestore format to unified format
+                        // Skip hidden content
+                        if (data.hidden) return;
+
                         messages.push({
                             id: doc.id,
                             author: data.author,
-                            content: {
-                                [data.language]: data.content
-                            },
+                            content: data.content,
                             authorLink: data.authorLink,
                             authorAvatar: data.authorAvatar
                         });
@@ -193,11 +198,10 @@ const Danmaku = {
             trackIndex = this.tracks.indexOf(Math.min(...this.tracks));
         }
 
-        // Create message element
-        const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'ja';
-        const content = message.content[lang];
+        // Create message element - show all messages regardless of language
+        const content = message.content;
 
-        // Skip if no content for current language
+        // Skip if no content
         if (!content) return;
 
         const el = document.createElement('div');

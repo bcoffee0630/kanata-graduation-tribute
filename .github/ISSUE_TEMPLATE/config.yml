@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: "Visit the Memorial Site / 記念サイトを見る / 訪問紀念網站"
+  - name: "Visit Site / サイトを見る / 訪問網站"
     url: https://eienkanata.com
-    about: "View the tribute website / 記念サイトを見る / 查看紀念網站"
-  - name: "Contributing Guide / 貢献ガイド / 貢獻指南"
+    about: "Submit messages and fan art directly on the website / サイトで直接投稿する / 在網站上直接投稿"
+  - name: "Code Contribution / コード貢献 / 程式碼貢獻"
     url: https://github.com/bcoffee0630/kanata-graduation-tribute/blob/main/.github/CONTRIBUTING.md
-    about: "Read our contribution guidelines / 貢献ガイドを読む / 閱讀貢獻指南"
+    about: "Contribute code improvements via PR / PRでコード改善に貢献 / 透過 PR 貢獻程式碼改進"

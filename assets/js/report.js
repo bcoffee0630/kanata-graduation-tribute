@@ -1,6 +1,7 @@
 /**
  * Report Module
  * 檢舉模組 - 透過 GitHub Issue 檢舉不當內容
+ * 自動隱藏功能 - 被檢舉 3 次後自動隱藏
  */
 
 const Report = {
@@ -8,50 +9,150 @@ const Report = {
     repoOwner: 'bcoffee0630',
     repoName: 'kanata-graduation-tribute',
 
+    // Firebase project ID for console links
+    firebaseProjectId: 'kanata-memorial',
+
     init() {
         this.setupEventListeners();
     },
 
     setupEventListeners() {
         // Delegate click events for report buttons
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', async (e) => {
             const reportBtn = e.target.closest('.report-btn');
             if (reportBtn) {
                 const contentId = reportBtn.dataset.contentId;
                 const contentType = reportBtn.dataset.contentType;
-                this.openReport(contentId, contentType);
+                await this.handleReport(contentId, contentType);
             }
         });
     },
 
-    openReport(contentId, contentType) {
+    async handleReport(contentId, contentType) {
         if (!contentId || !contentType) {
             console.error('Missing content ID or type');
             return;
         }
 
+        // Check if user is logged in
+        const user = firebase.auth?.()?.currentUser;
+        if (!user) {
+            // Not logged in - just open the GitHub Issue
+            this.openReport(contentId, contentType, null);
+            return;
+        }
+
+        try {
+            const db = window.FirebaseApp?.getDb();
+            if (!db) {
+                // No Firestore - just open the GitHub Issue
+                this.openReport(contentId, contentType, null);
+                return;
+            }
+
+            const collectionName = contentType === 'message' ? 'messages' : 'fanart';
+            const docRef = db.collection(collectionName).doc(contentId);
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                console.error('Content not found');
+                return;
+            }
+
+            const data = doc.data();
+
+            // Check if user already reported this content
+            if (data.reportedBy && data.reportedBy.includes(user.uid)) {
+                const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
+                const messages = {
+                    'ja': 'すでにこのコンテンツを報告しています',
+                    'zh-TW': '您已經檢舉過此內容',
+                    'en': 'You have already reported this content'
+                };
+                alert(messages[lang] || messages['en']);
+                return;
+            }
+
+            // Update report count and add user to reportedBy
+            const currentCount = data.reportCount || 0;
+            const newCount = currentCount + 1;
+            const shouldHide = newCount >= 3;
+
+            await docRef.update({
+                reportCount: firebase.firestore.FieldValue.increment(1),
+                reportedBy: firebase.firestore.FieldValue.arrayUnion(user.uid),
+                hidden: shouldHide
+            });
+
+            // Open GitHub Issue with content details
+            this.openReport(contentId, contentType, data);
+
+            // Show confirmation
+            const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
+            const confirmMessages = {
+                'ja': '報告を受け付けました。ご協力ありがとうございます。',
+                'zh-TW': '已收到您的檢舉。感謝您的協助。',
+                'en': 'Report submitted. Thank you for your help.'
+            };
+            alert(confirmMessages[lang] || confirmMessages['en']);
+
+        } catch (error) {
+            console.error('Failed to submit report:', error);
+            // Still open GitHub Issue even if Firestore update fails
+            this.openReport(contentId, contentType, null);
+        }
+    },
+
+    openReport(contentId, contentType, contentData) {
         // Build GitHub Issue URL with pre-filled template
         const issueTitle = encodeURIComponent(
             `[Report] ${contentType === 'message' ? 'Message' : 'Fan Art'} - ${contentId}`
         );
 
-        const issueBody = encodeURIComponent(this.buildIssueBody(contentId, contentType));
+        const issueBody = encodeURIComponent(this.buildIssueBody(contentId, contentType, contentData));
+
+        // Use specific labels for content type
+        const labels = `report:${contentType},report:pending`;
 
         const issueUrl = `https://github.com/${this.repoOwner}/${this.repoName}/issues/new?` +
-            `title=${issueTitle}&body=${issueBody}&labels=report,pending-review`;
+            `title=${issueTitle}&body=${issueBody}&labels=${labels}`;
 
         // Open in new tab
         window.open(issueUrl, '_blank');
     },
 
-    buildIssueBody(contentId, contentType) {
+    buildIssueBody(contentId, contentType, contentData) {
         const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
+        const collectionName = contentType === 'message' ? 'messages' : 'fanart';
+
+        // Firebase Console direct link
+        const consoleLink = `https://console.firebase.google.com/project/${this.firebaseProjectId}/firestore/data/~2F${collectionName}~2F${contentId}`;
+
+        // Content preview (if available)
+        let contentPreview = '';
+        if (contentData) {
+            if (contentType === 'message') {
+                contentPreview = contentData.content ? `> ${contentData.content.substring(0, 200)}${contentData.content.length > 200 ? '...' : ''}` : '';
+            } else {
+                contentPreview = contentData.caption ? `> ${contentData.caption.substring(0, 200)}${contentData.caption.length > 200 ? '...' : ''}` : '';
+            }
+        }
+
+        // Author info
+        const authorInfo = contentData?.author || 'Unknown';
 
         const templates = {
             'ja': `## 報告内容
 
 **コンテンツID:** \`${contentId}\`
 **コンテンツタイプ:** ${contentType === 'message' ? 'メッセージ' : 'ファンアート'}
+**投稿者:** ${authorInfo}
+
+### Firebase Console
+[コンテンツを確認](${consoleLink})
+
+### コンテンツプレビュー
+${contentPreview || '*プレビューなし*'}
 
 ---
 
@@ -74,6 +175,13 @@ const Report = {
 
 **內容ID:** \`${contentId}\`
 **內容類型:** ${contentType === 'message' ? '留言' : '繪圖'}
+**投稿者:** ${authorInfo}
+
+### Firebase Console
+[查看內容](${consoleLink})
+
+### 內容預覽
+${contentPreview || '*無預覽*'}
 
 ---
 
@@ -96,6 +204,13 @@ const Report = {
 
 **Content ID:** \`${contentId}\`
 **Content Type:** ${contentType === 'message' ? 'Message' : 'Fan Art'}
+**Author:** ${authorInfo}
+
+### Firebase Console
+[View Content](${consoleLink})
+
+### Content Preview
+${contentPreview || '*No preview available*'}
 
 ---
 

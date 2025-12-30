@@ -386,6 +386,45 @@
 }
 
 /* ==================== */
+/* Confirmation Checkbox*/
+/* ==================== */
+.submit-confirmation {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.confirm-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.confirm-label:last-child {
+    margin-bottom: 0;
+}
+
+.confirm-checkbox {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--kanata-blue);
+}
+
+.confirm-label span {
+    user-select: none;
+}
+
+/* ==================== */
 /* Responsive           */
 /* ==================== */
 @media (max-width: 768px) {
