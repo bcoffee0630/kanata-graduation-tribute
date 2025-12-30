@@ -1,7 +1,7 @@
 name: "Report Content / 內容檢舉 / コンテンツ報告"
 description: "Report inappropriate content on the site"
 title: "[Report] "
-labels: ["report", "pending-review"]
+labels: ["report:pending"]
 body:
   - type: markdown
     attributes:
