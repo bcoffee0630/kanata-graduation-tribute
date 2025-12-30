@@ -141,13 +141,16 @@
 /* Contribute notice */
 .danmaku-contribute {
     text-align: center;
-    margin-top: 25px;
-    padding: 15px;
+    margin-top: 50px;
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .danmaku-contribute p {
     color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .danmaku-contribute .github-link {
@@ -164,6 +167,17 @@
 .danmaku-contribute .github-link:hover {
     background: var(--kanata-blue, #2894FF);
     transform: translateY(-2px);
+}
+
+/* Login prompt in dark section */
+.danmaku-section .login-prompt {
+    background: rgba(40, 148, 255, 0.2);
+    border: 1px solid rgba(40, 148, 255, 0.3);
+}
+
+.danmaku-section .login-prompt p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0;
 }
 
 /* Responsive */

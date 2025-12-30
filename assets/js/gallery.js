@@ -77,7 +77,7 @@ const Gallery = {
             this.setupLazyLoading();
         } catch (error) {
             console.error('Failed to load gallery from JSON:', error);
-            this.container.innerHTML = `<p class="no-content" data-i18n="gallery.no_content">まだ投稿がありません</p>`;
+            this.showNoContent();
         }
     },
 
@@ -253,8 +253,7 @@ const Gallery = {
 
     render() {
         if (!this.data || !this.data.fanart || this.data.fanart.length === 0) {
-            this.container.innerHTML = `<p class="no-content" data-i18n="gallery.no_content">まだ投稿がありません</p>`;
-            if (window.i18n) i18n.updatePageContent();
+            this.showNoContent();
             return;
         }
 
@@ -422,6 +421,12 @@ const Gallery = {
         if (this.lightbox?.classList.contains('active')) {
             this.updateLightboxContent();
         }
+    },
+
+    // Show no content message with proper translation
+    showNoContent() {
+        const text = window.i18n ? i18n.t('gallery.no_content') : 'まだ投稿がありません';
+        this.container.innerHTML = `<p class="no-content" data-i18n="gallery.no_content">${text}</p>`;
     },
 
     // Escape HTML to prevent XSS
