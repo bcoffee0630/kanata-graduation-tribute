@@ -1,0 +1,498 @@
+/**
+ * Modal Styles
+ * 彈窗樣式
+ */
+
+/* ==================== */
+/* Auth UI              */
+/* ==================== */
+.auth-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Login Buttons Container */
+.login-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* Individual Login Button */
+.login-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+}
+
+.login-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* GitHub Button */
+.login-btn-github:hover {
+    background: #24292e;
+    border-color: #24292e;
+}
+
+/* Google Button */
+.login-btn-google:hover {
+    background: #4285f4;
+    border-color: #4285f4;
+}
+
+#user-display {
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--kanata-blue);
+}
+
+/* User Info Text Container */
+.user-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-name {
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-weight: 500;
+}
+
+.user-provider {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#logout-button {
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+#logout-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== */
+/* Modal Base           */
+/* ==================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, var(--kanata-blue) 0%, var(--kanata-blue-dark) 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 500;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+/* ==================== */
+/* Form Styles          */
+/* ==================== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--kanata-blue);
+    box-shadow: 0 0 0 3px rgba(40, 148, 255, 0.1);
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #888;
+    font-size: 12px;
+}
+
+/* Character counter */
+#char-count {
+    text-align: right;
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+#char-count.limit-warning {
+    color: #f59e0b;
+}
+
+#char-count.limit-exceeded {
+    color: #ef4444;
+    font-weight: 500;
+}
+
+/* ==================== */
+/* Image Upload         */
+/* ==================== */
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: var(--kanata-blue);
+    background: rgba(40, 148, 255, 0.05);
+}
+
+.upload-area input[type="file"] {
+    display: none;
+}
+
+.upload-area label {
+    cursor: pointer;
+    display: block;
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+.upload-text {
+    color: #666;
+    font-size: 14px;
+}
+
+.upload-hint {
+    color: #999;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+#image-preview {
+    display: none;
+    margin-top: 15px;
+    text-align: center;
+}
+
+#image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== */
+/* Submit Button        */
+/* ==================== */
+.submit-form-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--kanata-blue) 0%, var(--kanata-blue-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 148, 255, 0.3);
+}
+
+.submit-form-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 148, 255, 0.4);
+}
+
+.submit-form-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================== */
+/* Login Prompt         */
+/* ==================== */
+.login-prompt {
+    text-align: center;
+    padding: 20px;
+    background: rgba(40, 148, 255, 0.1);
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.login-prompt p {
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.login-prompt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--kanata-blue);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.login-prompt-btn:hover {
+    background: var(--kanata-blue-dark);
+    transform: translateY(-2px);
+}
+
+/* ==================== */
+/* Report Button        */
+/* ==================== */
+.report-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ==================== */
+/* Submit Buttons Area  */
+/* ==================== */
+.submit-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--kanata-blue);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(40, 148, 255, 0.3);
+}
+
+.submit-btn:hover {
+    background: var(--kanata-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 148, 255, 0.4);
+}
+
+.submit-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ==================== */
+/* Confirmation Checkbox*/
+/* ==================== */
+.submit-confirmation {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.confirm-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.confirm-label:last-child {
+    margin-bottom: 0;
+}
+
+.confirm-checkbox {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--kanata-blue);
+}
+
+.confirm-label span {
+    user-select: none;
+}
+
+/* ==================== */
+/* Responsive           */
+/* ==================== */
+@media (max-width: 768px) {
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 15px 20px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .auth-container {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .login-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .login-btn span {
+        display: none;
+    }
+
+    .login-btn {
+        padding: 8px 10px;
+    }
+
+    .user-info-text {
+        display: none;
+    }
+}

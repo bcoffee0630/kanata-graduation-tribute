@@ -22,16 +22,35 @@
     "submit_art_button": "Submit Artwork"
   },
   "gallery": {
-    "no_content": "No submissions yet"
+    "no_content": "No submissions yet",
+    "load_more": "Load More"
   },
   "danmaku": {
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "login_to_submit": "Please log in to submit"
+  },
+  "modal": {
+    "message_title": "Submit Message",
+    "fanart_title": "Submit Artwork",
+    "message": "Message",
+    "upload_image": "Upload Image",
+    "caption": "Caption",
+    "caption_placeholder": "Optional",
+    "artist_link": "Social Link (optional)",
+    "artist_link_hint": "Twitter, Pixiv, etc.",
+    "confirm_appropriate": "Content does not contain inappropriate or discriminatory remarks",
+    "confirm_political": "Content does not contain politically sensitive material",
+    "confirm_copyright": "Content does not infringe on others' copyrights",
+    "confirm_guidelines": "I agree to the community guidelines",
+    "submit": "Submit"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "Credits:",
-    "github": "GitHub",
-    "contribute": "Contributing Guide"
+    "credits_title": "Credits:"
   }
 }

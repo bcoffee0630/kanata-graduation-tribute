@@ -1,0 +1,65 @@
+name: "Report Content / 內容檢舉 / コンテンツ報告"
+description: "Report inappropriate content on the site"
+title: "[Report] "
+labels: ["report:pending"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Report Content / 內容檢舉 / コンテンツ報告
+
+        Please fill out this form to report inappropriate content.
+        請填寫此表單以檢舉不當內容。
+        不適切なコンテンツを報告するには、このフォームに記入してください。
+
+  - type: input
+    id: content_id
+    attributes:
+      label: "Content ID / 內容 ID / コンテンツID"
+      description: "The ID of the content to report (usually auto-filled from the report button)"
+      placeholder: "e.g., abc123def456"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: "Content Type / 內容類型 / コンテンツタイプ"
+      options:
+        - "Message / 留言 / メッセージ"
+        - "Fan Art / 繪圖 / ファンアート"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reason
+    attributes:
+      label: "Reason / 原因 / 理由"
+      options:
+        - "Inappropriate content / 不當內容 / 不適切なコンテンツ"
+        - "Spam / 垃圾訊息 / スパム"
+        - "Copyright infringement / 侵犯版權 / 著作権侵害"
+        - "Harassment / 騷擾 / ハラスメント"
+        - "Other / 其他 / その他"
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: "Additional Details / 詳細說明 / 詳細"
+      description: "Please explain why you are reporting this content"
+      placeholder: |
+        Please describe the issue in detail...
+        請詳細說明問題...
+        問題を詳しく説明してください...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "Confirmation / 確認"
+      options:
+        - label: "I confirm this report is made in good faith / 我確認此檢舉是出於善意 / この報告は誠意を持って行われていることを確認します"
+          required: true

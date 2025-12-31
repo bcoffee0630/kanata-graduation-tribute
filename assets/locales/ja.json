@@ -22,16 +22,35 @@
     "submit_art_button": "イラストを投稿"
   },
   "gallery": {
-    "no_content": "まだ投稿がありません"
+    "no_content": "まだ投稿がありません",
+    "load_more": "もっと見る"
   },
   "danmaku": {
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "login_to_submit": "投稿するにはログインしてください"
+  },
+  "modal": {
+    "message_title": "メッセージを投稿",
+    "fanart_title": "イラストを投稿",
+    "message": "メッセージ",
+    "upload_image": "画像をアップロード",
+    "caption": "キャプション",
+    "caption_placeholder": "任意",
+    "artist_link": "SNSリンク（任意）",
+    "artist_link_hint": "Twitter, Pixiv など",
+    "confirm_appropriate": "不当な発言や差別的な内容を含んでいません",
+    "confirm_political": "政治的に敏感な内容を含んでいません",
+    "confirm_copyright": "他者の著作権を侵害していません",
+    "confirm_guidelines": "コミュニティガイドラインに同意します",
+    "submit": "送信"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "クレジット：",
-    "github": "GitHub",
-    "contribute": "貢献ガイド"
+    "credits_title": "クレジット："
   }
 }

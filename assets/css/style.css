@@ -469,28 +469,6 @@ footer {
     text-decoration: underline;
 }
 
-.footer-links {
-    text-align: center;
-    margin-top: 25px;
-    padding-top: 25px;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.footer-links a {
-    color: var(--kanata-blue-light);
-    text-decoration: none;
-    margin: 0 15px;
-    transition: color 0.3s ease;
-}
-
-.footer-links a:hover {
-    color: var(--gold);
-}
-
-.footer-links span {
-    color: rgba(255, 255, 255, 0.3);
-}
-
 /* ==================== */
 /* Scroll Reveal        */
 /* ==================== */

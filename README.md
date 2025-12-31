@@ -5,7 +5,17 @@
 
 A community-driven memorial website for Amane Kanata, celebrating her journey and preserving memories forever.
 
-**Live Site**: [http://eienkanata.com/](http://eienkanata.com/)
+**Live Site**: [https://eienkanata.com/](https://eienkanata.com/)
+
+---
+
+## このリポジトリの目的 | 此 Repo 的用途 | Repository Purpose
+
+| 🇯🇵 日本語 | 🇹🇼 繁體中文 | 🇺🇸 English |
+|-----------|-------------|-------------|
+| バグ・コンテンツ報告 | Bug 報告、內容檢舉 | Bug & content reports |
+| 翻訳改善の提案 | 翻譯改進建議 | Translation suggestions |
+| コード貢献（PR） | 程式碼貢獻（PR） | Code contributions (PR) |
 
 ---
 
@@ -25,49 +35,26 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 - ファンメッセージ（弾幕風表示）
 - ファンアートギャラリー
 - 多言語対応（日本語、繁体中文、英語）
-- GitHub PRによるコミュニティ投稿
+
+### 投稿方法
+
+**サイトで直接投稿できます！**
+
+1. [eienkanata.com](https://eienkanata.com/) にアクセス
+2. GitHub または Google アカウントでログイン
+3. 投稿ボタンをクリック
 
 ---
 
-### 投稿方法（簡単！）
+### 貢献方法
 
-#### メッセージを投稿
-**[こちらをクリック](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** してフォームに記入するだけ！
-
-- GitHub アカウントが必要です
-- 言語を選択して、メッセージを入力
-- 審査後にサイトに表示されます
-
-> **注意:** メッセージは選択した言語でのみ表示されます。
-
-#### ファンアートを投稿
-**[こちらをクリック](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** してフォームに記入するだけ！
-
-- GitHub アカウントが必要です
-- 画像をドラッグ＆ドロップでアップロード
-- 審査後にサイトに表示されます
-
-#### 画像規格
-| 項目 | 要件 |
-|------|------|
-| 形式 | PNG または JPG |
-| サイズ | 2MB以下推奨（最大10MB） |
-| 解像度 | 1920x1080 推奨 |
-
-<details>
-<summary>上級者向け：Pull Request で投稿</summary>
-
-Git に慣れている方は、直接 Pull Request で投稿することもできます。詳細は [貢献ガイド](.github/CONTRIBUTING.md) をご覧ください。
-
-</details>
-
----
-
-### 著作権について
-
-- 投稿するファンアートは**自分のオリジナル作品**であるか、**著作権者から許可を得た**ものである必要があります
-- 投稿することで、このメモリアルサイトでの表示に同意したものとみなされます
-- hololive/COVER Corp.の公式素材は適切にクレジットを記載してください
+| 貢献タイプ | 方法 |
+|-----------|------|
+| 🐛 バグ報告 | [Issue を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 機能リクエスト | [Issue を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 翻訳改善 | [翻訳提案を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 コンテンツ報告 | [報告を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 コード貢献 | [貢献ガイド](.github/CONTRIBUTING.md) を参照
 
 ---
 
@@ -82,49 +69,26 @@ Git に慣れている方は、直接 Pull Request で投稿することもで�
 - 粉絲留言（彈幕風格顯示）
 - 粉絲繪圖畫廊
 - 多語言支援（日文、繁體中文、英文）
-- 透過 GitHub PR 進行社群投稿
+
+### 投稿方式
+
+**可以直接在網站上投稿！**
+
+1. 前往 [eienkanata.com](https://eienkanata.com/)
+2. 使用 GitHub 或 Google 帳號登入
+3. 點擊投稿按鈕
 
 ---
 
-### 投稿方式（超簡單！）
+### 貢獻方式
 
-#### 投稿留言
-**[點此連結](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** 填寫表單即可！
-
-- 需要 GitHub 帳號
-- 選擇語言，輸入留言內容
-- 審核通過後會顯示在網站上
-
-> **注意：** 留言只會在對應語言的網頁上顯示。
-
-#### 投稿繪圖
-**[點此連結](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** 填寫表單即可！
-
-- 需要 GitHub 帳號
-- 拖曳上傳圖片
-- 審核通過後會顯示在網站上
-
-#### 圖片規格
-| 項目 | 要求 |
-|------|------|
-| 格式 | PNG 或 JPG |
-| 大小 | 建議 2MB 以下（最大 10MB） |
-| 解析度 | 建議 1920x1080 |
-
-<details>
-<summary>進階：透過 Pull Request 投稿</summary>
-
-熟悉 Git 的使用者可以直接透過 Pull Request 投稿。詳情請參閱 [貢獻指南](.github/CONTRIBUTING.md)。
-
-</details>
-
----
-
-### 版權聲明
-
-- 投稿的繪圖必須是**您的原創作品**，或是**已獲得版權所有者授權**的作品
-- 投稿即表示您同意將作品展示於此紀念網站
-- 使用 hololive/COVER Corp. 的官方素材請標註適當的來源
+| 貢獻類型 | 方式 |
+|---------|------|
+| 🐛 Bug 報告 | [建立 Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 功能建議 | [建立 Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 翻譯改進 | [建立翻譯建議](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 內容檢舉 | [建立檢舉](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 程式碼貢獻 | 參閱 [貢獻指南](.github/CONTRIBUTING.md)
 
 ---
 
@@ -139,71 +103,44 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 - Fan messages (danmaku-style display)
 - Fan art gallery
 - Multi-language support (Japanese, Traditional Chinese, English)
-- Community submissions via GitHub PR
+
+### How to Submit
+
+**Submit directly on the website!**
+
+1. Visit [eienkanata.com](https://eienkanata.com/)
+2. Log in with GitHub or Google account
+3. Click the submit button
 
 ---
 
-### How to Submit (Easy!)
+### How to Contribute
 
-#### Submit a Message
-**[Click here](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-message.yml)** and fill out the form!
-
-- GitHub account required
-- Select your language and write your message
-- Your message will appear after review
-
-> **Note:** Messages only appear when the viewer's language matches.
-
-#### Submit Fan Art
-**[Click here](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=submit-fanart.yml)** and fill out the form!
-
-- GitHub account required
-- Drag and drop to upload your image
-- Your artwork will appear after review
-
-#### Image Guidelines
-| Item | Requirement |
-|------|-------------|
-| Format | PNG or JPG |
-| Size | Under 2MB recommended (max 10MB) |
-| Resolution | 1920x1080 recommended |
-
-<details>
-<summary>Advanced: Submit via Pull Request</summary>
-
-For those familiar with Git, you can submit directly via Pull Request. See the [Contributing Guide](.github/CONTRIBUTING.md) for details.
-
-</details>
-
----
-
-### Copyright Notice
-
-- Fan art submissions must be **your original work** or **authorized by the copyright holder**
-- By submitting, you agree to have your work displayed on this memorial site
-- Please credit hololive/COVER Corp. appropriately when using official materials
+| Type | How |
+|------|-----|
+| 🐛 Bug Report | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 Feature Request | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 Translation | [Suggest Translation](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 Report Content | [Create Report](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 Code Contribution | See [Contributing Guide](.github/CONTRIBUTING.md)
 
 ---
 
 ## Technical Stack
 
 - HTML5 / CSS3 / Vanilla JavaScript
-- GitHub Pages
-- No framework dependencies
+- Firebase (Hosting, Firestore, Storage, Authentication)
 
 ## Project Structure
 
 ```
 kanata-graduation-tribute/
-├── index.html
+├── index.html          # Main page
 ├── assets/
-│   ├── css/          # Stylesheets
-│   ├── js/           # JavaScript
-│   └── locales/      # Translation files
-├── memories/
-│   ├── fanart/       # Fan art submissions
-│   └── messages/     # Fan messages
-└── images/           # Site images
+│   ├── css/           # Stylesheets
+│   ├── js/            # JavaScript
+│   └── locales/       # Translation files
+└── images/            # Site images
 ```
 
 ## License

@@ -22,16 +22,35 @@
     "submit_art_button": "投稿繪圖"
   },
   "gallery": {
-    "no_content": "目前還沒有投稿"
+    "no_content": "目前還沒有投稿",
+    "load_more": "載入更多"
   },
   "danmaku": {
     "pause": "⏸",
     "play": "▶"
   },
+  "auth": {
+    "login": "登入",
+    "logout": "登出",
+    "login_to_submit": "請先登入才能投稿"
+  },
+  "modal": {
+    "message_title": "投稿留言",
+    "fanart_title": "投稿繪圖",
+    "message": "留言內容",
+    "upload_image": "上傳圖片",
+    "caption": "說明文字",
+    "caption_placeholder": "選填",
+    "artist_link": "社群連結（選填）",
+    "artist_link_hint": "Twitter, Pixiv 等",
+    "confirm_appropriate": "內容不包含不當言論或歧視性內容",
+    "confirm_political": "內容不包含政治敏感內容",
+    "confirm_copyright": "內容不侵犯他人著作權",
+    "confirm_guidelines": "我已閱讀並同意社群規範",
+    "submit": "送出"
+  },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "圖片來源：",
-    "github": "GitHub",
-    "contribute": "貢獻指南"
+    "credits_title": "圖片來源："
   }
 }

@@ -67,6 +67,40 @@
     color: white;
 }
 
+/* Selected danmaku state */
+.danmaku-message.selected {
+    background: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    z-index: 10;
+}
+
+/* Report button in controls area */
+.danmaku-report-btn {
+    background: rgba(255, 100, 100, 0.2);
+    border: 1px solid rgba(255, 100, 100, 0.4);
+    color: #ff6b6b;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.danmaku-report-btn:hover {
+    background: rgba(255, 100, 100, 0.4);
+    border-color: #ff6b6b;
+    transform: scale(1.1);
+}
+
+.danmaku-report-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 /* Controls */
 #danmaku-controls {
     display: flex;
@@ -107,13 +141,16 @@
 /* Contribute notice */
 .danmaku-contribute {
     text-align: center;
-    margin-top: 25px;
-    padding: 15px;
+    margin-top: 50px;
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .danmaku-contribute p {
     color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .danmaku-contribute .github-link {
@@ -132,6 +169,17 @@
     transform: translateY(-2px);
 }
 
+/* Login prompt in dark section */
+.danmaku-section .login-prompt {
+    background: rgba(40, 148, 255, 0.2);
+    border: 1px solid rgba(40, 148, 255, 0.3);
+}
+
+.danmaku-section .login-prompt p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #danmaku-container {
@@ -146,6 +194,12 @@
 
     .danmaku-section h2 {
         font-size: 1.5em;
+    }
+
+    /* Smaller report button on mobile */
+    .danmaku-report-btn {
+        width: 40px;
+        height: 40px;
     }
 }
 
