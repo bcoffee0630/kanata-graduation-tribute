@@ -25,21 +25,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- 主要 Header -->
-    <header class="main-header">
-        <div class="header-bg"></div>
-        <div class="header-content">
-            <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
-            <div class="counter-container">
-                <p class="counter-prefix" data-i18n="day_counter_prefix">卒業日 2025/12/27 から</p>
-                <h2 class="counter-number">
-                    <span id="day-counter-number">0</span>
-                    <span class="counter-unit" data-i18n="day_counter_unit">日</span>
-                </h2>
-            </div>
-        </div>
-    </header>
-
     <!-- 統一導航欄 - Unified Navigation Bar -->
     <nav class="site-nav">
         <!-- 左側：漢堡按鈕 (手機版) + 導航連結 (桌面版) -->
@@ -113,6 +98,24 @@
             <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
         </ul>
     </div>
+
+    <!-- Spacer for fixed navbar -->
+    <div class="nav-spacer"></div>
+
+    <!-- 主要 Header -->
+    <header class="main-header">
+        <div class="header-bg"></div>
+        <div class="header-content">
+            <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
+            <div class="counter-container">
+                <p class="counter-prefix" data-i18n="day_counter_prefix">卒業日 2025/12/27 から</p>
+                <h2 class="counter-number">
+                    <span id="day-counter-number">0</span>
+                    <span class="counter-unit" data-i18n="day_counter_unit">日</span>
+                </h2>
+            </div>
+        </div>
+    </header>
 
     <!-- 主要內容 -->
     <main>
@@ -308,6 +311,52 @@
     <!-- Mobile Navigation & Language Dropdown -->
     <script>
     (function() {
+        // ==================== Navbar Scroll Behavior ====================
+        const siteNav = document.querySelector('.site-nav');
+        let lastScrollY = 0;
+        let ticking = false;
+        const scrollThreshold = 10; // Minimum scroll delta to trigger hide/show
+
+        function updateNavbar() {
+            const currentScrollY = window.scrollY;
+
+            // Always show navbar at top of page
+            if (currentScrollY <= 0) {
+                siteNav.classList.remove('nav-hidden');
+                lastScrollY = currentScrollY;
+                ticking = false;
+                return;
+            }
+
+            // Don't hide when mobile nav is open
+            if (document.body.classList.contains('nav-open')) {
+                ticking = false;
+                return;
+            }
+
+            const scrollDelta = currentScrollY - lastScrollY;
+
+            // Scrolling down - hide navbar
+            if (scrollDelta > scrollThreshold) {
+                siteNav.classList.add('nav-hidden');
+                lastScrollY = currentScrollY;
+            }
+            // Scrolling up - show navbar
+            else if (scrollDelta < -scrollThreshold) {
+                siteNav.classList.remove('nav-hidden');
+                lastScrollY = currentScrollY;
+            }
+
+            ticking = false;
+        }
+
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(updateNavbar);
+                ticking = true;
+            }
+        }, { passive: true });
+
         // ==================== Mobile Navigation ====================
         const navToggle = document.querySelector('.nav-toggle');
         const mobileNav = document.querySelector('.mobile-nav');
@@ -357,6 +406,8 @@
                 navToggle.classList.remove('active');
                 navToggle.setAttribute('aria-expanded', 'false');
                 document.body.classList.remove('nav-open');
+                // Ensure navbar stays visible after closing menu
+                siteNav.classList.remove('nav-hidden');
             }
         }
 

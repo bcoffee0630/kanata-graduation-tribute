@@ -5,6 +5,10 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+}
+
 :root {
     /* Kanata's representative colors */
     --kanata-blue: #2894FF;
@@ -72,13 +76,26 @@ body.nav-open {
         rgba(26, 111, 204, 0.95) 50%,
         rgba(40, 148, 255, 0.9) 100%);
     backdrop-filter: blur(12px);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
     box-shadow:
         0 2px 20px rgba(40, 148, 255, 0.3),
         0 1px 0 rgba(255, 255, 255, 0.1) inset;
     min-height: 56px;
+    transition: transform 0.3s ease;
+}
+
+/* Hidden state when scrolling down */
+.site-nav.nav-hidden {
+    transform: translateY(-100%);
+}
+
+/* Spacer for fixed navbar */
+.nav-spacer {
+    height: 56px;
 }
 
 /* Subtle shimmer effect */
@@ -322,12 +339,9 @@ body.nav-open {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* When mobile nav is open, force nav bar to be fixed at top */
+/* When mobile nav is open, ensure nav stays visible */
 body.nav-open .site-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    transform: translateY(0) !important;
 }
 
 .mobile-nav .nav-links {
@@ -844,6 +858,11 @@ footer {
     .mobile-nav {
         display: block;
         top: 48px; /* Match mobile nav bar height */
+    }
+
+    /* Mobile nav spacer height */
+    .nav-spacer {
+        height: 48px;
     }
 
     /* Compact right side */
