@@ -99,3 +99,6 @@ class I18n {
 
 // Initialize i18n
 const i18n = new I18n();
+
+// Export to window for global access
+window.i18n = i18n;

@@ -56,9 +56,58 @@ const Auth = {
             googleBtn.addEventListener('click', () => this.login('google'));
         }
 
+        // Bind logout button
         const logoutButton = document.getElementById('logout-button');
         if (logoutButton) {
-            logoutButton.addEventListener('click', () => this.logout());
+            logoutButton.addEventListener('click', () => {
+                this.closeDropdown();
+                this.logout();
+            });
+        }
+
+        // Bind user trigger for dropdown
+        const userTrigger = this.userDisplay?.querySelector('.user-trigger');
+        if (userTrigger) {
+            userTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleDropdown();
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (this.userDisplay && !this.userDisplay.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
+
+        // Close dropdown on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeDropdown();
+            }
+        });
+    },
+
+    toggleDropdown() {
+        if (!this.userDisplay) return;
+        this.userDisplay.classList.toggle('open');
+
+        // Update aria-expanded
+        const trigger = this.userDisplay.querySelector('.user-trigger');
+        if (trigger) {
+            const isOpen = this.userDisplay.classList.contains('open');
+            trigger.setAttribute('aria-expanded', isOpen);
+        }
+    },
+
+    closeDropdown() {
+        if (!this.userDisplay) return;
+        this.userDisplay.classList.remove('open');
+
+        const trigger = this.userDisplay.querySelector('.user-trigger');
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', 'false');
         }
     },
 
@@ -66,9 +115,10 @@ const Auth = {
         if (!this.loginButtons || !this.userDisplay) return;
 
         if (this.currentUser) {
-            // User is logged in
+            // User is logged in - hide login buttons, show user display
             this.loginButtons.style.display = 'none';
-            this.userDisplay.style.display = 'flex';
+            this.userDisplay.classList.add('show');
+            this.closeDropdown(); // Ensure dropdown is closed on login
 
             const avatar = this.userDisplay.querySelector('.user-avatar');
             const name = this.userDisplay.querySelector('.user-name');
@@ -85,9 +135,10 @@ const Auth = {
                 providerBadge.textContent = `via ${this.getProviderName()}`;
             }
         } else {
-            // User is logged out
+            // User is logged out - show login buttons, hide user display
             this.loginButtons.style.display = 'flex';
-            this.userDisplay.style.display = 'none';
+            this.userDisplay.classList.remove('show');
+            this.closeDropdown();
         }
 
         // Update submit buttons visibility

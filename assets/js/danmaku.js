@@ -225,13 +225,26 @@ const Danmaku = {
         this.messageQueue = this.shuffleArray([...this.data.messages]);
         this.currentIndex = 0;
 
+        // Dynamic interval based on message count to reduce repetition
+        const messageCount = this.messageQueue.length;
+        let interval;
+        if (messageCount <= 3) {
+            interval = 8000;  // Very few messages: 8 seconds
+        } else if (messageCount <= 10) {
+            interval = 5000;  // Few messages: 5 seconds
+        } else if (messageCount <= 30) {
+            interval = 3500;  // Medium: 3.5 seconds
+        } else {
+            interval = 2500;  // Many messages: 2.5 seconds
+        }
+
         // Start spawning messages
         this.spawnMessage();
         this.animationInterval = setInterval(() => {
             if (!this.isPaused) {
                 this.spawnMessage();
             }
-        }, 3000); // New message every 3 seconds
+        }, interval);
     },
 
     stop() {
@@ -266,7 +279,13 @@ const Danmaku = {
         if (this.messageQueue.length === 0) return;
 
         const message = this.messageQueue[this.currentIndex];
-        this.currentIndex = (this.currentIndex + 1) % this.messageQueue.length;
+        this.currentIndex++;
+
+        // Re-shuffle when we've shown all messages (adds variety on each loop)
+        if (this.currentIndex >= this.messageQueue.length) {
+            this.currentIndex = 0;
+            this.messageQueue = this.shuffleArray([...this.data.messages]);
+        }
 
         // Find available track
         const now = Date.now();
