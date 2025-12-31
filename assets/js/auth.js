@@ -1,12 +1,24 @@
 /**
  * Authentication Module
- * GitHub OAuth 認證模組
+ * Multi-provider OAuth 認證模組 (GitHub + Google)
  */
 
 const Auth = {
     currentUser: null,
-    loginButton: null,
+    loginButtons: null,
     userDisplay: null,
+
+    // Provider factory
+    providers: {
+        github: () => {
+            const provider = new firebase.auth.GithubAuthProvider();
+            provider.addScope('read:user');
+            return provider;
+        },
+        google: () => {
+            return new firebase.auth.GoogleAuthProvider();
+        }
+    },
 
     init() {
         // Wait for Firebase to be ready
@@ -30,11 +42,18 @@ const Auth = {
     },
 
     setupUI() {
-        this.loginButton = document.getElementById('login-button');
+        this.loginButtons = document.getElementById('login-buttons');
         this.userDisplay = document.getElementById('user-display');
 
-        if (this.loginButton) {
-            this.loginButton.addEventListener('click', () => this.login());
+        // Bind login buttons
+        const githubBtn = document.getElementById('login-github');
+        const googleBtn = document.getElementById('login-google');
+
+        if (githubBtn) {
+            githubBtn.addEventListener('click', () => this.login('github'));
+        }
+        if (googleBtn) {
+            googleBtn.addEventListener('click', () => this.login('google'));
         }
 
         const logoutButton = document.getElementById('logout-button');
@@ -44,15 +63,16 @@ const Auth = {
     },
 
     updateUI() {
-        if (!this.loginButton || !this.userDisplay) return;
+        if (!this.loginButtons || !this.userDisplay) return;
 
         if (this.currentUser) {
             // User is logged in
-            this.loginButton.style.display = 'none';
+            this.loginButtons.style.display = 'none';
             this.userDisplay.style.display = 'flex';
 
             const avatar = this.userDisplay.querySelector('.user-avatar');
             const name = this.userDisplay.querySelector('.user-name');
+            const providerBadge = this.userDisplay.querySelector('.user-provider');
 
             if (avatar && this.currentUser.photoURL) {
                 avatar.src = this.currentUser.photoURL;
@@ -61,9 +81,12 @@ const Auth = {
             if (name) {
                 name.textContent = this.currentUser.displayName || 'User';
             }
+            if (providerBadge) {
+                providerBadge.textContent = `via ${this.getProviderName()}`;
+            }
         } else {
             // User is logged out
-            this.loginButton.style.display = 'flex';
+            this.loginButtons.style.display = 'flex';
             this.userDisplay.style.display = 'none';
         }
 
@@ -84,14 +107,16 @@ const Auth = {
         });
     },
 
-    async login() {
+    async login(providerName = 'github') {
         try {
             const auth = window.FirebaseApp.getAuth();
-            const provider = new firebase.auth.GithubAuthProvider();
+            const providerFactory = this.providers[providerName];
 
-            // Request additional scopes
-            provider.addScope('read:user');
+            if (!providerFactory) {
+                throw new Error(`Unknown provider: ${providerName}`);
+            }
 
+            const provider = providerFactory();
             const result = await auth.signInWithPopup(provider);
             console.log('Login successful:', result.user.displayName);
 
@@ -136,6 +161,44 @@ const Auth = {
         return messages[code] || 'Login failed. Please try again.';
     },
 
+    // Get the provider ID of current user
+    getProviderId() {
+        return this.currentUser?.providerData[0]?.providerId || null;
+    },
+
+    // Get human-readable provider name
+    getProviderName() {
+        const providerId = this.getProviderId();
+        const names = {
+            'github.com': 'GitHub',
+            'google.com': 'Google'
+        };
+        return names[providerId] || 'Unknown';
+    },
+
+    // Get profile link based on provider
+    getProfileLink() {
+        if (!this.currentUser) return null;
+
+        const providerId = this.getProviderId();
+
+        switch (providerId) {
+            case 'github.com':
+                // GitHub: construct profile URL from display name
+                const githubData = this.currentUser.providerData.find(
+                    p => p.providerId === 'github.com'
+                );
+                if (githubData?.displayName) {
+                    return `https://github.com/${githubData.displayName}`;
+                }
+                break;
+            case 'google.com':
+                // Google: no public profile page (Google+ shut down in 2019)
+                return null;
+        }
+        return null;
+    },
+
     isLoggedIn() {
         return !!this.currentUser;
     },
@@ -156,21 +219,9 @@ const Auth = {
         return this.currentUser?.photoURL || null;
     },
 
+    // Legacy method for backwards compatibility
     getGitHubLink() {
-        // GitHub provider data
-        if (this.currentUser?.providerData) {
-            const githubData = this.currentUser.providerData.find(
-                p => p.providerId === 'github.com'
-            );
-            if (githubData) {
-                // Extract username from photoURL or use uid
-                const match = githubData.photoURL?.match(/\/u\/(\d+)/);
-                if (match) {
-                    return `https://github.com/${githubData.displayName || ''}`;
-                }
-            }
-        }
-        return null;
+        return this.getProfileLink();
     }
 };
 

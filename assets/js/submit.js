@@ -306,8 +306,9 @@ const Submit = {
             await db.collection('messages').add({
                 author: user.displayName || 'Anonymous',
                 authorId: user.uid,
-                authorLink: `https://github.com/${user.displayName || ''}`,
+                authorLink: window.Auth.getProfileLink() || '',
                 authorAvatar: user.photoURL || '',
+                authorProvider: window.Auth.getProviderId() || '',
                 content: content,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 reported: false,
@@ -389,8 +390,9 @@ const Submit = {
             await db.collection('fanart').add({
                 artist: user.displayName || 'Anonymous',
                 artistId: user.uid,
-                artistLink: artistLink || `https://github.com/${user.displayName || ''}`,
+                artistLink: artistLink || window.Auth.getProfileLink() || '',
                 artistAvatar: user.photoURL || '',
+                artistProvider: window.Auth.getProviderId() || '',
                 imagePath: path,
                 imageUrl: imageUrl,
                 caption: caption,
