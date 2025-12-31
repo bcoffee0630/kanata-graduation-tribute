@@ -14,11 +14,11 @@ Thank you for your interest in contributing to this memorial site for Amane Kana
 **サイトで直接投稿できます！**
 **可以直接在網站上投稿！**
 
-Visit [eienkanata.com](https://eienkanata.com/), log in with your GitHub account, and click the submit button.
+Visit [eienkanata.com](https://eienkanata.com/), log in with your **GitHub or Google** account, and click the submit button.
 
-[eienkanata.com](https://eienkanata.com/) にアクセスし、GitHub アカウントでログインして投稿ボタンをクリック。
+[eienkanata.com](https://eienkanata.com/) にアクセスし、**GitHub または Google** アカウントでログインして投稿ボタンをクリック。
 
-前往 [eienkanata.com](https://eienkanata.com/)，使用 GitHub 帳號登入，點擊投稿按鈕。
+前往 [eienkanata.com](https://eienkanata.com/)，使用 **GitHub 或 Google** 帳號登入，點擊投稿按鈕。
 
 ---
 
@@ -30,6 +30,17 @@ Want to improve the site's design or features? Pull Requests are welcome!
 
 想改進網站的設計或功能？歡迎提交 Pull Request！
 
+### What You Can Contribute / 貢献できること / 可以貢獻的項目
+
+| Area / 領域 | Examples / 例 |
+|-------------|---------------|
+| **CSS / Styles** | Design improvements, animations, responsive fixes |
+| **Translations** | Improve ja.json, zh-TW.json, en.json |
+| **Static Features** | Counter, animations, effects, i18n |
+| **Bug Fixes** | Layout issues, browser compatibility |
+
+---
+
 ### Local Development / ローカル開発 / 本地開發
 
 1. **Fork** this repository / このリポジトリを **Fork** / **Fork** 這個儲存庫
@@ -40,35 +51,57 @@ Want to improve the site's design or features? Pull Requests are welcome!
    cd kanata-graduation-tribute
    ```
 
-3. **Set up Firebase config** / Firebase設定 / 設定 Firebase
-   ```bash
-   cp assets/js/firebase-config.example.js assets/js/firebase-config.js
-   ```
-   Edit `firebase-config.js` with your own Firebase project settings (for local testing).
-
-4. **Start local server** / ローカルサーバー起動 / 啟動本地伺服器
+3. **Start local server** / ローカルサーバー起動 / 啟動本地伺服器
    ```bash
    python -m http.server 8000
    ```
    Open [http://localhost:8000](http://localhost:8000)
 
-5. **Create a branch** / ブランチを作成 / 建立分支
+4. **Create a branch** / ブランチを作成 / 建立分支
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-6. **Make your changes** / 変更を加える / 進行修改
+5. **Make your changes** / 変更を加える / 進行修改
 
-7. **Test your changes** / テスト / 測試
+6. **Test your changes** / テスト / 測試
 
-8. **Commit & Push** / コミット＆プッシュ
+7. **Commit & Push** / コミット＆プッシュ
    ```bash
    git add .
    git commit -m "Add your feature description"
    git push origin feature/your-feature-name
    ```
 
-9. **Create a Pull Request** / Pull Request を作成 / 建立 Pull Request
+8. **Create a Pull Request** / Pull Request を作成 / 建立 Pull Request
+
+---
+
+### Testing Limitations / テスト制限 / 測試限制
+
+> **Note**: Firebase features (authentication, messages, fanart) cannot be tested locally. The site uses Firebase Hosting for deployment.
+>
+> **注意**: Firebase 機能（認証、メッセージ、ファンアート）はローカルでテストできません。
+>
+> **注意**: Firebase 功能（認證、留言、繪圖）無法在本地測試。
+
+**What you CAN test locally / ローカルでテスト可能 / 可以本地測試:**
+- HTML structure and CSS styling
+- Static JavaScript (counter, animations, effects)
+- Translation files (locales/*.json)
+- Responsive design
+
+**What you CANNOT test locally / ローカルでテスト不可 / 無法本地測試:**
+- Login (GitHub/Google OAuth)
+- Submit messages or fanart
+- Danmaku display
+- Gallery display
+
+For Firebase-related changes, describe your changes clearly in the PR. The maintainer will test them before merging.
+
+Firebase 関連の変更は、PR で詳しく説明してください。マージ前にメンテナーがテストします。
+
+Firebase 相關的變更，請在 PR 中詳細說明。維護者會在合併前進行測試。
 
 ---
 
@@ -84,6 +117,7 @@ Want to improve the site's design or features? Pull Requests are welcome!
 ```
 kanata-graduation-tribute/
 ├── index.html              # Main page
+├── 404.html                # 404 page
 ├── assets/
 │   ├── css/
 │   │   ├── style.css       # Main styles
@@ -91,15 +125,16 @@ kanata-graduation-tribute/
 │   │   ├── danmaku.css     # Danmaku styles
 │   │   └── modal.css       # Modal styles
 │   ├── js/
-│   │   ├── firebase-config.example.js  # Firebase config template
 │   │   ├── firebase-init.js    # Firebase initialization
-│   │   ├── auth.js             # Authentication
+│   │   ├── auth.js             # Authentication (GitHub + Google)
 │   │   ├── submit.js           # Submission handling
 │   │   ├── report.js           # Report functionality
 │   │   ├── i18n.js             # Internationalization
 │   │   ├── counter.js          # Day counter
 │   │   ├── gallery.js          # Gallery functionality
-│   │   └── danmaku.js          # Danmaku functionality
+│   │   ├── danmaku.js          # Danmaku functionality
+│   │   ├── animations.js       # Animations
+│   │   └── effects.js          # Visual effects
 │   └── locales/
 │       ├── ja.json         # Japanese translations
 │       ├── zh-TW.json      # Traditional Chinese translations
@@ -117,9 +152,26 @@ kanata-graduation-tribute/
 
 ### Important Notes / 重要な注意事項 / 重要注意事項
 
-- `firebase-config.js` is in `.gitignore` and will NOT be uploaded
-- Deployment is handled by the maintainer
-- Use your own Firebase project for local testing
+- Deployment is handled by the maintainer via Firebase Hosting
+- Firebase configuration files are not included in the repository
+- All contributions are subject to the [Code of Conduct](CODE_OF_CONDUCT.md)
+
+---
+
+## Translation Contribution / 翻訳貢献 / 翻譯貢獻
+
+Help us improve translations! You can:
+
+翻訳の改善にご協力ください！以下の方法があります：
+
+幫助我們改進翻譯！您可以：
+
+1. **Submit an Issue** / **Issue を作成** / **建立 Issue**
+   - Use the [Translation template](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml)
+
+2. **Submit a PR** / **PR を提出** / **提交 PR**
+   - Edit files in `assets/locales/`
+   - Make sure to update all three language files if adding new keys
 
 ---
 
@@ -127,6 +179,7 @@ kanata-graduation-tribute/
 
 - [Bug Report / バグ報告](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md)
 - [Feature Request / 機能リクエスト](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md)
+- [Translation / 翻訳提案](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml)
 - [Report Content / コンテンツ報告](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml)
 
 ---
