@@ -9,6 +9,16 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 
 ---
 
+## このリポジトリの目的 | 此 Repo 的用途 | Repository Purpose
+
+| 🇯🇵 日本語 | 🇹🇼 繁體中文 | 🇺🇸 English |
+|-----------|-------------|-------------|
+| バグ・コンテンツ報告 | Bug 報告、內容檢舉 | Bug & content reports |
+| 翻訳改善の提案 | 翻譯改進建議 | Translation suggestions |
+| コード貢献（PR） | 程式碼貢獻（PR） | Code contributions (PR) |
+
+---
+
 **Language / 言語 / 語言:**
 [日本語](#日本語) | [繁體中文](#繁體中文) | [English](#english)
 
@@ -31,21 +41,20 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 **サイトで直接投稿できます！**
 
 1. [eienkanata.com](https://eienkanata.com/) にアクセス
-2. GitHub アカウントでログイン
+2. GitHub または Google アカウントでログイン
 3. 投稿ボタンをクリック
 
 ---
 
-### コード貢献
+### 貢献方法
 
-サイトの改善に貢献したい方は、Pull Request を歓迎します！
-詳細は [貢献ガイド](.github/CONTRIBUTING.md) をご覧ください。
-
-### 問題報告
-
-- [バグ報告](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md)
-- [機能リクエスト](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md)
-- [コンテンツ報告](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml)
+| 貢献タイプ | 方法 |
+|-----------|------|
+| 🐛 バグ報告 | [Issue を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 機能リクエスト | [Issue を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 翻訳改善 | [翻訳提案を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 コンテンツ報告 | [報告を作成](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 コード貢献 | [貢献ガイド](.github/CONTRIBUTING.md) を参照
 
 ---
 
@@ -66,21 +75,20 @@ A community-driven memorial website for Amane Kanata, celebrating her journey an
 **可以直接在網站上投稿！**
 
 1. 前往 [eienkanata.com](https://eienkanata.com/)
-2. 使用 GitHub 帳號登入
+2. 使用 GitHub 或 Google 帳號登入
 3. 點擊投稿按鈕
 
 ---
 
-### 程式碼貢獻
+### 貢獻方式
 
-想要改進網站？歡迎提交 Pull Request！
-詳情請參閱 [貢獻指南](.github/CONTRIBUTING.md)。
-
-### 問題回報
-
-- [Bug 報告](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md)
-- [功能建議](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md)
-- [內容檢舉](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml)
+| 貢獻類型 | 方式 |
+|---------|------|
+| 🐛 Bug 報告 | [建立 Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 功能建議 | [建立 Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 翻譯改進 | [建立翻譯建議](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 內容檢舉 | [建立檢舉](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 程式碼貢獻 | 參閱 [貢獻指南](.github/CONTRIBUTING.md)
 
 ---
 
@@ -101,21 +109,20 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 **Submit directly on the website!**
 
 1. Visit [eienkanata.com](https://eienkanata.com/)
-2. Log in with your GitHub account
+2. Log in with GitHub or Google account
 3. Click the submit button
 
 ---
 
-### Code Contribution
+### How to Contribute
 
-Want to improve the site? Pull Requests are welcome!
-See the [Contributing Guide](.github/CONTRIBUTING.md) for details.
-
-### Report Issues
-
-- [Bug Report](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md)
-- [Feature Request](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md)
-- [Report Content](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml)
+| Type | How |
+|------|-----|
+| 🐛 Bug Report | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
+| 💡 Feature Request | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
+| 🌐 Translation | [Suggest Translation](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
+| 🚨 Report Content | [Create Report](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 💻 Code Contribution | See [Contributing Guide](.github/CONTRIBUTING.md)
 
 ---
 
