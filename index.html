@@ -313,15 +313,15 @@
     (function() {
         // ==================== Navbar Scroll Behavior ====================
         const siteNav = document.querySelector('.site-nav');
-        let lastScrollY = 0;
+        let lastScrollY = window.scrollY;
         let ticking = false;
-        const scrollThreshold = 10; // Minimum scroll delta to trigger hide/show
+        const scrollThreshold = 5; // Reduced threshold for more responsive behavior
 
         function updateNavbar() {
             const currentScrollY = window.scrollY;
 
             // Always show navbar at top of page
-            if (currentScrollY <= 0) {
+            if (currentScrollY <= 10) {
                 siteNav.classList.remove('nav-hidden');
                 lastScrollY = currentScrollY;
                 ticking = false;
@@ -330,6 +330,7 @@
 
             // Don't hide when mobile nav is open
             if (document.body.classList.contains('nav-open')) {
+                lastScrollY = currentScrollY;
                 ticking = false;
                 return;
             }
@@ -339,17 +340,18 @@
             // Scrolling down - hide navbar
             if (scrollDelta > scrollThreshold) {
                 siteNav.classList.add('nav-hidden');
-                lastScrollY = currentScrollY;
             }
             // Scrolling up - show navbar
             else if (scrollDelta < -scrollThreshold) {
                 siteNav.classList.remove('nav-hidden');
-                lastScrollY = currentScrollY;
             }
 
+            // Always update lastScrollY
+            lastScrollY = currentScrollY;
             ticking = false;
         }
 
+        // Use both scroll and touchmove for better mobile support
         window.addEventListener('scroll', () => {
             if (!ticking) {
                 requestAnimationFrame(updateNavbar);

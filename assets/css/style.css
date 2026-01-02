@@ -9,6 +9,17 @@ html {
     overflow-x: hidden;
 }
 
+/* Hide scrollbar but keep scrolling functionality */
+html, body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
 :root {
     /* Kanata's representative colors */
     --kanata-blue: #2894FF;
