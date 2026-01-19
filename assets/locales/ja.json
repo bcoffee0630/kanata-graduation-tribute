@@ -51,6 +51,10 @@
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "クレジット："
+    "share_text": "この想いを共有する",
+    "credits_title": "クレジット：",
+    "disclaimer": "このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。",
+    "copyright_notice": "使用している画像・映像の著作権：",
+    "non_commercial": "当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。"
   }
 }

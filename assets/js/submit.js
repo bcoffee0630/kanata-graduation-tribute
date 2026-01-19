@@ -201,7 +201,7 @@ const Submit = {
 
     openMessageModal() {
         if (!window.Auth.isLoggedIn()) {
-            alert(this.getTranslation('login_required'));
+            Toast.warning(this.getTranslation('login_required'));
             return;
         }
         if (this.messageModal) {
@@ -212,7 +212,7 @@ const Submit = {
 
     openFanartModal() {
         if (!window.Auth.isLoggedIn()) {
-            alert(this.getTranslation('login_required'));
+            Toast.warning(this.getTranslation('login_required'));
             return;
         }
         if (this.fanartModal) {
@@ -246,14 +246,14 @@ const Submit = {
         if (file && preview) {
             // Validate file type
             if (!file.type.match(/^image\/(png|jpeg|jpg)$/)) {
-                alert(this.getTranslation('invalid_image_type'));
+                Toast.error(this.getTranslation('invalid_image_type'));
                 e.target.value = '';
                 return;
             }
 
             // Validate file size (10MB max)
             if (file.size > 10 * 1024 * 1024) {
-                alert(this.getTranslation('image_too_large'));
+                Toast.error(this.getTranslation('image_too_large'));
                 e.target.value = '';
                 return;
             }
@@ -271,7 +271,7 @@ const Submit = {
         e.preventDefault();
 
         if (!window.Auth.isLoggedIn()) {
-            alert(this.getTranslation('login_required'));
+            Toast.warning(this.getTranslation('login_required'));
             return;
         }
 
@@ -281,6 +281,7 @@ const Submit = {
 
         try {
             submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
             submitBtn.textContent = this.getTranslation('submitting');
 
             const content = document.getElementById('message-content').value.trim();
@@ -321,7 +322,7 @@ const Submit = {
             await this.updateUserStats('message');
 
             // Success
-            alert(this.getTranslation('message_submitted'));
+            Toast.success(this.getTranslation('message_submitted'));
             form.reset();
             this.closeAllModals();
 
@@ -332,9 +333,10 @@ const Submit = {
 
         } catch (error) {
             console.error('Message submission error:', error);
-            alert(error.message || this.getTranslation('submit_error'));
+            Toast.error(error.message || this.getTranslation('submit_error'));
         } finally {
             submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
+            submitBtn.classList.remove('loading');
             submitBtn.textContent = originalText;
         }
     },
@@ -343,7 +345,7 @@ const Submit = {
         e.preventDefault();
 
         if (!window.Auth.isLoggedIn()) {
-            alert(this.getTranslation('login_required'));
+            Toast.warning(this.getTranslation('login_required'));
             return;
         }
 
@@ -353,6 +355,7 @@ const Submit = {
 
         try {
             submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
             submitBtn.textContent = this.getTranslation('uploading');
 
             const imageInput = document.getElementById('fanart-image');
@@ -407,7 +410,7 @@ const Submit = {
             await this.updateUserStats('fanart');
 
             // Success
-            alert(this.getTranslation('fanart_submitted'));
+            Toast.success(this.getTranslation('fanart_submitted'));
             form.reset();
             document.getElementById('image-preview').style.display = 'none';
             this.closeAllModals();
@@ -419,9 +422,10 @@ const Submit = {
 
         } catch (error) {
             console.error('Fanart submission error:', error);
-            alert(error.message || this.getTranslation('submit_error'));
+            Toast.error(error.message || this.getTranslation('submit_error'));
         } finally {
             submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
+            submitBtn.classList.remove('loading');
             submitBtn.textContent = originalText;
         }
     },

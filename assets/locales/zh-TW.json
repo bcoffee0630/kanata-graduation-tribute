@@ -51,6 +51,10 @@
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "圖片來源："
+    "share_text": "分享這份心意",
+    "credits_title": "圖片來源：",
+    "disclaimer": "此網站為非官方粉絲紀念網站，與 COVER 株式會社無任何關聯。",
+    "copyright_notice": "本站使用之圖片及影像素材版權屬於：",
+    "non_commercial": "本站不進行任何營利活動，包含但不限於廣告、贊助、周邊販售或收費紀念品等。"
   }
 }

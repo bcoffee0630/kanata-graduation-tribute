@@ -706,6 +706,68 @@ footer {
     z-index: -1;
 }
 
+/* Share Section */
+.share-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.share-text {
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 15px;
+}
+
+.share-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.share-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.share-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.share-twitter {
+    background: #1da1f2;
+    color: white;
+}
+
+.share-twitter:hover {
+    background: #0d8bd9;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(29, 161, 242, 0.4);
+}
+
+.share-native {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.share-native:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-3px);
+}
+
+/* Hide native share on desktop if Web Share API not supported */
+.share-native.hidden {
+    display: none;
+}
+
 .credits {
     text-align: center;
     font-size: 0.9em;
@@ -730,6 +792,83 @@ footer {
 .credits a:hover {
     color: var(--gold);
     text-decoration: underline;
+}
+
+/* Copyright Notice */
+.copyright-notice {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: center;
+}
+
+.disclaimer {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.85);
+    max-width: 600px;
+    margin: 0 auto 15px;
+    line-height: 1.7;
+    font-weight: 500;
+}
+
+.copyright-text {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+}
+
+.non-commercial {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ==================== */
+/* Back to Top Button   */
+/* ==================== */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--kanata-blue) 0%, var(--kanata-blue-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(40, 148, 255, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 900;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(40, 148, 255, 0.5);
+}
+
+.back-to-top:active {
+    transform: translateY(-1px);
+}
+
+.back-to-top svg {
+    width: 24px;
+    height: 24px;
 }
 
 /* ==================== */
@@ -919,6 +1058,14 @@ footer {
     .intro-section::after {
         font-size: 40px;
     }
+
+    /* Back to top button - tablet */
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 46px;
+        height: 46px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -962,6 +1109,19 @@ footer {
     .intro-section::after {
         font-size: 30px;
         bottom: 15px;
+    }
+
+    /* Back to top button - mobile */
+    .back-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .back-to-top svg {
+        width: 20px;
+        height: 20px;
     }
 }
 

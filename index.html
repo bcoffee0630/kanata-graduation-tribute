@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="assets/css/gallery.css">
     <link rel="stylesheet" href="assets/css/danmaku.css">
     <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/toast.css">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -274,6 +275,18 @@
     <footer>
         <div class="container">
             <p class="forever-kanata" data-i18n="footer.forever_kanata">永遠にかなた</p>
+            <!-- Share Section -->
+            <div class="share-section">
+                <p class="share-text" data-i18n="footer.share_text">この想いを共有する</p>
+                <div class="share-buttons">
+                    <button id="share-twitter" class="share-btn share-twitter" aria-label="Share on Twitter/X">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </button>
+                    <button id="share-native" class="share-btn share-native" aria-label="Share">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    </button>
+                </div>
+            </div>
             <div class="credits">
                 <p data-i18n="footer.credits_title">Credits:</p>
                 <ul>
@@ -282,8 +295,28 @@
                     <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank">Star icons created by Freepik - Flaticon</a></li>
                 </ul>
             </div>
+            <!-- Copyright & Non-commercial Notice -->
+            <div class="copyright-notice">
+                <p class="disclaimer" data-i18n="footer.disclaimer">
+                    このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。
+                </p>
+                <p class="copyright-text">
+                    <span data-i18n="footer.copyright_notice">使用している画像・映像の著作権：</span>
+                    © COVER Corp. / hololive production
+                </p>
+                <p class="non-commercial" data-i18n="footer.non_commercial">
+                    当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。
+                </p>
+            </div>
         </div>
     </footer>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+    </button>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -294,6 +327,7 @@
     <!-- Core Scripts -->
     <script src="assets/js/i18n.js"></script>
     <script src="assets/js/counter.js"></script>
+    <script src="assets/js/toast.js"></script>
 
     <!-- Firebase Integration -->
     <script src="assets/js/firebase-config.js"></script>
@@ -307,6 +341,7 @@
     <script src="assets/js/danmaku.js"></script>
     <script src="assets/js/effects.js"></script>
     <script src="assets/js/animations.js"></script>
+    <script src="assets/js/scroll-top.js"></script>
 
     <!-- Mobile Navigation & Language Dropdown -->
     <script>
@@ -485,6 +520,41 @@
                 closeLangDropdown();
             }
         });
+
+        // ==================== Share Buttons ====================
+        const shareTwitterBtn = document.getElementById('share-twitter');
+        const shareNativeBtn = document.getElementById('share-native');
+
+        const shareData = {
+            title: document.title,
+            url: window.location.href
+        };
+
+        // Twitter/X share
+        if (shareTwitterBtn) {
+            shareTwitterBtn.addEventListener('click', () => {
+                const text = encodeURIComponent('天音かなた卒業記念 #天音かなた #かなたん');
+                const url = encodeURIComponent(shareData.url);
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=550,height=420');
+            });
+        }
+
+        // Native share (Web Share API)
+        if (shareNativeBtn) {
+            if (navigator.share) {
+                shareNativeBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        // User cancelled or error
+                        console.log('Share cancelled or failed:', err);
+                    }
+                });
+            } else {
+                // Hide native share button if Web Share API not supported
+                shareNativeBtn.classList.add('hidden');
+            }
+        }
     })();
     </script>
 </body>

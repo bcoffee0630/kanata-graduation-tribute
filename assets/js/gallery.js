@@ -29,6 +29,9 @@ const Gallery = {
         this.setupLightbox();
         this.setupLoadMoreButton();
 
+        // Show skeleton loading immediately
+        this.showSkeleton();
+
         // Check if Firebase is already initialized
         if (window.FirebaseApp && window.FirebaseApp.getDb()) {
             this.loadFromFirestore();
@@ -45,6 +48,18 @@ const Gallery = {
                 this.loadFromJSON();
             }
         }, 2000);
+    },
+
+    showSkeleton(count = 6) {
+        const skeletonHtml = Array(count).fill(0).map(() =>
+            '<div class="gallery-skeleton"></div>'
+        ).join('');
+        this.container.innerHTML = skeletonHtml;
+    },
+
+    hideSkeleton() {
+        const skeletons = this.container.querySelectorAll('.gallery-skeleton');
+        skeletons.forEach(skeleton => skeleton.remove());
     },
 
     setupLoadMoreButton() {
@@ -142,6 +157,7 @@ const Gallery = {
         this.isLoading = true;
         if (this.loadMoreBtn) {
             this.loadMoreBtn.disabled = true;
+            this.loadMoreBtn.classList.add('loading');
         }
 
         try {
@@ -191,6 +207,7 @@ const Gallery = {
             this.isLoading = false;
             if (this.loadMoreBtn) {
                 this.loadMoreBtn.disabled = false;
+                this.loadMoreBtn.classList.remove('loading');
             }
         }
     },
@@ -355,6 +372,44 @@ const Gallery = {
         // Navigation buttons
         this.lightbox.querySelector('.lightbox-prev')?.addEventListener('click', () => this.navigate(-1));
         this.lightbox.querySelector('.lightbox-next')?.addEventListener('click', () => this.navigate(1));
+
+        // Touch swipe navigation
+        this.setupTouchSwipe();
+    },
+
+    setupTouchSwipe() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        const minSwipeDistance = 50;
+
+        const lightboxContent = this.lightbox.querySelector('.lightbox-content');
+        if (!lightboxContent) return;
+
+        lightboxContent.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        lightboxContent.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            // Only trigger swipe if horizontal movement is greater than vertical
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+                if (deltaX > 0) {
+                    // Swipe right - go to previous
+                    this.navigate(-1);
+                } else {
+                    // Swipe left - go to next
+                    this.navigate(1);
+                }
+            }
+        }, { passive: true });
     },
 
     openLightbox(index) {

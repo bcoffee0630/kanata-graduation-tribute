@@ -51,6 +51,10 @@
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
-    "credits_title": "Credits:"
+    "share_text": "Share this memory",
+    "credits_title": "Credits:",
+    "disclaimer": "This is an unofficial fan memorial website and is not affiliated with COVER Corp. in any way.",
+    "copyright_notice": "Images and videos used on this site are copyrighted by:",
+    "non_commercial": "This site does not engage in any commercial activities, including but not limited to advertisements, sponsorships, merchandise sales, or paid memorabilia."
   }
 }
