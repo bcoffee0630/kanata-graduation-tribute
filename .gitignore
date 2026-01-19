@@ -40,3 +40,7 @@ node_modules/
 
 # Migration scripts (本地執行用)
 migrate-data.js
+
+# UI/UX Pro Max Skill (GitHub Copilot Skills)
+.shared/ui-ux-pro-max/
+.github/prompts/ui-ux-pro-max.prompt.md
