@@ -180,7 +180,7 @@ npm run deploy:production -- \
 ```
 
 8. 驗證 `admin.eienkanata.com` 的 `/`、`/auth/action/`、security headers 與敏感路徑，再將完整 preview hostname 傳給上一節 Auth apply；禁止猜測或只加入基本 `web.app` domain。
-9. 建立並於測試後刪除兩個臨時 Gmail plus-address Auth 帳號，寄送 reset mail；檢查 From/action-link domain、SPF、DKIM、DMARC alignment 與 Spam 分類。任何一項不合格即停止。
+9. 建立兩個臨時 Gmail plus-address Auth 帳號並寄送第一輪 reset mail；此時 callback 尚未切換，只驗證 From、SPF、DKIM、DMARC alignment 與 Spam 分類。兩封都必須進 Inbox 且三項驗證皆 `pass`，否則停止；帳號保留到維護模式中的第二輪 action-link 驗證完成後再刪除。
 
 ## Maintenance 與資料遷移
 
@@ -197,6 +197,8 @@ npm run deploy:production -- \
 確認公開讀取仍可用、舊頁面透過 Rules 或 Functions 的所有寫入均被拒絕。Final backup 與 migration 完成前不得在 Admin preview 或其他工具執行任何治理異動；Firestore managed export 不是啟動瞬間的快照，可能包含 export 執行期間的變更。接著執行 final backup：
 
 `maintenance` phase 會先以 ADC 寫入不可由客戶端修改的 `system/maintenance` 鎖，再發布 Hosting 與 temporary Rules；公開投稿、upload/finalize 與站內舉報 Functions 也會回 `UNAVAILABLE`。`release` phase 只有在最終 Public Hosting 部署成功後才解除該鎖；解除失敗時網站維持唯讀並讓指令失敗。
+
+Maintenance Hosting 已包含 `https://eienkanata.com/auth/action/` bridge。發布後先執行上一節 Auth apply，再對同兩個 plus-address 帳號寄送第二輪 reset mail；除了 SPF/DKIM/DMARC 與 Inbox 外，郵件中的 link host 必須是 `eienkanata.com`，實際開啟後必須原樣保留 `mode`、`oobCode`、`apiKey`、`continueUrl`、`lang` 並抵達 `admin.eienkanata.com/auth/action/`。完成後刪除兩個測試 Auth 帳號。任何一項失敗都保持 maintenance，不執行 final backup 或 migration。
 
 ```bash
 npm run backup:production -- \
