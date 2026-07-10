@@ -58,7 +58,9 @@ const headers = {
 async function api(path, options = {}) {
   const response = await fetch(`${apiRoot}${path}`, { headers, ...options });
   if (!response.ok) {
-    throw new Error(`Identity Toolkit request failed (${response.status}).`);
+    const payload = await response.json().catch(() => null);
+    const detail = payload?.error?.message || 'No error detail was returned.';
+    throw new Error(`Identity Toolkit request failed (${response.status}): ${detail}`);
   }
   return response.json();
 }
