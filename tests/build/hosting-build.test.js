@@ -139,6 +139,15 @@ describe('production Hosting allowlists', () => {
     expect(result.stderr).toContain('exact Admin Hosting preview domain');
   });
 
+  it('pins the production email action URL and verifies the custom sender', () => {
+    const authConfiguration = readFileSync('scripts/configure-production-auth.mjs', 'utf8');
+    expect(authConfiguration).toContain("const ACTION_HANDLER_URL = `https://${ADMIN_DOMAIN}/auth/action/`;");
+    expect(authConfiguration).toContain('notification.sendEmail.callbackUri');
+    expect(authConfiguration).toContain("const MAIL_DOMAIN = 'auth.eienkanata.com';");
+    expect(authConfiguration).toContain("const SENDER_DISPLAY_NAME = 'eienkanata.com';");
+    expect(authConfiguration).toContain("const SENDER_LOCAL_PART = 'noreply';");
+  });
+
   it('refuses production Owner credential changes without a separate confirmation', () => {
     const result = spawnSync('node', ['scripts/prepare-production-owner.mjs'], { encoding: 'utf8' });
     expect(result.status).not.toBe(0);

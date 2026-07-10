@@ -4,6 +4,10 @@ import { requireProductionReleaseTag } from './production-release-guard.mjs';
 
 const PROJECT = 'kanata-memorial';
 const ADMIN_DOMAIN = 'admin.eienkanata.com';
+const ACTION_HANDLER_URL = `https://${ADMIN_DOMAIN}/auth/action/`;
+const MAIL_DOMAIN = 'auth.eienkanata.com';
+const SENDER_DISPLAY_NAME = 'eienkanata.com';
+const SENDER_LOCAL_PART = 'noreply';
 const ALLOWED_SITE_IDS = new Set([
   'eienkanata-admin',
   'kanata-memorial-governance',
@@ -87,11 +91,14 @@ let finalConfig = config;
 let finalProjectConfig = null;
 
 if (apply) {
-  await api('/config?updateMask=signIn.email,authorizedDomains', {
+  await api('/config?updateMask=signIn.email,authorizedDomains,notification.sendEmail.callbackUri', {
     method: 'PATCH',
     body: JSON.stringify({
       signIn: { email: { enabled: true, passwordRequired: true } },
-      authorizedDomains: desiredDomains
+      authorizedDomains: desiredDomains,
+      notification: {
+        sendEmail: { callbackUri: ACTION_HANDLER_URL }
+      }
     })
   });
   await auth.projectConfigManager().updateProjectConfig({
@@ -127,9 +134,19 @@ if (apply) {
   if (
     configAfter.signIn?.email?.enabled !== true ||
     configAfter.signIn?.email?.passwordRequired !== true ||
-    !desiredDomains.every((domain) => configAfter.authorizedDomains?.includes(domain))
+    !desiredDomains.every((domain) => configAfter.authorizedDomains?.includes(domain)) ||
+    configAfter.notification?.sendEmail?.callbackUri !== ACTION_HANDLER_URL
   ) {
-    throw new Error('Email/password or authorized-domain verification failed after Auth configuration.');
+    throw new Error('Email/password, authorized-domain, or action URL verification failed after Auth configuration.');
+  }
+  const sendEmail = configAfter.notification?.sendEmail;
+  if (
+    sendEmail?.dnsInfo?.customDomain !== MAIL_DOMAIN ||
+    sendEmail?.dnsInfo?.useCustomDomain !== true ||
+    sendEmail?.resetPasswordTemplate?.senderDisplayName !== SENDER_DISPLAY_NAME ||
+    sendEmail?.resetPasswordTemplate?.senderLocalPart !== SENDER_LOCAL_PART
+  ) {
+    throw new Error('Custom mail domain or password-reset sender verification failed after Auth configuration.');
   }
   const constraints = projectConfigAfter.passwordPolicyConfig?.constraints;
   if (
@@ -156,6 +173,12 @@ console.log(JSON.stringify({
     ? finalProjectConfig.emailPrivacyConfig?.enableImprovedEmailPrivacy === true
     : config.emailPrivacyConfig?.enableImprovedEmailPrivacy === true,
   authorizedDomains: desiredDomains,
+  emailActionUrl: finalConfig.notification?.sendEmail?.callbackUri || null,
+  mailDomain: finalConfig.notification?.sendEmail?.dnsInfo?.customDomain || null,
+  passwordResetSender: finalConfig.notification?.sendEmail?.resetPasswordTemplate
+    ? `${finalConfig.notification.sendEmail.resetPasswordTemplate.senderDisplayName} <` +
+      `${finalConfig.notification.sendEmail.resetPasswordTemplate.senderLocalPart}@${MAIL_DOMAIN}>`
+    : null,
   preservedProviders: {
     google: providerStateBefore['google.com'],
     github: providerStateBefore['github.com']
