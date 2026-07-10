@@ -165,6 +165,8 @@ describe('production Hosting allowlists', () => {
     expect(authConfiguration).toContain("action: 'VERIFY'");
     expect(authConfiguration).toContain("action: 'APPLY'");
     expect(authConfiguration).toContain("mailDomainVerificationState !== 'SUCCEEDED'");
+    expect(authConfiguration).toContain('const configAfterMailDomainApply = await api(\'/config\');');
+    expect(authConfiguration).toContain('useCustomDomain !== true');
   });
 
   it('refuses production Owner credential changes without a separate confirmation', () => {

@@ -110,11 +110,17 @@ if (apply) {
     method: 'POST',
     body: JSON.stringify({ domain: MAIL_DOMAIN, action: 'APPLY' })
   });
-  if (domainApplication.verificationState !== 'SUCCEEDED') {
+  if (domainApplication.verificationError) {
     throw new Error(
-      `Custom mail domain application did not succeed: ` +
-      `${domainApplication.verificationError || domainApplication.verificationState}.`
+      `Custom mail domain application did not succeed: ${domainApplication.verificationError}.`
     );
+  }
+  const configAfterMailDomainApply = await api('/config');
+  if (
+    configAfterMailDomainApply.notification?.sendEmail?.dnsInfo?.customDomain !== MAIL_DOMAIN ||
+    configAfterMailDomainApply.notification?.sendEmail?.dnsInfo?.useCustomDomain !== true
+  ) {
+    throw new Error('Custom mail domain application was not reflected in the Auth configuration.');
   }
 
   await api('/config?updateMask=signIn.email,authorizedDomains,notification.sendEmail.callbackUri', {
