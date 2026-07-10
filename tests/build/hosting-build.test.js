@@ -158,6 +158,9 @@ describe('production Hosting allowlists', () => {
     expect(authConfiguration).toContain("const SENDER_DISPLAY_NAME = 'eienkanata.com';");
     expect(authConfiguration).toContain("const SENDER_LOCAL_PART = 'noreply';");
     expect(authConfiguration).toContain("payload?.error?.message || 'No error detail was returned.'");
+    expect(authConfiguration).toContain("api('/domain:verify'");
+    expect(authConfiguration).toContain("action: 'VERIFY'");
+    expect(authConfiguration).toContain("mailDomainVerificationState !== 'SUCCEEDED'");
   });
 
   it('refuses production Owner credential changes without a separate confirmation', () => {

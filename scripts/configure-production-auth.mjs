@@ -91,8 +91,34 @@ const desiredDomains = [...new Set([
 
 let finalConfig = config;
 let finalProjectConfig = null;
+let mailDomainVerificationState = config.notification?.sendEmail?.dnsInfo?.customDomainState || 'NOT_STARTED';
 
 if (apply) {
+  const domainVerification = await api('/domain:verify', {
+    method: 'POST',
+    body: JSON.stringify({ domain: MAIL_DOMAIN, action: 'VERIFY' })
+  });
+  mailDomainVerificationState = domainVerification.verificationState;
+  if (mailDomainVerificationState !== 'SUCCEEDED') {
+    throw new Error(
+      `Custom mail domain verification did not succeed: ${domainVerification.verificationError || mailDomainVerificationState}.`
+    );
+  }
+
+  const currentDnsInfo = config.notification?.sendEmail?.dnsInfo;
+  if (currentDnsInfo?.customDomain !== MAIL_DOMAIN || currentDnsInfo?.useCustomDomain !== true) {
+    const domainApplication = await api('/domain:verify', {
+      method: 'POST',
+      body: JSON.stringify({ domain: MAIL_DOMAIN, action: 'APPLY' })
+    });
+    if (domainApplication.verificationState !== 'SUCCEEDED') {
+      throw new Error(
+        `Custom mail domain application did not succeed: ` +
+        `${domainApplication.verificationError || domainApplication.verificationState}.`
+      );
+    }
+  }
+
   await api('/config?updateMask=signIn.email,authorizedDomains,notification.sendEmail.callbackUri', {
     method: 'PATCH',
     body: JSON.stringify({
@@ -177,6 +203,7 @@ console.log(JSON.stringify({
   authorizedDomains: desiredDomains,
   emailActionUrl: finalConfig.notification?.sendEmail?.callbackUri || null,
   mailDomain: finalConfig.notification?.sendEmail?.dnsInfo?.customDomain || null,
+  mailDomainVerificationState,
   passwordResetSender: finalConfig.notification?.sendEmail?.resetPasswordTemplate
     ? `${finalConfig.notification.sendEmail.resetPasswordTemplate.senderDisplayName} <` +
       `${finalConfig.notification.sendEmail.resetPasswordTemplate.senderLocalPart}@${MAIL_DOMAIN}>`

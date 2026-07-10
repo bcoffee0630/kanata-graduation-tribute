@@ -101,7 +101,7 @@ npm run configure:production:auth -- \
   --apply
 ```
 
-Apply 只啟用 Email/Password、加入 Admin domains、設定 `https://admin.eienkanata.com/auth/action/`、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。它也會回讀確認自訂寄件網域、`eienkanata.com <noreply@auth.eienkanata.com>` 與 Google/GitHub provider 均未偏離。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
+Apply 先透過 Identity Toolkit `domain:verify` 要求 `auth.eienkanata.com` 驗證為 `SUCCEEDED`；只有尚未套用時才執行 `APPLY`。接著只啟用 Email/Password、加入 Admin domains、設定 `https://admin.eienkanata.com/auth/action/`、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。它也會回讀確認自訂寄件網域、`eienkanata.com <noreply@auth.eienkanata.com>` 與 Google/GitHub provider 均未偏離。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
 
 Email/Password provider 可能被外部直接呼叫 signup API；不能開啟全域 `disabledUserSignup`，否則新的公開 Google/GitHub 使用者也會被阻擋。因此 `submitMessage`、創作 upload/finalize 與 `submitReport` 只接受 `google.com` 或 `github.com` token。Password-only 帳號即使自行建立，也不能投稿、上傳或站內舉報；只有具有效 admin claims 與 `adminAccounts` 文件的 Password session 能使用管理 API。
 
