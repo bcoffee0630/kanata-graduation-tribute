@@ -69,6 +69,17 @@ describe('production Hosting allowlists', () => {
     expect(result.stderr).toContain('--release-tag');
   });
 
+  it('keeps the pre-maintenance Admin live phase isolated from public Hosting and Rules', () => {
+    const deployment = readFileSync('scripts/deploy-production.mjs', 'utf8');
+    const adminLivePhase = deployment.match(
+      /phase === 'admin-live'[\s\S]*?\} else if \(phase === 'maintenance'/
+    )?.[0];
+    expect(adminLivePhase).toContain("'deploy', '--only', 'hosting:admin'");
+    expect(adminLivePhase).not.toContain('hosting:public');
+    expect(adminLivePhase).not.toContain('firestore:rules');
+    expect(adminLivePhase).not.toContain("'storage'");
+  });
+
   it('accepts only a clean HEAD selected by an annotated production release tag', () => {
     const directory = mkdtempSync(join(tmpdir(), 'kanata-release-tag-'));
     const releaseTag = 'governance-production-20260711T000000Z';

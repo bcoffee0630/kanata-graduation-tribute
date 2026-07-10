@@ -8,6 +8,7 @@ const PRODUCTION_OWNER_FILE = '.production-owner.env';
 const phases = new Set([
   'backend',
   'admin-preview',
+  'admin-live',
   'maintenance',
   'governance',
   'bootstrap-lock',
@@ -34,7 +35,7 @@ if (
   console.error(
     'Refusing production deployment. Required: --project kanata-memorial ' +
     '--confirm-production kanata-memorial ' +
-    '--phase <backend|admin-preview|maintenance|governance|bootstrap-lock|release> ' +
+    '--phase <backend|admin-preview|admin-live|maintenance|governance|bootstrap-lock|release> ' +
     '--release-tag <annotated-release-tag>.'
   );
   process.exit(1);
@@ -122,6 +123,11 @@ if (phase === 'backend') {
   run('firebase', [
     'hosting:channel:deploy', 'admin-governance', '--only', 'admin',
     '--config', 'firebase.production.json', ...common, '--expires', '7d'
+  ]);
+} else if (phase === 'admin-live') {
+  run('firebase', [
+    'deploy', '--only', 'hosting:admin',
+    '--config', 'firebase.production.json', ...common
   ]);
 } else if (phase === 'maintenance') {
   run('node', [

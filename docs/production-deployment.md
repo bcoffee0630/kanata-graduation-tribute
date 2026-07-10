@@ -69,7 +69,7 @@ git tag -a governance-production-YYYYMMDDTHHMMSSZ -m "Production governance rele
 4. 依 manifest 新增 DNS 紀錄；保留既有 apex `hosting-site=kanata-memorial` TXT，不替換或刪除任何既有紀錄。
 5. 等待 Hosting 狀態為 `Connected`，並確認 SSL 憑證有效後才繼續。
 6. 在 Auth Templates 將寄件網域設為 `auth.eienkanata.com`，新增 Firebase 指定的 TXT/CNAME/SPF/DKIM；另新增 `_dmarc.auth.eienkanata.com` TXT：`v=DMARC1; p=none`。
-7. 驗證完成後才套用自訂寄件網域；sender 設為 `noreply@auth.eienkanata.com`，顯示名稱為「天音彼方紀念站」，Password reset action URL 設為 `https://admin.eienkanata.com/auth/action/`。不得修改既有 Google/GitHub OAuth provider。
+7. 驗證完成後才套用自訂寄件網域；sender 設為 `noreply@auth.eienkanata.com`，顯示名稱為 `eienkanata.com`。Password reset action URL 必須等 Admin Hosting 的第一個 live 版本發布後，再設為 `https://admin.eienkanata.com/auth/action/`。不得修改既有 Google/GitHub OAuth provider。
 8. 將 Firebase Console 顯示的完整郵件 TXT/CNAME 記錄寫入本機 `.production-mail-dns.json`（格式見空值 example），再執行只讀驗證：
 
 ```bash
@@ -101,7 +101,7 @@ npm run configure:production:auth -- \
   --apply
 ```
 
-Apply 只啟用 Email/Password、加入 Admin domains、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
+Apply 只啟用 Email/Password、加入 Admin domains、設定 `https://admin.eienkanata.com/auth/action/`、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。它也會回讀確認自訂寄件網域、`eienkanata.com <noreply@auth.eienkanata.com>` 與 Google/GitHub provider 均未偏離。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
 
 Email/Password provider 可能被外部直接呼叫 signup API；不能開啟全域 `disabledUserSignup`，否則新的公開 Google/GitHub 使用者也會被阻擋。因此 `submitMessage`、創作 upload/finalize 與 `submitReport` 只接受 `google.com` 或 `github.com` token。Password-only 帳號即使自行建立，也不能投稿、上傳或站內舉報；只有具有效 admin claims 與 `adminAccounts` 文件的 Password session 能使用管理 API。
 
@@ -168,9 +168,19 @@ npm run deploy:production -- \
   --release-tag <release-tag>
 ```
 
-6. 將指令輸出的完整 preview hostname 傳給上一節 Auth apply；禁止猜測或只加入基本 `web.app` domain。
-7. 驗證 preview 的 `/`、`/auth/action/`、production Firebase project ID、security headers，以及 `.git`、env、Functions、Rules、scripts、tests、package 檔均為 404。此階段不發布 public live。
-8. 建立並於測試後刪除兩個臨時 Gmail plus-address Auth 帳號，寄送 reset mail；檢查 From/action-link domain、SPF、DKIM、DMARC alignment 與 Spam 分類。任何一項不合格即停止。
+6. 驗證 preview 的 `/`、`/auth/action/`、production Firebase project ID、security headers，以及 `.git`、env、Functions、Rules、scripts、tests、package 檔均為 404。
+7. 為了讓 Firebase 驗證自訂 email action handler，先發布隔離的 Admin Hosting 第一個 live 版本；此階段不發布 public live、不改 Rules、Functions 或資料：
+
+```bash
+npm run deploy:production -- \
+  --project kanata-memorial \
+  --confirm-production kanata-memorial \
+  --phase admin-live \
+  --release-tag <release-tag>
+```
+
+8. 驗證 `admin.eienkanata.com` 的 `/`、`/auth/action/`、security headers 與敏感路徑，再將完整 preview hostname 傳給上一節 Auth apply；禁止猜測或只加入基本 `web.app` domain。
+9. 建立並於測試後刪除兩個臨時 Gmail plus-address Auth 帳號，寄送 reset mail；檢查 From/action-link domain、SPF、DKIM、DMARC alignment 與 Spam 分類。任何一項不合格即停止。
 
 ## Maintenance 與資料遷移
 
