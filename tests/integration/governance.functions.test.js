@@ -36,6 +36,7 @@ const users = {
   reporter3: { uid: 'integration-reporter-3', email: 'reporter3@example.test', displayName: 'Reporter 3' },
   restricted: { uid: 'integration-restricted', email: 'restricted@example.test', displayName: 'Restricted' },
   passwordOnly: { uid: 'integration-password-only', email: 'password-only@example.test', displayName: 'Password Only' },
+  bootstrapCandidate: { uid: 'owner-e2e', email: 'bootstrap-owner@example.test', displayName: 'Bootstrap Owner' },
   owner: { uid: 'integration-owner', email: 'owner@example.test', displayName: 'Owner' },
   ownerPeer: { uid: 'integration-owner-peer', email: 'owner-peer@example.test', displayName: 'Owner Peer' },
   moderator: { uid: 'integration-moderator', email: 'moderator@example.test', displayName: 'Moderator' }
@@ -152,6 +153,7 @@ beforeAll(async () => {
     reporter3: await createClient(users.reporter3),
     restricted: await createClient(users.restricted),
     passwordOnly: await createClient(users.passwordOnly, null, 'password'),
+    bootstrapCandidate: await createClient(users.bootstrapCandidate, null, 'password'),
     owner: await createClient(users.owner, 'owner'),
     ownerPeer: await createClient(users.ownerPeer, 'owner'),
     moderator: await createClient(users.moderator, 'moderator')
@@ -502,6 +504,31 @@ describe.sequential('governance callable APIs', () => {
     await expect(call(remainingOwnerClient, 'getDashboard'))
       .rejects.toMatchObject({ code: 'functions/permission-denied' });
   }, 15_000);
+
+  it('requires a matching linked Google account before initial Owner bootstrap', async () => {
+    await expect(call(clients.bootstrapCandidate, 'bootstrapOwner'))
+      .rejects.toMatchObject({ code: 'functions/failed-precondition' });
+
+    const googleClient = await createGoogleSessionForExistingUser(
+      users.bootstrapCandidate,
+      clients.bootstrapCandidate
+    );
+    clients.bootstrapCandidateGoogle = googleClient;
+    const response = await call(clients.bootstrapCandidate, 'bootstrapOwner');
+    expect(response.data).toMatchObject({ uid: users.bootstrapCandidate.uid, role: 'owner' });
+
+    const [user, account, lock] = await Promise.all([
+      adminAuth.getUser(users.bootstrapCandidate.uid),
+      db.collection('adminAccounts').doc(users.bootstrapCandidate.uid).get(),
+      db.collection('system').doc('bootstrap').get()
+    ]);
+    expect(user.providerData.some((provider) =>
+      provider.providerId === 'google.com' && provider.email === users.bootstrapCandidate.email
+    )).toBe(true);
+    expect(user.customClaims).toMatchObject({ adminRole: 'owner', adminSessionVersion: 1 });
+    expect(account.data()).toMatchObject({ role: 'owner', disabled: false, sessionVersion: 1 });
+    expect(lock.data()).toMatchObject({ ownerUid: users.bootstrapCandidate.uid });
+  });
 
   it('migrates legacy reports atomically and remains idempotent', async () => {
     migrationAdminApp = initializeApp({

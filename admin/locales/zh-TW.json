@@ -12,6 +12,7 @@
   },
   "access": {
     "title": "尚未取得管理權限", "description": "此帳號已登入，但沒有 Owner 或 Moderator 權限。",
+    "linkGoogle": "重新連結 Google 帳號", "googleLinked": "Google 帳號已重新連結，請再次使用密碼登入。",
     "bootstrap": "啟用第一位 Owner", "bootstrapSuccess": "Owner 權限已啟用，正在重新整理登入憑證。"
   },
   "nav": {
@@ -71,6 +72,6 @@
   },
   "errors": {
     "signIn": "登入失敗，請確認帳號與密碼。", "permission": "此帳號沒有執行該操作的權限。",
-    "load": "資料載入失敗，請稍後重試。", "save": "操作失敗，請稍後重試。", "session": "登入成功，但無法驗證管理員工作階段，請稍後重試。", "bootstrap": "無法啟用 Owner，請確認此 UID 已設定為 bootstrap 帳號。"
+    "load": "資料載入失敗，請稍後重試。", "save": "操作失敗，請稍後重試。", "session": "登入成功，但無法驗證管理員工作階段，請稍後重試。", "googleLink": "無法連結 Google 帳號，請確認選擇相同的電子郵件。", "bootstrap": "無法啟用 Owner，請確認此 UID 已設定為 bootstrap 帳號。"
   }
 }

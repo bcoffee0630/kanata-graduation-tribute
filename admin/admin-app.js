@@ -66,6 +66,7 @@ const AdminApp = {
         document.getElementById('forgot-password').addEventListener('click', () => this.resetPassword());
         document.getElementById('logout-button-admin').addEventListener('click', () => this.auth.signOut());
         document.getElementById('access-logout').addEventListener('click', () => this.auth.signOut());
+        document.getElementById('link-google').addEventListener('click', () => this.linkGoogleAccount());
         document.getElementById('bootstrap-owner').addEventListener('click', () => this.bootstrapOwner());
         document.getElementById('sidebar-collapse').addEventListener('click', () => {
             this.refs.app.classList.toggle('sidebar-collapsed');
@@ -181,6 +182,10 @@ const AdminApp = {
                 }
                 document.getElementById('access-account').textContent = user.email || user.uid;
                 document.getElementById('access-error').textContent = '';
+                const hasGoogleProvider = user.providerData
+                    .some((provider) => provider.providerId === 'google.com');
+                document.getElementById('link-google').classList.toggle('is-hidden', hasGoogleProvider);
+                document.getElementById('bootstrap-owner').classList.toggle('is-hidden', !hasGoogleProvider);
                 this.showOnly(this.refs.accessView);
                 this.refreshIcons(this.refs.accessView);
                 return;
@@ -249,6 +254,38 @@ const AdminApp = {
             console.error('Password reset request failed:', error);
             // Keep the response identical so the form cannot be used to enumerate accounts.
             this.toast(this.t('auth.resetSent'));
+        }
+    },
+
+    async linkGoogleAccount() {
+        const user = this.state.user;
+        const button = document.getElementById('link-google');
+        const errorNode = document.getElementById('access-error');
+        if (!user?.email) {
+            errorNode.textContent = this.t('errors.googleLink');
+            return;
+        }
+
+        button.disabled = true;
+        errorNode.textContent = '';
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account', login_hint: user.email });
+            const result = await user.linkWithPopup(provider);
+            const linkedUser = result.user;
+            const googleProvider = linkedUser?.providerData
+                .find((entry) => entry.providerId === 'google.com');
+            if (googleProvider?.email?.toLowerCase() !== linkedUser.email?.toLowerCase()) {
+                if (googleProvider) await linkedUser.unlink('google.com');
+                throw new Error('The linked Google account does not match the administrator email.');
+            }
+            await this.auth.signOut();
+            this.toast(this.t('access.googleLinked'));
+        } catch (error) {
+            console.error('Google account linking failed:', error);
+            errorNode.textContent = this.t('errors.googleLink');
+        } finally {
+            button.disabled = false;
         }
     },
 

@@ -61,7 +61,8 @@ async function lookupOwner() {
 if (user.email?.toLowerCase() !== ownerEmail || user.disabled) {
   throw new Error('Production Owner identity does not match the expected active account.');
 }
-if (!user.providerData.some((provider) => provider.providerId === 'google.com')) {
+const googleProvider = user.providerData.find((provider) => provider.providerId === 'google.com');
+if (!googleProvider) {
   throw new Error('Production Owner must retain the existing Google provider.');
 }
 const ownerBefore = await lookupOwner();
@@ -75,9 +76,24 @@ if (
 const temporaryPassword = `Aa1!${randomBytes(32).toString('base64url')}`;
 await auth.updateUser(ownerUid, { password: temporaryPassword });
 await auth.revokeRefreshTokens(ownerUid);
-const ownerAfter = await lookupOwner();
-if (Number(ownerAfter.passwordUpdatedAt || 0) <= 0) {
-  throw new Error('The Owner password credential could not be verified after preparation.');
+let ownerAfter = await lookupOwner();
+if (!ownerAfter.providerUserInfo?.some((provider) => provider.providerId === 'google.com')) {
+  await auth.updateUser(ownerUid, {
+    providerToLink: {
+      providerId: 'google.com',
+      uid: googleProvider.uid,
+      ...(googleProvider.email ? { email: googleProvider.email } : {}),
+      ...(googleProvider.displayName ? { displayName: googleProvider.displayName } : {}),
+      ...(googleProvider.photoURL ? { photoURL: googleProvider.photoURL } : {})
+    }
+  });
+  ownerAfter = await lookupOwner();
+}
+if (
+  Number(ownerAfter.passwordUpdatedAt || 0) <= 0 ||
+  !ownerAfter.providerUserInfo?.some((provider) => provider.providerId === 'google.com')
+) {
+  throw new Error('The Owner password and Google providers could not both be verified after preparation.');
 }
 console.log(JSON.stringify({
   passwordCredentialPrepared: true,

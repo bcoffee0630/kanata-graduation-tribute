@@ -12,6 +12,7 @@
   },
   "access": {
     "title": "Administrator access required", "description": "This account is signed in but has no Owner or Moderator role.",
+    "linkGoogle": "Reconnect Google account", "googleLinked": "Google account reconnected. Sign in with the password again.",
     "bootstrap": "Activate initial Owner", "bootstrapSuccess": "Owner access activated. Refreshing credentials."
   },
   "nav": {
@@ -71,6 +72,6 @@
   },
   "errors": {
     "signIn": "Sign-in failed. Check the email and password.", "permission": "This account cannot perform that action.",
-    "load": "Data could not be loaded. Try again shortly.", "save": "The action failed. Try again shortly.", "session": "Sign-in succeeded, but the administrator session could not be verified. Try again shortly.", "bootstrap": "Owner activation failed. Confirm this UID is configured as the bootstrap account."
+    "load": "Data could not be loaded. Try again shortly.", "save": "The action failed. Try again shortly.", "session": "Sign-in succeeded, but the administrator session could not be verified. Try again shortly.", "googleLink": "The Google account could not be linked. Select the account with the same email address.", "bootstrap": "Owner activation failed. Confirm this UID is configured as the bootstrap account."
   }
 }

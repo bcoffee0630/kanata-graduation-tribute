@@ -725,10 +725,22 @@ export const bootstrapOwner = onCall(CALLABLE_OPTIONS, async (request) => {
     throw new HttpsError('failed-precondition', 'Bootstrap requires an email/password account.');
   }
 
+  const user = await auth.getUser(requestAuth.uid);
+  const googleProvider = user.providerData.find((provider) => provider.providerId === 'google.com');
+  if (
+    !user.email ||
+    !googleProvider?.email ||
+    googleProvider.email.toLowerCase() !== user.email.toLowerCase()
+  ) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Bootstrap requires the matching Google account to remain linked.'
+    );
+  }
+
   const lockRef = db.collection('system').doc('bootstrap');
   const lock = await lockRef.get();
   if (lock.exists) throw new HttpsError('already-exists', 'Owner bootstrap is already complete.');
-  const user = await auth.getUser(requestAuth.uid);
   await auth.setCustomUserClaims(user.uid, {
     ...(user.customClaims || {}),
     adminRole: 'owner',

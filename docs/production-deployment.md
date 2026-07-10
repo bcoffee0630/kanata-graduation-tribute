@@ -238,7 +238,7 @@ npm run deploy:production -- \
   --release-tag <release-tag>
 ```
 
-2. 建立不輸出、不記錄的隨機臨時 password credential：
+2. 建立不輸出、不記錄的隨機臨時 password credential。工具會在更新後確認原有 `google.com` provider 仍存在；若 Firebase 在設定 password 時移除它，工具會使用更新前已驗證的 provider UID 立即重新連結並再次核對，兩個 provider 未同時存在即失敗：
 
 ```bash
 node scripts/prepare-production-owner.mjs \
@@ -248,14 +248,15 @@ node scripts/prepare-production-owner.mjs \
   --confirm-owner-credential prepare
 ```
 
-3. 從後台申請重設信，在 Firebase 原生 action handler 完成密碼重設並返回後台後，以 Password provider 登入並執行一次 bootstrap。
-4. 將 `functions/.env.kanata-memorial` 改為空值：
+3. 從後台申請重設信，在 Firebase 原生 action handler 完成密碼重設後，開啟 `https://admin.eienkanata.com/?bootstrap=1`。若畫面要求恢復 Google 連結，必須選擇與 Owner Email 相同的 Google 帳號；完成後重新以 Password provider 登入，再執行一次 bootstrap。一般 `/` 入口會將尚無角色的帳號登出，不能用於初始 bootstrap。
+4. `bootstrapOwner` 除了核對固定 UID 與 Password session，也會從 Auth user record 確認同 Email 的 `google.com` provider 已連結；任一條件不符都不建立 claims、管理員文件或 bootstrap lock。
+5. 將 `functions/.env.kanata-memorial` 改為空值：
 
 ```dotenv
 BOOTSTRAP_OWNER_UID=
 ```
 
-5. 立即重新部署 bootstrap Function：
+6. 立即重新部署 bootstrap Function：
 
 ```bash
 npm run deploy:production -- \
@@ -265,7 +266,7 @@ npm run deploy:production -- \
   --release-tag <release-tag>
 ```
 
-6. 重跑 backend verification，確認遠端 bootstrap Function 已沒有 Owner UID：
+7. 重跑 backend verification，確認遠端 bootstrap Function 已沒有 Owner UID：
 
 ```bash
 npm run verify:production:backend -- \
@@ -276,7 +277,7 @@ npm run verify:production:backend -- \
 ```
 
 再於公開站仍為 maintenance 時，驗證 Owner-Password 可管理、同 UID Owner-Google 被拒絕、隱藏資料不可公開讀、Storage 原圖不可直讀、media proxy 正常、所有管理操作有 audit log。
-7. 上述驗收通過後才發布 Public live target；部署成功後腳本才解除後端維護鎖：
+8. 上述驗收通過後才發布 Public live target；部署成功後腳本才解除後端維護鎖：
 
 ```bash
 npm run deploy:production -- \
@@ -286,7 +287,7 @@ npm run deploy:production -- \
   --release-tag <release-tag>
 ```
 
-8. 開站後立即驗證一般用戶 Google／GitHub 登入、投稿、創作與舉報；保留 release tag、backup、舊 Hosting version 與 Rules release，觀察至少 24 小時。
+9. 開站後立即驗證一般用戶 Google／GitHub 登入、投稿、創作與舉報；保留 release tag、backup、舊 Hosting version 與 Rules release，觀察至少 24 小時。
 
 ## 回滾
 

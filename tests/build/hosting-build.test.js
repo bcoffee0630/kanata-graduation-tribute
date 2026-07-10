@@ -173,6 +173,24 @@ describe('production Hosting allowlists', () => {
     expect(authConfiguration).toContain('useCustomDomain !== true');
   });
 
+  it('preserves the Owner Google provider and requires it for bootstrap', () => {
+    const ownerPreparation = readFileSync('scripts/prepare-production-owner.mjs', 'utf8');
+    const adminBackend = readFileSync('functions/src/admin.ts', 'utf8');
+    const adminFrontend = readFileSync('admin/admin-app.js', 'utf8');
+    expect(ownerPreparation).toContain("providerToLink: {");
+    expect(ownerPreparation).toContain("providerId: 'google.com'");
+    expect(ownerPreparation).toContain('googleProvider.uid');
+    expect(ownerPreparation).toContain(
+      'The Owner password and Google providers could not both be verified after preparation.'
+    );
+    expect(adminBackend).toContain(
+      "user.providerData.find((provider) => provider.providerId === 'google.com')"
+    );
+    expect(adminBackend).toContain('Bootstrap requires the matching Google account to remain linked.');
+    expect(adminFrontend).toContain('user.linkWithPopup(provider)');
+    expect(adminFrontend).toContain("linkedUser.unlink('google.com')");
+  });
+
   it('refuses production Owner credential changes without a separate confirmation', () => {
     const result = spawnSync('node', ['scripts/prepare-production-owner.mjs'], { encoding: 'utf8' });
     expect(result.status).not.toBe(0);

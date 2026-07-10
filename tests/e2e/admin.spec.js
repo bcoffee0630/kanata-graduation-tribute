@@ -150,3 +150,28 @@ test('administrator resets a password through the custom action handler', async 
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('heading', { name: '治理總覽' })).toBeVisible();
 });
+
+test('initial Owner must restore Google before bootstrap is offered', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'Desktop bootstrap workflow assertion');
+  await getAuth().updateUser(owner.uid, { password: owner.password });
+  await getAuth().setCustomUserClaims(owner.uid, {});
+  await getFirestore().collection('adminAccounts').doc(owner.uid).delete();
+
+  await page.goto('/admin/?bootstrap=1');
+  await page.getByLabel('電子郵件').fill(owner.email);
+  await page.getByLabel('密碼').fill(owner.password);
+  await page.getByRole('button', { name: '登入' }).click();
+
+  await expect(page.getByRole('button', { name: '重新連結 Google 帳號' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '啟用第一位 Owner' })).toBeHidden();
+
+  await getAuth().updateUser(owner.uid, {
+    providerToLink: { providerId: 'google.com', uid: 'owner-google-e2e', email: owner.email }
+  });
+  await page.getByRole('button', { name: '登出' }).click();
+  await page.getByLabel('電子郵件').fill(owner.email);
+  await page.getByLabel('密碼').fill(owner.password);
+  await page.getByRole('button', { name: '登入' }).click();
+  await expect(page.getByRole('button', { name: '重新連結 Google 帳號' })).toBeHidden();
+  await expect(page.getByRole('button', { name: '啟用第一位 Owner' })).toBeVisible();
+});
