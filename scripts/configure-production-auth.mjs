@@ -5,7 +5,7 @@ import { requireProductionReleaseTag } from './production-release-guard.mjs';
 const PROJECT = 'kanata-memorial';
 const ADMIN_DOMAIN = 'admin.eienkanata.com';
 const PUBLIC_DOMAIN = 'eienkanata.com';
-const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action/`;
+const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action`;
 const MAIL_DOMAIN = 'auth.eienkanata.com';
 const SENDER_DISPLAY_NAME = 'eienkanata.com';
 const SENDER_LOCAL_PART = 'noreply';

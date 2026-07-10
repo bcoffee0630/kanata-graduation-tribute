@@ -155,7 +155,7 @@ describe('production Hosting allowlists', () => {
   it('pins the production email action URL and verifies the custom sender', () => {
     const authConfiguration = readFileSync('scripts/configure-production-auth.mjs', 'utf8');
     expect(authConfiguration).toContain("const PUBLIC_DOMAIN = 'eienkanata.com';");
-    expect(authConfiguration).toContain("const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action/`;");
+    expect(authConfiguration).toContain("const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action`;");
     expect(authConfiguration).toContain('notification.sendEmail.callbackUri');
     expect(authConfiguration).toContain("const MAIL_DOMAIN = 'auth.eienkanata.com';");
     expect(authConfiguration).toContain("const SENDER_DISPLAY_NAME = 'eienkanata.com';");
