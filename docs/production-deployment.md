@@ -69,7 +69,7 @@ git tag -a governance-production-YYYYMMDDTHHMMSSZ -m "Production governance rele
 4. 依 manifest 新增 DNS 紀錄；保留既有 apex `hosting-site=kanata-memorial` TXT，不替換或刪除任何既有紀錄。
 5. 等待 Hosting 狀態為 `Connected`，並確認 SSL 憑證有效後才繼續。
 6. 在 Auth Templates 將寄件網域設為 `auth.eienkanata.com`，新增 Firebase 指定的 TXT/CNAME/SPF/DKIM；另新增 `_dmarc.auth.eienkanata.com` TXT：`v=DMARC1; p=none`。
-7. 驗證完成後才套用自訂寄件網域；sender 設為 `noreply@auth.eienkanata.com`，顯示名稱為 `eienkanata.com`。Firebase Auth 只接受 default Hosting site 且不含尾斜線的 email callback，因此 Password reset action URL 使用 `https://eienkanata.com/auth/action`；Hosting 先原樣保留查詢參數導向 `/auth/action/`，public 與 maintenance 的 no-store bridge page 再導向 `https://admin.eienkanata.com/auth/action/`。不得修改既有 Google/GitHub OAuth provider。
+7. 驗證完成後才套用自訂寄件網域；sender 設為 `noreply@auth.eienkanata.com`，顯示名稱為 `eienkanata.com`。此 Firebase Auth 專案對所有已測試的 custom callback URL 都回覆 `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`，因此保留 Firebase 原生 action handler `https://kanata-memorial.firebaseapp.com/__/auth/action`，並在重設信帶入 `continueUrl=https://admin.eienkanata.com/`。Admin Hosting 仍保留 `/auth/action/` 頁面供未來可用時接線，目前 Firebase 不會導向該頁。不得修改既有 Google/GitHub OAuth provider。
 8. 將 Firebase Console 顯示的完整郵件 TXT/CNAME 記錄寫入本機 `.production-mail-dns.json`（格式見空值 example），再執行只讀驗證：
 
 ```bash
@@ -101,7 +101,7 @@ npm run configure:production:auth -- \
   --apply
 ```
 
-Apply 先透過 Identity Toolkit `domain:verify` 要求 `auth.eienkanata.com` 驗證為 `SUCCEEDED`，隨即執行 `APPLY`。接著只啟用 Email/Password、加入 Admin domains、設定 `https://eienkanata.com/auth/action`、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。它也會回讀確認自訂寄件網域、`eienkanata.com <noreply@auth.eienkanata.com>` 與 Google/GitHub provider 均未偏離。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
+Apply 先透過 Identity Toolkit `domain:verify` 要求 `auth.eienkanata.com` 驗證為 `SUCCEEDED`，隨即執行 `APPLY`。接著只啟用 Email/Password、加入 Admin domains、保留 email enumeration protection，並強制 12–128 字元且含大小寫、數字及符號的 server-side password policy。它不修改 callback，且會回讀要求 Firebase 原生 action handler 仍為 `https://kanata-memorial.firebaseapp.com/__/auth/action`，同時確認自訂寄件網域、`eienkanata.com <noreply@auth.eienkanata.com>` 與 Google/GitHub provider 均未偏離。管理 API、Firestore Rules 與 Storage Rules 仍要求 `firebase.sign_in_provider == "password"`；同 UID 的 Google session 不具管理權。
 
 Email/Password provider 可能被外部直接呼叫 signup API；不能開啟全域 `disabledUserSignup`，否則新的公開 Google/GitHub 使用者也會被阻擋。因此 `submitMessage`、創作 upload/finalize 與 `submitReport` 只接受 `google.com` 或 `github.com` token。Password-only 帳號即使自行建立，也不能投稿、上傳或站內舉報；只有具有效 admin claims 與 `adminAccounts` 文件的 Password session 能使用管理 API。
 
@@ -169,7 +169,7 @@ npm run deploy:production -- \
 ```
 
 6. 驗證 preview 的 `/`、`/auth/action/`、production Firebase project ID、security headers，以及 `.git`、env、Functions、Rules、scripts、tests、package 檔均為 404。
-7. 為了讓 Firebase 驗證自訂 email action handler，先發布隔離的 Admin Hosting 第一個 live 版本；此階段不發布 public live、不改 Rules、Functions 或資料：
+7. 先發布隔離的 Admin Hosting 第一個 live 版本；此階段不發布 public live、不改 Rules、Functions 或資料：
 
 ```bash
 npm run deploy:production -- \
@@ -180,7 +180,7 @@ npm run deploy:production -- \
 ```
 
 8. 驗證 `admin.eienkanata.com` 的 `/`、`/auth/action/`、security headers 與敏感路徑，再將完整 preview hostname 傳給上一節 Auth apply；禁止猜測或只加入基本 `web.app` domain。
-9. 建立兩個臨時 Gmail plus-address Auth 帳號並寄送第一輪 reset mail；此時 callback 尚未切換，只驗證 From、SPF、DKIM、DMARC alignment 與 Spam 分類。兩封都必須進 Inbox 且三項驗證皆 `pass`，否則停止；帳號保留到維護模式中的第二輪 action-link 驗證完成後再刪除。
+9. 建立兩個臨時 Gmail plus-address Auth 帳號並各寄送一封 reset mail。兩封都必須進 Inbox，From 為 `eienkanata.com <noreply@auth.eienkanata.com>`，SPF、DKIM、DMARC alignment 皆為 `pass`，連結必須使用 Firebase 原生 action handler 並帶入 `continueUrl=https://admin.eienkanata.com/`。任一項不符即停止；驗證完成後刪除兩個測試 Auth 帳號。
 
 ## Maintenance 與資料遷移
 
@@ -198,7 +198,7 @@ npm run deploy:production -- \
 
 `maintenance` phase 會先以 ADC 寫入不可由客戶端修改的 `system/maintenance` 鎖，再發布 Hosting 與 temporary Rules；公開投稿、upload/finalize 與站內舉報 Functions 也會回 `UNAVAILABLE`。`release` phase 只有在最終 Public Hosting 部署成功後才解除該鎖；解除失敗時網站維持唯讀並讓指令失敗。
 
-Maintenance Hosting 已包含 `https://eienkanata.com/auth/action/` bridge。發布後先執行上一節 Auth apply，再對同兩個 plus-address 帳號寄送第二輪 reset mail；除了 SPF/DKIM/DMARC 與 Inbox 外，郵件中的 link host 必須是 `eienkanata.com`，實際開啟後必須原樣保留 `mode`、`oobCode`、`apiKey`、`continueUrl`、`lang` 並抵達 `admin.eienkanata.com/auth/action/`。完成後刪除兩個測試 Auth 帳號。任何一項失敗都保持 maintenance，不執行 final backup 或 migration。
+郵件驗收與 Auth apply 必須在進入 maintenance 前完成。Public 與 maintenance Hosting 不提供 email action bridge；所有密碼動作由已驗證的 Firebase 原生 handler 處理，完成後依 `continueUrl` 返回 Admin Hosting。若 callback、寄件網域或驗證結果偏離，保持 maintenance，不執行 final backup 或 migration。
 
 ```bash
 npm run backup:production -- \
@@ -248,7 +248,7 @@ node scripts/prepare-production-owner.mjs \
   --confirm-owner-credential prepare
 ```
 
-3. 從後台申請重設信，完成自訂 action page 後，以 Password provider 登入並執行一次 bootstrap。
+3. 從後台申請重設信，在 Firebase 原生 action handler 完成密碼重設並返回後台後，以 Password provider 登入並執行一次 bootstrap。
 4. 將 `functions/.env.kanata-memorial` 改為空值：
 
 ```dotenv

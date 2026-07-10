@@ -101,7 +101,7 @@ function buildPreview() {
 function buildPublic() {
   const output = prepareOutput('.hosting-public');
   for (const file of ['404.html', 'index.html', 'shooting-star.png']) copyRequired(output, file);
-  for (const directory of ['assets', 'auth', 'images']) copyRequired(output, directory);
+  for (const directory of ['assets', 'images']) copyRequired(output, directory);
   return { name: basename(output), files: assertSafeOutput(output) };
 }
 
@@ -118,7 +118,6 @@ function buildMaintenance() {
   const output = prepareOutput('.hosting-maintenance');
   copyRequired(output, 'index-maintenance.html', 'index.html');
   copyRequired(output, 'shooting-star.png');
-  copyRequired(output, 'auth');
   copyRequired(output, 'images/kanata-header.png');
   return { name: basename(output), files: assertSafeOutput(output) };
 }

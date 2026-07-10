@@ -4,8 +4,8 @@ import { requireProductionReleaseTag } from './production-release-guard.mjs';
 
 const PROJECT = 'kanata-memorial';
 const ADMIN_DOMAIN = 'admin.eienkanata.com';
-const PUBLIC_DOMAIN = 'eienkanata.com';
-const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action`;
+const DEFAULT_ACTION_HANDLER_URL =
+  'https://kanata-memorial.firebaseapp.com/__/auth/action';
 const MAIL_DOMAIN = 'auth.eienkanata.com';
 const SENDER_DISPLAY_NAME = 'eienkanata.com';
 const SENDER_LOCAL_PART = 'noreply';
@@ -123,14 +123,11 @@ if (apply) {
     throw new Error('Custom mail domain application was not reflected in the Auth configuration.');
   }
 
-  await api('/config?updateMask=signIn.email,authorizedDomains,notification.sendEmail.callbackUri', {
+  await api('/config?updateMask=signIn.email,authorizedDomains', {
     method: 'PATCH',
     body: JSON.stringify({
       signIn: { email: { enabled: true, passwordRequired: true } },
-      authorizedDomains: desiredDomains,
-      notification: {
-        sendEmail: { callbackUri: ACTION_HANDLER_URL }
-      }
+      authorizedDomains: desiredDomains
     })
   });
   await auth.projectConfigManager().updateProjectConfig({
@@ -167,9 +164,11 @@ if (apply) {
     configAfter.signIn?.email?.enabled !== true ||
     configAfter.signIn?.email?.passwordRequired !== true ||
     !desiredDomains.every((domain) => configAfter.authorizedDomains?.includes(domain)) ||
-    configAfter.notification?.sendEmail?.callbackUri !== ACTION_HANDLER_URL
+    configAfter.notification?.sendEmail?.callbackUri !== DEFAULT_ACTION_HANDLER_URL
   ) {
-    throw new Error('Email/password, authorized-domain, or action URL verification failed after Auth configuration.');
+    throw new Error(
+      'Email/password, authorized-domain, or default action-handler verification failed after Auth configuration.'
+    );
   }
   const sendEmail = configAfter.notification?.sendEmail;
   if (
