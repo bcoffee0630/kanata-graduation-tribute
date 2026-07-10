@@ -4,7 +4,8 @@ import { requireProductionReleaseTag } from './production-release-guard.mjs';
 
 const PROJECT = 'kanata-memorial';
 const ADMIN_DOMAIN = 'admin.eienkanata.com';
-const ACTION_HANDLER_URL = `https://${ADMIN_DOMAIN}/auth/action/`;
+const PUBLIC_DOMAIN = 'eienkanata.com';
+const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action/`;
 const MAIL_DOMAIN = 'auth.eienkanata.com';
 const SENDER_DISPLAY_NAME = 'eienkanata.com';
 const SENDER_LOCAL_PART = 'noreply';
@@ -105,18 +106,15 @@ if (apply) {
     );
   }
 
-  const currentDnsInfo = config.notification?.sendEmail?.dnsInfo;
-  if (currentDnsInfo?.customDomain !== MAIL_DOMAIN || currentDnsInfo?.useCustomDomain !== true) {
-    const domainApplication = await api('/domain:verify', {
-      method: 'POST',
-      body: JSON.stringify({ domain: MAIL_DOMAIN, action: 'APPLY' })
-    });
-    if (domainApplication.verificationState !== 'SUCCEEDED') {
-      throw new Error(
-        `Custom mail domain application did not succeed: ` +
-        `${domainApplication.verificationError || domainApplication.verificationState}.`
-      );
-    }
+  const domainApplication = await api('/domain:verify', {
+    method: 'POST',
+    body: JSON.stringify({ domain: MAIL_DOMAIN, action: 'APPLY' })
+  });
+  if (domainApplication.verificationState !== 'SUCCEEDED') {
+    throw new Error(
+      `Custom mail domain application did not succeed: ` +
+      `${domainApplication.verificationError || domainApplication.verificationState}.`
+    );
   }
 
   await api('/config?updateMask=signIn.email,authorizedDomains,notification.sendEmail.callbackUri', {

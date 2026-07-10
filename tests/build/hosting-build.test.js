@@ -35,12 +35,14 @@ describe('production Hosting allowlists', () => {
 
     expect(existsSync('.hosting-public/index.html')).toBe(true);
     expect(existsSync('.hosting-public/admin/index.html')).toBe(false);
+    expect(existsSync('.hosting-public/auth/action/index.html')).toBe(true);
     expect(existsSync('.hosting-admin/index.html')).toBe(true);
     expect(existsSync('.hosting-admin/auth/action/index.html')).toBe(true);
     expect(existsSync('.hosting-admin/assets/js/firebase-init.js')).toBe(true);
     expect(existsSync('.hosting-admin/vendor/lucide.min.js')).toBe(true);
     expect(existsSync('.hosting-admin/vendor/LUCIDE-LICENSE.txt')).toBe(true);
     expect(existsSync('.hosting-maintenance/index.html')).toBe(true);
+    expect(existsSync('.hosting-maintenance/auth/action/index.html')).toBe(true);
     expect(readFileSync('.hosting-admin/index.html', 'utf8')).toContain('治理中心');
     expect(readFileSync('.hosting-maintenance/index.html', 'utf8')).toContain('noindex');
 
@@ -152,7 +154,8 @@ describe('production Hosting allowlists', () => {
 
   it('pins the production email action URL and verifies the custom sender', () => {
     const authConfiguration = readFileSync('scripts/configure-production-auth.mjs', 'utf8');
-    expect(authConfiguration).toContain("const ACTION_HANDLER_URL = `https://${ADMIN_DOMAIN}/auth/action/`;");
+    expect(authConfiguration).toContain("const PUBLIC_DOMAIN = 'eienkanata.com';");
+    expect(authConfiguration).toContain("const ACTION_HANDLER_URL = `https://${PUBLIC_DOMAIN}/auth/action/`;");
     expect(authConfiguration).toContain('notification.sendEmail.callbackUri');
     expect(authConfiguration).toContain("const MAIL_DOMAIN = 'auth.eienkanata.com';");
     expect(authConfiguration).toContain("const SENDER_DISPLAY_NAME = 'eienkanata.com';");
@@ -160,6 +163,7 @@ describe('production Hosting allowlists', () => {
     expect(authConfiguration).toContain("payload?.error?.message || 'No error detail was returned.'");
     expect(authConfiguration).toContain("api('/domain:verify'");
     expect(authConfiguration).toContain("action: 'VERIFY'");
+    expect(authConfiguration).toContain("action: 'APPLY'");
     expect(authConfiguration).toContain("mailDomainVerificationState !== 'SUCCEEDED'");
   });
 
@@ -230,6 +234,21 @@ describe('production Hosting allowlists', () => {
     });
     expect(config.hosting.every((site) => site.rewrites?.[0]?.source === '/api/fanart-media')).toBe(true);
     expect(maintenance.hosting[0].rewrites?.[0]?.source).toBe('/api/fanart-media');
+    expect(config.hosting.every((site) => site.redirects === undefined)).toBe(true);
+    expect(maintenance.hosting[0].redirects).toBeUndefined();
+    const redirectScript = readFileSync('auth/action/redirect.js', 'utf8');
+    let redirectedTo = '';
+    Function('window', redirectScript)({
+      location: {
+        search: '?mode=resetPassword&oobCode=test-code&continueUrl=https%3A%2F%2Fadmin.eienkanata.com%2F',
+        hash: '#test',
+        replace: (value) => { redirectedTo = value; }
+      }
+    });
+    expect(redirectedTo).toBe(
+      'https://admin.eienkanata.com/auth/action/?mode=resetPassword&' +
+      'oobCode=test-code&continueUrl=https%3A%2F%2Fadmin.eienkanata.com%2F#test'
+    );
     const adminHeaders = config.hosting[1].headers[0].headers;
     const csp = adminHeaders.find((header) => header.key === 'Content-Security-Policy')?.value;
     expect(csp).toContain("frame-ancestors 'none'");
