@@ -232,6 +232,7 @@ describe('production Hosting allowlists', () => {
     const backendVerification = readFileSync('scripts/verify-production-backend.mjs', 'utf8');
     expect(backendVerification).toContain("buildConfig?.runtime !== 'nodejs22'");
     expect(backendVerification).toContain("['enabled', 'disabled'].includes(expectedBootstrapState)");
+    expect(backendVerification).not.toContain('/indexes?pageSize=');
     expect(backendVerification).not.toContain('deployedBootstrapUid,');
   });
 });

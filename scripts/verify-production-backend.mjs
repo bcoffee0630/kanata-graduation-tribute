@@ -57,7 +57,10 @@ const headers = {
 
 async function api(url, options = {}) {
   const response = await fetch(url, { headers, ...options });
-  if (!response.ok) throw new Error(`Production backend verification request failed (${response.status}).`);
+  if (!response.ok) {
+    const path = new URL(url).pathname;
+    throw new Error(`Production backend verification request failed (${response.status}) for ${path}.`);
+  }
   return response.json();
 }
 
@@ -182,7 +185,7 @@ const deployedIndexes = [];
 for (const collectionGroup of [...new Set(expectedIndexes.map((index) => index.collectionGroup))]) {
   const payload = await api(
     `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/collectionGroups/` +
-    `${encodeURIComponent(collectionGroup)}/indexes?pageSize=100`
+    `${encodeURIComponent(collectionGroup)}/indexes`
   );
   deployedIndexes.push(...(payload.indexes || []).map((index) => ({
     ...index,
