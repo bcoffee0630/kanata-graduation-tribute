@@ -1,0 +1,2 @@
+# Firebase Web API keys are public client identifiers. This local file is Git-ignored and Hosting-excluded.
+assets/js/firebase-config.js:gcp-api-key:4

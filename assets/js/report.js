@@ -1,258 +1,216 @@
 /**
- * Report Module
- * 檢舉模組 - 透過 GitHub Issue 檢舉不當內容
- * 自動隱藏功能 - 被檢舉 3 次後自動隱藏
+ * Authenticated reports are stored privately for administrator review.
+ * Anonymous visitors keep the existing GitHub Issue fallback.
  */
 
 const Report = {
-    // GitHub repo info
     repoOwner: 'bcoffee0630',
     repoName: 'kanata-graduation-tribute',
+    selected: null,
+    isSubmitting: false,
 
-    // Firebase project ID for console links
-    firebaseProjectId: 'kanata-memorial',
-
-    init() {
-        this.setupEventListeners();
+    copy: {
+        'ja': {
+            title: 'コンテンツを報告', reason: '報告理由', choose: '選択してください',
+            inappropriate: '不適切なコンテンツ', spam: 'スパム', copyright: '著作権侵害',
+            harassment: 'ハラスメント', other: 'その他', details: '詳細説明',
+            privacy: '報告内容とアカウント情報は管理者のみ確認できます。', cancel: 'キャンセル',
+            submit: '報告を送信', submitting: '送信中...', success: '報告を受け付けました。',
+            autoHidden: '報告を受け付け、コンテンツを審査のため一時非表示にしました。',
+            duplicate: 'このコンテンツはすでに報告済みです。', own: '自分の投稿は報告できません。',
+            restricted: 'このアカウントは現在報告できません。', error: '報告を送信できませんでした。',
+            maintenance: 'メンテナンス中のため、現在は報告できません。',
+            message: 'メッセージ', fanart: 'ファンアート'
+        },
+        'zh-TW': {
+            title: '檢舉內容', reason: '檢舉原因', choose: '請選擇',
+            inappropriate: '不當內容', spam: '垃圾訊息', copyright: '侵犯版權',
+            harassment: '騷擾', other: '其他', details: '詳細說明',
+            privacy: '檢舉內容與帳號資訊僅供管理員查閱。', cancel: '取消',
+            submit: '送出檢舉', submitting: '送出中...', success: '已收到您的檢舉。',
+            autoHidden: '已收到檢舉，內容已暫時隱藏並送交管理員審查。',
+            duplicate: '您已檢舉過此內容。', own: '無法檢舉自己的投稿。',
+            restricted: '此帳號目前無法送出檢舉。', maintenance: '網站維護中，目前無法送出檢舉。',
+            error: '無法送出檢舉。', message: '留言', fanart: '創作'
+        },
+        'en': {
+            title: 'Report content', reason: 'Report reason', choose: 'Choose a reason',
+            inappropriate: 'Inappropriate content', spam: 'Spam', copyright: 'Copyright infringement',
+            harassment: 'Harassment', other: 'Other', details: 'Additional details',
+            privacy: 'Only administrators can view your report and account information.', cancel: 'Cancel',
+            submit: 'Submit report', submitting: 'Submitting...', success: 'Your report was submitted.',
+            autoHidden: 'Your report was submitted and the content was temporarily hidden for review.',
+            duplicate: 'You already reported this content.', own: 'You cannot report your own content.',
+            restricted: 'This account cannot submit reports right now.',
+            maintenance: 'The site is under maintenance and is temporarily read-only.',
+            error: 'The report could not be submitted.',
+            message: 'Message', fanart: 'Fan art'
+        }
     },
 
-    setupEventListeners() {
-        // Delegate click events for report buttons
-        document.addEventListener('click', async (e) => {
-            const reportBtn = e.target.closest('.report-btn');
-            if (reportBtn) {
-                const contentId = reportBtn.dataset.contentId;
-                const contentType = reportBtn.dataset.contentType;
-                await this.handleReport(contentId, contentType);
+    init() {
+        document.addEventListener('click', (event) => {
+            const reportButton = event.target.closest('.report-btn');
+            if (reportButton) {
+                this.handleReport(reportButton.dataset.contentId, reportButton.dataset.contentType);
             }
+
+            if (event.target.closest('.report-modal-close')) this.closeModal();
+            if (event.target.id === 'report-modal') this.closeModal();
         });
+
+        document.getElementById('report-form')?.addEventListener('submit', (event) => {
+            this.submit(event);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') this.closeModal();
+        });
+        window.addEventListener('languageChanged', () => this.applyModalLanguage());
+        this.applyModalLanguage();
+    },
+
+    language() {
+        return (typeof i18n !== 'undefined' && i18n.currentLang) || 'en';
+    },
+
+    labels() {
+        return this.copy[this.language()] || this.copy.en;
+    },
+
+    applyModalLanguage() {
+        const labels = this.labels();
+        const setText = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        };
+        setText('report-modal-title', labels.title);
+        setText('report-reason-label', labels.reason);
+        setText('report-details-label', labels.details);
+        setText('report-privacy-note', labels.privacy);
+        setText('report-submit', labels.submit);
+        const cancel = document.querySelector('#report-modal .secondary-btn');
+        if (cancel) cancel.textContent = labels.cancel;
+        const close = document.querySelector('#report-modal .modal-header .report-modal-close');
+        if (close) close.setAttribute('aria-label', labels.cancel);
+
+        const reason = document.getElementById('report-reason');
+        if (reason) {
+            const optionKeys = ['choose', 'inappropriate', 'spam', 'copyright', 'harassment', 'other'];
+            [...reason.options].forEach((option, index) => {
+                option.textContent = labels[optionKeys[index]] || option.textContent;
+            });
+        }
+        if (this.selected) this.updateTargetLabel();
     },
 
     async handleReport(contentId, contentType) {
-        if (!contentId || !contentType) {
-            console.error('Missing content ID or type');
+        if (!contentId || !['message', 'fanart'].includes(contentType)) return;
+        const user = window.FirebaseApp?.getAuth()?.currentUser;
+        if (!user) {
+            this.openGitHubFallback(contentId, contentType);
             return;
         }
 
-        // Check if user is logged in
-        const user = firebase.auth?.()?.currentUser;
-        if (!user) {
-            // Not logged in - just open the GitHub Issue
-            this.openReport(contentId, contentType, null);
-            return;
-        }
+        this.selected = { contentId, contentType };
+        this.updateTargetLabel();
+        const modal = document.getElementById('report-modal');
+        modal?.classList.add('active');
+        modal?.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('report-reason')?.focus();
+    },
+
+    updateTargetLabel() {
+        if (!this.selected) return;
+        const labels = this.labels();
+        const typeLabel = this.selected.contentType === 'message' ? labels.message : labels.fanart;
+        const target = document.getElementById('report-target-label');
+        if (target) target.textContent = `${typeLabel} · ${this.selected.contentId}`;
+    },
+
+    closeModal() {
+        const modal = document.getElementById('report-modal');
+        if (!modal?.classList.contains('active')) return;
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        document.getElementById('report-form')?.reset();
+        this.selected = null;
+    },
+
+    async submit(event) {
+        event.preventDefault();
+        if (!this.selected || this.isSubmitting) return;
+        const labels = this.labels();
+        const submitButton = document.getElementById('report-submit');
+        const reason = document.getElementById('report-reason')?.value || '';
+        const details = document.getElementById('report-details')?.value.trim() || '';
+
+        this.isSubmitting = true;
+        submitButton.disabled = true;
+        submitButton.textContent = labels.submitting;
 
         try {
-            const db = window.FirebaseApp?.getDb();
-            if (!db) {
-                // No Firestore - just open the GitHub Issue
-                this.openReport(contentId, contentType, null);
-                return;
-            }
-
-            const collectionName = contentType === 'message' ? 'messages' : 'fanart';
-            const docRef = db.collection(collectionName).doc(contentId);
-            const doc = await docRef.get();
-
-            if (!doc.exists) {
-                console.error('Content not found');
-                return;
-            }
-
-            const data = doc.data();
-
-            // Check if user already reported this content
-            if (data.reportedBy && data.reportedBy.includes(user.uid)) {
-                const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
-                const messages = {
-                    'ja': 'すでにこのコンテンツを報告しています',
-                    'zh-TW': '您已經檢舉過此內容',
-                    'en': 'You have already reported this content'
-                };
-                alert(messages[lang] || messages['en']);
-                return;
-            }
-
-            // Update report count and add user to reportedBy
-            const currentCount = data.reportCount || 0;
-            const newCount = currentCount + 1;
-            const shouldHide = newCount >= 3;
-
-            await docRef.update({
-                reportCount: firebase.firestore.FieldValue.increment(1),
-                reportedBy: firebase.firestore.FieldValue.arrayUnion(user.uid),
-                hidden: shouldHide
+            const submitReport = window.FirebaseApp.getFunctions().httpsCallable('submitReport');
+            const result = await submitReport({
+                contentId: this.selected.contentId,
+                contentType: this.selected.contentType,
+                reason,
+                details
             });
-
-            // Open GitHub Issue with content details
-            this.openReport(contentId, contentType, data);
-
-            // Show confirmation
-            const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
-            const confirmMessages = {
-                'ja': '報告を受け付けました。ご協力ありがとうございます。',
-                'zh-TW': '已收到您的檢舉。感謝您的協助。',
-                'en': 'Report submitted. Thank you for your help.'
-            };
-            alert(confirmMessages[lang] || confirmMessages['en']);
-
+            const message = result.data.autoHidden ? labels.autoHidden : labels.success;
+            if (window.Toast) Toast.success(message); else alert(message);
+            this.closeModal();
         } catch (error) {
-            console.error('Failed to submit report:', error);
-            // Still open GitHub Issue even if Firestore update fails
-            this.openReport(contentId, contentType, null);
+            const code = String(error.code || '');
+            let message = labels.error;
+            if (code.includes('already-exists')) message = labels.duplicate;
+            if (code.includes('failed-precondition') && String(error.message).includes('own')) message = labels.own;
+            if (code.includes('permission-denied')) message = labels.restricted;
+            if (code.includes('unavailable')) message = labels.maintenance;
+            if (window.Toast) Toast.error(message); else alert(message);
+            console.error('Report submission failed:', error);
+        } finally {
+            this.isSubmitting = false;
+            submitButton.disabled = false;
+            submitButton.textContent = labels.submit;
         }
     },
 
-    openReport(contentId, contentType, contentData) {
-        // Build GitHub Issue URL with pre-filled template
-        const issueTitle = encodeURIComponent(
-            `[Report] ${contentType === 'message' ? 'Message' : 'Fan Art'} - ${contentId}`
+    openGitHubFallback(contentId, contentType) {
+        const typeLabel = contentType === 'message' ? 'Message' : 'Fan Art';
+        const projectId = window.FirebaseApp?.getProjectId?.() || 'kanata-memorial';
+        const collection = contentType === 'message' ? 'messages' : 'fanart';
+        const consoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore/data/~2F${collection}~2F${contentId}`;
+        const title = encodeURIComponent(`[Report] ${typeLabel} - ${contentId}`);
+        const body = encodeURIComponent(
+            `## Report Details\n\n**Content ID:** \`${contentId}\`\n` +
+            `**Content Type:** ${typeLabel}\n\n` +
+            `### Firebase Console\n[View content](${consoleUrl})\n\n` +
+            `### Reason\n<!-- Please explain why you are reporting this content. -->\n`
         );
-
-        const issueBody = encodeURIComponent(this.buildIssueBody(contentId, contentType, contentData));
-
-        // Use specific labels for content type
-        const labels = `report:${contentType},report:pending`;
-
-        const issueUrl = `https://github.com/${this.repoOwner}/${this.repoName}/issues/new?` +
-            `title=${issueTitle}&body=${issueBody}&labels=${labels}`;
-
-        // Open in new tab
-        window.open(issueUrl, '_blank');
+        const labels = encodeURIComponent(`report:${contentType},report:pending`);
+        const url = `https://github.com/${this.repoOwner}/${this.repoName}/issues/new?title=${title}&body=${body}&labels=${labels}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
     },
 
-    buildIssueBody(contentId, contentType, contentData) {
-        const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
-        const collectionName = contentType === 'message' ? 'messages' : 'fanart';
-
-        // Firebase Console direct link
-        const consoleLink = `https://console.firebase.google.com/project/${this.firebaseProjectId}/firestore/data/~2F${collectionName}~2F${contentId}`;
-
-        // Content preview (if available)
-        let contentPreview = '';
-        if (contentData) {
-            if (contentType === 'message') {
-                contentPreview = contentData.content ? `> ${contentData.content.substring(0, 200)}${contentData.content.length > 200 ? '...' : ''}` : '';
-            } else {
-                contentPreview = contentData.caption ? `> ${contentData.caption.substring(0, 200)}${contentData.caption.length > 200 ? '...' : ''}` : '';
-            }
-        }
-
-        // Author info
-        const authorInfo = contentData?.author || 'Unknown';
-
-        const templates = {
-            'ja': `## 報告内容
-
-**コンテンツID:** \`${contentId}\`
-**コンテンツタイプ:** ${contentType === 'message' ? 'メッセージ' : 'ファンアート'}
-**投稿者:** ${authorInfo}
-
-### Firebase Console
-[コンテンツを確認](${consoleLink})
-
-### コンテンツプレビュー
-${contentPreview || '*プレビューなし*'}
-
----
-
-### 報告理由
-<!-- 以下から選択してください -->
-- [ ] 不適切なコンテンツ
-- [ ] スパム
-- [ ] 著作権侵害
-- [ ] その他
-
-### 詳細説明
-<!-- なぜこのコンテンツを報告するのか、詳しく説明してください -->
-
-
-
----
-*この Issue は自動生成されました*`,
-
-            'zh-TW': `## 檢舉內容
-
-**內容ID:** \`${contentId}\`
-**內容類型:** ${contentType === 'message' ? '留言' : '繪圖'}
-**投稿者:** ${authorInfo}
-
-### Firebase Console
-[查看內容](${consoleLink})
-
-### 內容預覽
-${contentPreview || '*無預覽*'}
-
----
-
-### 檢舉原因
-<!-- 請選擇適用的項目 -->
-- [ ] 不當內容
-- [ ] 垃圾訊息
-- [ ] 侵犯版權
-- [ ] 其他
-
-### 詳細說明
-<!-- 請說明為什麼要檢舉此內容 -->
-
-
-
----
-*此 Issue 由系統自動產生*`,
-
-            'en': `## Report Details
-
-**Content ID:** \`${contentId}\`
-**Content Type:** ${contentType === 'message' ? 'Message' : 'Fan Art'}
-**Author:** ${authorInfo}
-
-### Firebase Console
-[View Content](${consoleLink})
-
-### Content Preview
-${contentPreview || '*No preview available*'}
-
----
-
-### Reason for Report
-<!-- Please select applicable options -->
-- [ ] Inappropriate content
-- [ ] Spam
-- [ ] Copyright infringement
-- [ ] Other
-
-### Additional Details
-<!-- Please explain why you are reporting this content -->
-
-
-
----
-*This Issue was auto-generated*`
-        };
-
-        return templates[lang] || templates['en'];
+    escapeAttribute(value) {
+        return String(value).replace(/[&<>'"]/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[character]);
     },
 
-    // Create report button HTML
     createReportButton(contentId, contentType) {
-        const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'en';
-
-        const labels = {
-            'ja': '報告',
-            'zh-TW': '檢舉',
-            'en': 'Report'
-        };
-
-        return `<button class="report-btn" data-content-id="${contentId}" data-content-type="${contentType}" title="${labels[lang] || labels['en']}">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        const label = this.escapeAttribute(this.labels().title);
+        const safeContentId = this.escapeAttribute(contentId);
+        const safeContentType = this.escapeAttribute(contentType);
+        return `<button class="report-btn" data-content-id="${safeContentId}" data-content-type="${safeContentType}" title="${label}" aria-label="${label}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zM8 4a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 8 4z"/>
             </svg>
         </button>`;
     }
 };
 
-// Initialize
 Report.init();
-
-// Export
 window.Report = Report;

@@ -78,6 +78,8 @@ const Danmaku = {
 
             // Set up real-time listener
             this.unsubscribe = db.collection('messages')
+                .where('hidden', '==', false)
+                .where('deleted', '==', false)
                 .orderBy('createdAt', 'desc')
                 .limit(100)
                 .onSnapshot((snapshot) => {
@@ -365,6 +367,8 @@ const Danmaku = {
 
     // Update messages when language changes
     onLanguageChange() {
+        const reportButton = document.querySelector('.danmaku-report-btn');
+        if (reportButton) reportButton.title = this.getReportLabel();
         // Clear existing messages
         const trackContainer = this.container?.querySelector('.danmaku-tracks');
         if (trackContainer) {

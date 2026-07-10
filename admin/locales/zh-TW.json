@@ -1,0 +1,76 @@
+{
+  "brand": { "name": "天音彼方紀念站" },
+  "common": {
+    "loading": "載入中", "error": "發生錯誤", "retry": "重試", "none": "無", "unknown": "未知",
+    "cancel": "取消", "confirm": "確認", "close": "關閉", "search": "搜尋", "all": "全部",
+    "refresh": "重新整理", "loadMore": "載入更多", "saved": "已儲存", "yes": "是", "no": "否"
+  },
+  "auth": {
+    "title": "治理中心", "subtitle": "僅限獲授權的網站管理員使用", "email": "電子郵件", "password": "密碼",
+    "signIn": "登入", "signOut": "登出", "forgot": "忘記密碼", "resetTitle": "重設密碼",
+    "resetDescription": "系統會將密碼重設連結寄到此信箱。", "sendReset": "寄送重設信", "resetSent": "密碼重設信已寄出。"
+  },
+  "access": {
+    "title": "尚未取得管理權限", "description": "此帳號已登入，但沒有 Owner 或 Moderator 權限。",
+    "bootstrap": "啟用第一位 Owner", "bootstrapSuccess": "Owner 權限已啟用，正在重新整理登入憑證。"
+  },
+  "nav": {
+    "dashboard": "總覽", "reports": "舉報案件", "content": "投稿管理", "users": "用戶管理",
+    "admins": "管理員", "audit": "稽核紀錄", "site": "前往紀念網站", "collapse": "收合選單"
+  },
+  "dashboard": {
+    "title": "治理總覽", "subtitle": "掌握待審案件、內容處置與近期管理操作。",
+    "recentReports": "近期舉報案件", "recentAudit": "近期管理操作"
+  },
+  "metrics": {
+    "openReports": "待處理案件", "hiddenContent": "暫時隱藏", "mutedUsers": "禁言用戶", "bannedUsers": "封鎖用戶"
+  },
+  "reports": {
+    "title": "舉報案件", "subtitle": "審查站內舉報並記錄處理結果。", "statusFilter": "案件狀態",
+    "typeFilter": "內容類型", "caseDetails": "案件詳情", "reportReason": "舉報原因", "reporters": "舉報紀錄",
+    "target": "內容", "targetAuthor": "投稿者", "reportCount": "舉報數", "latestReport": "最近舉報",
+    "noReports": "目前沒有符合條件的舉報案件。", "startReview": "開始審查", "resolve": "標記已處理",
+    "dismiss": "駁回案件", "resolutionNote": "處理說明", "viewTarget": "查看內容",
+    "reasons": {
+      "inappropriate": "不當內容", "spam": "垃圾訊息", "copyright": "侵犯版權",
+      "harassment": "騷擾", "other": "其他", "legacy_unknown": "舊舉報（原因不明）", "unknown": "未知"
+    }
+  },
+  "content": {
+    "title": "投稿管理", "subtitle": "查看、隱藏、恢復或永久移除用戶投稿。", "messages": "留言", "fanart": "創作",
+    "visibility": "顯示狀態", "authorUid": "投稿者 UID", "dateFrom": "起始日期", "dateTo": "結束日期",
+    "content": "內容", "author": "投稿者", "createdAt": "投稿時間",
+    "reportCount": "舉報數", "noContent": "目前沒有符合條件的投稿。", "details": "投稿詳情",
+    "hide": "隱藏內容", "restore": "恢復內容", "remove": "永久移除", "reason": "處置原因",
+    "removeWarning": "此操作會清除留言內文或 Storage 圖片，且無法復原。"
+  },
+  "users": {
+    "title": "用戶管理", "subtitle": "使用完整 UID 或 Email 查詢帳號與投稿紀錄。", "searchPlaceholder": "輸入完整 UID 或 Email",
+    "user": "用戶", "providers": "登入來源", "lastSignIn": "最後登入", "restriction": "限制狀態", "noUsers": "找不到用戶。",
+    "details": "用戶詳情", "recentContent": "近期投稿", "mute": "期限禁言", "ban": "封鎖帳號", "clear": "解除限制",
+    "expiresAt": "禁言截止時間", "reason": "限制原因", "hideExisting": "同時隱藏該用戶既有投稿",
+    "restrictionSaved": "用戶限制已更新。"
+  },
+  "admins": {
+    "title": "管理員", "subtitle": "邀請管理員並維護 Owner／Moderator 權限。", "invite": "邀請管理員",
+    "name": "顯示名稱", "email": "Email", "role": "角色", "status": "狀態", "lastLogin": "最後登入",
+    "owner": "Owner", "moderator": "Moderator", "disable": "停用帳號", "enable": "啟用帳號",
+    "revoke": "撤銷工作階段", "reset": "寄送密碼重設信", "noAdmins": "尚未建立管理員。",
+    "inviteSent": "管理員已建立，密碼設定信已寄出。", "updated": "管理員設定已更新。"
+  },
+  "audit": {
+    "title": "稽核紀錄", "subtitle": "所有治理異動皆由後端建立，客戶端無法修改。", "action": "操作",
+    "actor": "操作者", "target": "目標", "reason": "原因", "createdAt": "時間", "noAudit": "尚無稽核紀錄。"
+  },
+  "table": { "status": "狀態", "content": "內容", "author": "投稿者", "count": "數量", "date": "時間", "actions": "操作" },
+  "actions": { "view": "查看", "viewUser": "查看用戶", "save": "儲存", "submit": "送出", "more": "更多" },
+  "status": {
+    "open": "待處理", "reviewing": "審查中", "resolved": "已處理", "dismissed": "已駁回",
+    "visible": "公開", "auto_hidden": "自動隱藏", "admin_hidden": "管理員隱藏", "removed": "已移除",
+    "active": "正常", "muted": "禁言", "banned": "封鎖", "disabled": "停用", "invited": "已邀請"
+  },
+  "errors": {
+    "signIn": "登入失敗，請確認帳號與密碼。", "permission": "此帳號沒有執行該操作的權限。",
+    "load": "資料載入失敗，請稍後重試。", "save": "操作失敗，請稍後重試。", "session": "登入成功，但無法驗證管理員工作階段，請稍後重試。", "bootstrap": "無法啟用 Owner，請確認此 UID 已設定為 bootstrap 帳號。"
+  }
+}

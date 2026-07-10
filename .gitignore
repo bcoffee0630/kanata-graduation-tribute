@@ -4,26 +4,54 @@
 # Firebase
 firebase-debug.log
 firebase-debug.*.log
-.firebaserc
-firebase.json
-firestore.rules
-firestore.indexes.json
-storage.rules
+*-debug.log
 
 # Firebase 設定（不上傳，部署時才加入）
 **/firebase-config.js
 **/firebase-config.local.js
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!**/.env.example
 
 # Firebase Emulator
 .firebase/
 firebase-export-*/
 
+# Generated Hosting allowlist
+.hosting-preview/
+.hosting-public/
+.hosting-admin/
+.hosting-maintenance/
+
+# Local production backup manifests
+.production-backups/
+.production-owner.env
+.production-mail-dns.json
+
+# Firebase Functions environment
+functions/.env*
+!functions/.env.example
+
 # Firebase Admin SDK
 **/serviceAccountKey.json
 **/service-account-key.json
+**/service-account*.json
+**/serviceAccount*.json
+**/firebase-adminsdk*.json
+**/client_secret*.json
+**/oauth-credentials*.json
+.runtimeconfig.json
+
+# Private keys and certificate containers
+*.key
+*.pem
+*.p12
+*.pfx
+*.pkcs12
+*.jks
+*.keystore
+**/.npmrc
 
 # IDE
 .vscode/
@@ -37,6 +65,10 @@ Thumbs.db
 
 # Node
 node_modules/
+functions/lib/
+coverage/
+test-results/
+playwright-report/
 
 # Migration scripts (本地執行用)
 migrate-data.js

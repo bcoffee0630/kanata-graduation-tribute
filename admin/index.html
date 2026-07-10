@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>治理中心 | 天音彼方紀念站</title>
+    <link rel="icon" type="image/png" href="../shooting-star.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div id="admin-loading" class="admin-loading" aria-live="polite">
+        <img src="../shooting-star.png" alt="" width="36" height="36">
+        <span data-admin-i18n="common.loading">載入中</span>
+    </div>
+
+    <main id="auth-view" class="auth-view is-hidden">
+        <section class="auth-brand" aria-label="Amane Kanata Memorial">
+            <div class="auth-brand-image" role="img" aria-label="Amane Kanata memorial artwork"></div>
+            <div class="auth-brand-copy">
+                <img src="../shooting-star.png" alt="" width="34" height="34">
+                <div>
+                    <strong data-admin-i18n="brand.name">天音彼方紀念站</strong>
+                    <span>Amane Kanata Memorial</span>
+                </div>
+            </div>
+        </section>
+        <section class="auth-panel">
+            <div class="auth-language">
+                <label class="sr-only" for="login-language">Language</label>
+                <select id="login-language" data-language-select>
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            <div class="auth-form-wrap">
+                <h1 data-admin-i18n="auth.title">治理中心</h1>
+                <p data-admin-i18n="auth.subtitle">僅限獲授權的網站管理員使用</p>
+                <form id="login-form" novalidate>
+                    <label for="login-email" data-admin-i18n="auth.email">電子郵件</label>
+                    <input id="login-email" name="email" type="email" autocomplete="username" required>
+                    <label for="login-password" data-admin-i18n="auth.password">密碼</label>
+                    <input id="login-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
+                    <p id="login-error" class="form-error" role="alert"></p>
+                    <button id="login-submit" class="primary-command" type="submit">
+                        <i data-lucide="log-in" aria-hidden="true"></i>
+                        <span data-admin-i18n="auth.signIn">登入</span>
+                    </button>
+                    <button id="forgot-password" class="text-command" type="button" data-admin-i18n="auth.forgot">忘記密碼</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <main id="access-view" class="access-view is-hidden">
+        <div class="access-panel">
+            <img src="../shooting-star.png" alt="" width="44" height="44">
+            <h1 data-admin-i18n="access.title">尚未取得管理權限</h1>
+            <p id="access-account"></p>
+            <p data-admin-i18n="access.description">此帳號已登入，但沒有 Owner 或 Moderator 權限。</p>
+            <div class="access-actions">
+                <button id="bootstrap-owner" type="button" class="primary-command">
+                    <i data-lucide="key-round" aria-hidden="true"></i>
+                    <span data-admin-i18n="access.bootstrap">啟用第一位 Owner</span>
+                </button>
+                <button id="access-logout" type="button" class="secondary-command" data-admin-i18n="auth.signOut">登出</button>
+            </div>
+            <p id="access-error" class="form-error" role="alert"></p>
+        </div>
+    </main>
+
+    <div id="admin-app" class="admin-app is-hidden">
+        <aside id="admin-sidebar" class="admin-sidebar">
+            <div class="sidebar-brand">
+                <img src="../shooting-star.png" alt="" width="30" height="30">
+                <div>
+                    <strong data-admin-i18n="brand.name">天音彼方紀念站</strong>
+                    <span>Governance</span>
+                </div>
+            </div>
+            <div class="sidebar-art" aria-hidden="true"></div>
+            <nav class="admin-nav" aria-label="Administration">
+                <button type="button" class="nav-item is-active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i><span data-admin-i18n="nav.dashboard">總覽</span>
+                </button>
+                <button type="button" class="nav-item" data-view="reports">
+                    <i data-lucide="flag"></i><span data-admin-i18n="nav.reports">舉報案件</span>
+                </button>
+                <button type="button" class="nav-item" data-view="content">
+                    <i data-lucide="files"></i><span data-admin-i18n="nav.content">投稿管理</span>
+                </button>
+                <button type="button" class="nav-item" data-view="users">
+                    <i data-lucide="users"></i><span data-admin-i18n="nav.users">用戶管理</span>
+                </button>
+                <button type="button" class="nav-item owner-only" data-view="admins">
+                    <i data-lucide="shield-check"></i><span data-admin-i18n="nav.admins">管理員</span>
+                </button>
+                <button type="button" class="nav-item" data-view="audit">
+                    <i data-lucide="history"></i><span data-admin-i18n="nav.audit">稽核紀錄</span>
+                </button>
+                <a class="nav-item nav-site-link" href="https://eienkanata.com/" target="_blank" rel="noopener noreferrer">
+                    <i data-lucide="external-link"></i><span data-admin-i18n="nav.site">前往紀念網站</span>
+                </a>
+            </nav>
+            <button id="sidebar-collapse" type="button" class="sidebar-collapse" title="Collapse navigation">
+                <i data-lucide="panel-left-close"></i>
+                <span data-admin-i18n="nav.collapse">收合選單</span>
+            </button>
+        </aside>
+
+        <section class="admin-workspace">
+            <header class="admin-topbar">
+                <button id="mobile-menu" type="button" class="icon-command mobile-menu" aria-label="Open navigation">
+                    <i data-lucide="menu"></i>
+                </button>
+                <h1 id="view-title" data-admin-i18n="nav.dashboard">總覽</h1>
+                <div class="topbar-actions">
+                    <label class="language-control">
+                        <i data-lucide="languages" aria-hidden="true"></i>
+                        <select data-language-select aria-label="Language">
+                            <option value="zh-TW">繁體中文</option>
+                            <option value="ja">日本語</option>
+                            <option value="en">English</option>
+                        </select>
+                    </label>
+                    <span id="admin-role" class="role-label"></span>
+                    <span id="admin-identity" class="admin-identity"></span>
+                    <button id="logout-button-admin" type="button" class="icon-command" data-admin-i18n-title="auth.signOut" title="登出">
+                        <i data-lucide="log-out"></i>
+                    </button>
+                </div>
+            </header>
+            <div id="admin-main" class="admin-main" tabindex="-1"></div>
+        </section>
+
+        <aside id="detail-drawer" class="detail-drawer" aria-hidden="true">
+            <header>
+                <h2 id="drawer-title"></h2>
+                <button id="drawer-close" type="button" class="icon-command" aria-label="Close details">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+            <div id="drawer-content" class="drawer-content"></div>
+        </aside>
+        <button id="drawer-backdrop" type="button" class="drawer-backdrop" aria-label="Close details"></button>
+    </div>
+
+    <div id="admin-modal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title" aria-hidden="true">
+        <div class="admin-modal-panel">
+            <header>
+                <h2 id="admin-modal-title"></h2>
+                <button id="admin-modal-close" type="button" class="icon-command" aria-label="Close dialog"><i data-lucide="x"></i></button>
+            </header>
+            <form id="admin-modal-form"></form>
+        </div>
+    </div>
+
+    <div id="admin-toast" class="admin-toast" role="status" aria-live="polite"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
+    <script src="vendor/lucide.min.js"></script>
+    <script src="../assets/js/firebase-init.js"></script>
+    <script src="admin-i18n.js"></script>
+    <script src="admin-app.js"></script>
+</body>
+</html>

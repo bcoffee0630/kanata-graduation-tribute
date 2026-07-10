@@ -1,0 +1,33 @@
+{
+  "hosting": [
+    {
+      "target": "public",
+      "public": ".hosting-maintenance",
+      "ignore": ["**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "/api/fanart-media",
+          "function": { "functionId": "fanartMedia", "region": "asia-east1" }
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-store" },
+            { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+            { "key": "Retry-After", "value": "1800" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" }
+          ]
+        }
+      ]
+    }
+  ],
+  "storage": { "rules": "storage.maintenance.rules" },
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-east1",
+    "rules": "firestore.maintenance.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

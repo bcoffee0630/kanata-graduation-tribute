@@ -1,49 +1,88 @@
 /**
- * Firebase Initialization
- * Firebase 初始化
+ * Firebase initialization shared by the public site and administration UI.
+ * Hosting's reserved init endpoint keeps staging and production isolated.
  */
 
-// Initialize Firebase
-let app, auth, db, storage;
+let app, auth, db, storage, functions;
+let initializationPromise = null;
 
-function initializeFirebase() {
-    try {
-        // Get Firebase config from window (loaded from firebase-config.js)
-        const firebaseConfig = window.firebaseConfig;
-
-        if (!firebaseConfig) {
-            throw new Error('Firebase config not found. Please create firebase-config.js from firebase-config.example.js');
-        }
-
-        // Initialize Firebase app
-        app = firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        db = firebase.firestore();
-        storage = firebase.storage();
-
-        console.log('Firebase initialized successfully');
-
-        // Dispatch event for other scripts
-        window.dispatchEvent(new CustomEvent('firebaseReady'));
-
-        return { app, auth, db, storage };
-    } catch (error) {
-        console.error('Failed to initialize Firebase:', error);
-        throw error;
+async function resolveFirebaseConfig() {
+    if (window.__USE_LOCAL_FIREBASE_CONFIG__ && window.firebaseConfig) {
+        return window.firebaseConfig;
     }
+
+    const response = await fetch('/__/firebase/init.json', { cache: 'no-store' });
+    if (!response.ok) {
+        throw new Error(`Firebase Hosting configuration failed (${response.status})`);
+    }
+    return response.json();
 }
 
-// Export for use in other modules
+function shouldUseEmulators() {
+    const host = window.location.hostname;
+    const params = new URLSearchParams(window.location.search);
+    return (host === 'localhost' || host === '127.0.0.1') &&
+        (window.location.port === '5050' || params.get('emulator') === '1');
+}
+
+function initializeFirebase() {
+    if (initializationPromise) return initializationPromise;
+
+    initializationPromise = (async () => {
+        const firebaseConfig = await resolveFirebaseConfig();
+        const initializedApp = firebase.apps.length
+            ? firebase.app()
+            : firebase.initializeApp(firebaseConfig);
+        const initializedAuth = initializedApp.auth();
+        const initializedDb = typeof initializedApp.firestore === 'function'
+            ? initializedApp.firestore()
+            : null;
+        const initializedStorage = typeof initializedApp.storage === 'function'
+            ? initializedApp.storage()
+            : null;
+        const initializedFunctions = typeof initializedApp.functions === 'function'
+            ? initializedApp.functions('asia-east1')
+            : null;
+
+        if (shouldUseEmulators()) {
+            initializedAuth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
+            initializedDb?.useEmulator('127.0.0.1', 8180);
+            initializedStorage?.useEmulator('127.0.0.1', 9199);
+            initializedFunctions?.useEmulator('127.0.0.1', 5001);
+        }
+
+        app = initializedApp;
+        auth = initializedAuth;
+        db = initializedDb;
+        storage = initializedStorage;
+        functions = initializedFunctions;
+
+        window.dispatchEvent(new CustomEvent('firebaseReady', {
+            detail: { projectId: firebaseConfig.projectId }
+        }));
+        return { app, auth, db, storage, functions };
+    })().catch((error) => {
+        initializationPromise = null;
+        throw error;
+    });
+
+    return initializationPromise;
+}
+
 window.FirebaseApp = {
     init: initializeFirebase,
+    getApp: () => app,
     getAuth: () => auth,
     getDb: () => db,
-    getStorage: () => storage
+    getStorage: () => storage,
+    getFunctions: () => functions,
+    getProjectId: () => app?.options?.projectId || null,
+    isUsingEmulators: shouldUseEmulators
 };
 
-// Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    initializeFirebase().catch(err => {
-        console.warn('Firebase initialization failed. Some features may not work.');
+    initializeFirebase().catch((error) => {
+        console.error('Failed to initialize Firebase:', error);
+        window.dispatchEvent(new CustomEvent('firebaseError', { detail: { error } }));
     });
 });

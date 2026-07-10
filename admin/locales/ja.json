@@ -1,0 +1,76 @@
+{
+  "brand": { "name": "天音かなた記念サイト" },
+  "common": {
+    "loading": "読み込み中", "error": "エラーが発生しました", "retry": "再試行", "none": "なし", "unknown": "不明",
+    "cancel": "キャンセル", "confirm": "確認", "close": "閉じる", "search": "検索", "all": "すべて",
+    "refresh": "更新", "loadMore": "さらに読み込む", "saved": "保存しました", "yes": "はい", "no": "いいえ"
+  },
+  "auth": {
+    "title": "管理センター", "subtitle": "許可されたサイト管理者専用です", "email": "メールアドレス", "password": "パスワード",
+    "signIn": "ログイン", "signOut": "ログアウト", "forgot": "パスワードを忘れた場合", "resetTitle": "パスワードをリセット",
+    "resetDescription": "このメールアドレスにリセットリンクを送信します。", "sendReset": "リセットメールを送信", "resetSent": "リセットメールを送信しました。"
+  },
+  "access": {
+    "title": "管理権限がありません", "description": "ログイン済みですが、Owner または Moderator 権限がありません。",
+    "bootstrap": "最初の Owner を有効化", "bootstrapSuccess": "Owner 権限を有効化しました。認証情報を更新しています。"
+  },
+  "nav": {
+    "dashboard": "概要", "reports": "報告案件", "content": "投稿管理", "users": "ユーザー管理",
+    "admins": "管理者", "audit": "監査ログ", "site": "記念サイトを開く", "collapse": "メニューを折りたたむ"
+  },
+  "dashboard": {
+    "title": "管理概要", "subtitle": "未処理案件、非表示コンテンツ、最近の管理操作を確認します。",
+    "recentReports": "最近の報告案件", "recentAudit": "最近の管理操作"
+  },
+  "metrics": {
+    "openReports": "未処理案件", "hiddenContent": "一時非表示", "mutedUsers": "ミュート中", "bannedUsers": "ブロック中"
+  },
+  "reports": {
+    "title": "報告案件", "subtitle": "サイト内報告を確認し、対応結果を記録します。", "statusFilter": "案件ステータス",
+    "typeFilter": "コンテンツ種類", "caseDetails": "案件詳細", "reportReason": "報告理由", "reporters": "報告履歴",
+    "target": "コンテンツ", "targetAuthor": "投稿者", "reportCount": "報告数", "latestReport": "最新報告",
+    "noReports": "条件に一致する報告案件はありません。", "startReview": "審査を開始", "resolve": "対応済みにする",
+    "dismiss": "案件を却下", "resolutionNote": "対応メモ", "viewTarget": "コンテンツを確認",
+    "reasons": {
+      "inappropriate": "不適切なコンテンツ", "spam": "スパム", "copyright": "著作権侵害",
+      "harassment": "ハラスメント", "other": "その他", "legacy_unknown": "旧報告（理由不明）", "unknown": "不明"
+    }
+  },
+  "content": {
+    "title": "投稿管理", "subtitle": "ユーザー投稿の確認、非表示、復元、完全削除を行います。", "messages": "メッセージ", "fanart": "ファンアート",
+    "visibility": "表示状態", "authorUid": "投稿者 UID", "dateFrom": "開始日", "dateTo": "終了日",
+    "content": "内容", "author": "投稿者", "createdAt": "投稿日時",
+    "reportCount": "報告数", "noContent": "条件に一致する投稿はありません。", "details": "投稿詳細",
+    "hide": "非表示にする", "restore": "表示を復元", "remove": "完全に削除", "reason": "対応理由",
+    "removeWarning": "メッセージ本文または Storage 画像が削除され、元に戻せません。"
+  },
+  "users": {
+    "title": "ユーザー管理", "subtitle": "完全な UID またはメールアドレスでアカウントを検索します。", "searchPlaceholder": "完全な UID またはメールアドレス",
+    "user": "ユーザー", "providers": "ログイン方法", "lastSignIn": "最終ログイン", "restriction": "制限状態", "noUsers": "ユーザーが見つかりません。",
+    "details": "ユーザー詳細", "recentContent": "最近の投稿", "mute": "期限付きミュート", "ban": "アカウントをブロック", "clear": "制限を解除",
+    "expiresAt": "ミュート終了日時", "reason": "制限理由", "hideExisting": "このユーザーの既存投稿も非表示にする",
+    "restrictionSaved": "ユーザー制限を更新しました。"
+  },
+  "admins": {
+    "title": "管理者", "subtitle": "管理者を招待し、Owner／Moderator 権限を管理します。", "invite": "管理者を招待",
+    "name": "表示名", "email": "メール", "role": "ロール", "status": "状態", "lastLogin": "最終ログイン",
+    "owner": "Owner", "moderator": "Moderator", "disable": "アカウントを無効化", "enable": "アカウントを有効化",
+    "revoke": "セッションを取り消す", "reset": "パスワードリセットを送信", "noAdmins": "管理者はまだいません。",
+    "inviteSent": "管理者を作成し、パスワード設定メールを送信しました。", "updated": "管理者設定を更新しました。"
+  },
+  "audit": {
+    "title": "監査ログ", "subtitle": "すべての管理操作はバックエンドで記録され、クライアントから変更できません。", "action": "操作",
+    "actor": "実行者", "target": "対象", "reason": "理由", "createdAt": "日時", "noAudit": "監査ログはまだありません。"
+  },
+  "table": { "status": "状態", "content": "内容", "author": "投稿者", "count": "件数", "date": "日時", "actions": "操作" },
+  "actions": { "view": "表示", "viewUser": "ユーザーを表示", "save": "保存", "submit": "送信", "more": "その他" },
+  "status": {
+    "open": "未処理", "reviewing": "審査中", "resolved": "対応済み", "dismissed": "却下",
+    "visible": "公開", "auto_hidden": "自動非表示", "admin_hidden": "管理者が非表示", "removed": "削除済み",
+    "active": "有効", "muted": "ミュート", "banned": "ブロック", "disabled": "無効", "invited": "招待済み"
+  },
+  "errors": {
+    "signIn": "ログインできません。メールアドレスとパスワードを確認してください。", "permission": "この操作を行う権限がありません。",
+    "load": "データを読み込めませんでした。後でもう一度お試しください。", "save": "操作に失敗しました。後でもう一度お試しください。", "session": "ログインしましたが、管理者セッションを確認できませんでした。後でもう一度お試しください。", "bootstrap": "Owner を有効化できません。この UID が bootstrap アカウントに設定されているか確認してください。"
+  }
+}

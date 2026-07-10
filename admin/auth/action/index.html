@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>重設密碼 | 天音彼方紀念站</title>
+    <link rel="icon" type="image/png" href="/shooting-star.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="action.css">
+</head>
+<body>
+    <header class="action-brand">
+        <a id="brand-link" href="/" aria-label="Amane Kanata Memorial">
+            <img src="/shooting-star.png" alt="" width="34" height="34">
+            <span>
+                <strong data-action-i18n="brand">天音彼方紀念站</strong>
+                <small>Amane Kanata Memorial</small>
+            </span>
+        </a>
+        <label>
+            <span class="sr-only">Language</span>
+            <select id="action-language" aria-label="Language">
+                <option value="zh-TW">繁體中文</option>
+                <option value="ja">日本語</option>
+                <option value="en">English</option>
+            </select>
+        </label>
+    </header>
+
+    <main class="action-main">
+        <section class="action-panel" aria-labelledby="action-title">
+            <img src="/shooting-star.png" alt="" width="42" height="42">
+            <p class="action-eyebrow" data-action-i18n="eyebrow">治理中心</p>
+            <h1 id="action-title" data-action-i18n="title">設定新密碼</h1>
+            <p id="action-description" class="action-description" data-action-i18n="checking">正在驗證重設連結...</p>
+            <p id="action-email" class="action-email is-hidden"></p>
+
+            <form id="reset-form" class="is-hidden" novalidate>
+                <label for="new-password" data-action-i18n="password">新密碼</label>
+                <input id="new-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+                <p class="password-policy" data-action-i18n="policy">至少 12 字元，並包含大小寫英文字母、數字與符號。</p>
+                <label for="confirm-password" data-action-i18n="confirmPassword">確認新密碼</label>
+                <input id="confirm-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+                <p id="action-error" class="form-error" role="alert"></p>
+                <button id="reset-submit" type="submit" data-action-i18n="submit">更新密碼</button>
+            </form>
+
+            <div id="action-result" class="action-result is-hidden" role="status"></div>
+            <a id="back-to-admin" class="back-link" href="/" data-action-i18n="back">返回後台登入</a>
+        </section>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="/assets/js/firebase-init.js"></script>
+    <script src="action.js"></script>
+</body>
+</html>

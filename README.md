@@ -121,7 +121,7 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 | 🐛 Bug Report | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=bug_report.md) |
 | 💡 Feature Request | [Create Issue](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=feature_request.md) |
 | 🌐 Translation | [Suggest Translation](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=translation.yml) |
-| 🚨 Report Content | [Create Report](https://github.com/bcoffee0630/kanata-graduation-tribute/issues/new?template=report-content.yml) |
+| 🚨 Report Content | Use the in-site report action after signing in; GitHub Issues remain the anonymous fallback |
 | 💻 Code Contribution | See [Contributing Guide](.github/CONTRIBUTING.md)
 
 ---
@@ -129,7 +129,7 @@ A fan memorial website for Amane Kanata who graduated on December 27, 2025. Insp
 ## Technical Stack
 
 - HTML5 / CSS3 / Vanilla JavaScript
-- Firebase (Hosting, Firestore, Storage, Authentication)
+- Firebase (Hosting, Authentication, Firestore, Storage, Cloud Functions)
 
 ## Project Structure
 
@@ -140,6 +140,9 @@ kanata-graduation-tribute/
 │   ├── css/           # Stylesheets
 │   ├── js/            # JavaScript
 │   └── locales/       # Translation files
+├── admin/              # Governance administration UI
+├── functions/          # Trusted submission and moderation APIs
+├── tests/              # Rules, integration, and browser tests
 └── images/            # Site images
 ```
 

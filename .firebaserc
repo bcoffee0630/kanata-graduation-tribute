@@ -1,0 +1,20 @@
+{
+  "projects": {
+    "default": "kanata-memorial-admin",
+    "staging": "kanata-memorial-admin",
+    "production": "kanata-memorial"
+  },
+  "targets": {
+    "kanata-memorial": {
+      "hosting": {
+        "public": [
+          "kanata-memorial"
+        ],
+        "admin": [
+          "eienkanata-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

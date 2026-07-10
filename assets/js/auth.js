@@ -214,7 +214,10 @@ const Auth = {
 
     // Get the provider ID of current user
     getProviderId() {
-        return this.currentUser?.providerData[0]?.providerId || null;
+        const providers = this.currentUser?.providerData || [];
+        return providers.find((provider) =>
+            provider.providerId === 'google.com' || provider.providerId === 'github.com'
+        )?.providerId || providers[0]?.providerId || null;
     },
 
     // Get human-readable provider name

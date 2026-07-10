@@ -40,13 +40,11 @@ const Submit = {
             fanartSubmitBtn.addEventListener('click', () => this.openFanartModal());
         }
 
-        // Modal close buttons
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', () => this.closeAllModals());
-        });
-
-        // Close on backdrop click
-        document.querySelectorAll('.modal').forEach(modal => {
+        const submissionModals = [this.messageModal, this.fanartModal].filter(Boolean);
+        submissionModals.forEach(modal => {
+            modal.querySelectorAll('.modal-close').forEach(btn => {
+                btn.addEventListener('click', () => this.closeAllModals());
+            });
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     this.closeAllModals();
@@ -222,7 +220,7 @@ const Submit = {
     },
 
     closeAllModals() {
-        document.querySelectorAll('.modal').forEach(modal => {
+        [this.messageModal, this.fanartModal].filter(Boolean).forEach(modal => {
             modal.classList.remove('active');
         });
         document.body.style.overflow = '';
@@ -297,43 +295,27 @@ const Submit = {
                 throw new Error(this.getTranslation('message_too_long'));
             }
 
-            // Check rate limit
-            await this.checkMessageRateLimit();
-
-            // Submit to Firestore
-            const db = window.FirebaseApp.getDb();
-            const user = window.Auth.getUser();
-
-            await db.collection('messages').add({
-                author: user.displayName || 'Anonymous',
-                authorId: user.uid,
-                authorLink: window.Auth.getProfileLink() || '',
-                authorAvatar: user.photoURL || '',
-                authorProvider: window.Auth.getProviderId() || '',
-                content: content,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                reported: false,
-                reportCount: 0,
-                reportedBy: [],
-                hidden: false
-            });
-
-            // Update user stats
-            await this.updateUserStats('message');
+            const functions = window.FirebaseApp.getFunctions();
+            if (!functions) throw new Error(this.getTranslation('submit_error'));
+            const submitMessage = functions.httpsCallable('submitMessage');
+            await submitMessage({ content });
 
             // Success
             Toast.success(this.getTranslation('message_submitted'));
             form.reset();
             this.closeAllModals();
 
-            // Refresh danmaku
-            if (window.Danmaku) {
-                window.Danmaku.loadFromFirestore();
-            }
-
         } catch (error) {
             console.error('Message submission error:', error);
-            Toast.error(error.message || this.getTranslation('submit_error'));
+            const code = String(error.code || '');
+            const message = code.includes('unavailable')
+                ? this.getTranslation('site_maintenance')
+                : code.includes('resource-exhausted')
+                ? this.getTranslation('rate_limit_message')
+                : code.includes('permission-denied')
+                    ? this.getTranslation('account_restricted')
+                    : error.message || this.getTranslation('submit_error');
+            Toast.error(message);
         } finally {
             submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
             submitBtn.classList.remove('loading');
@@ -366,48 +348,27 @@ const Submit = {
                 throw new Error(this.getTranslation('no_image'));
             }
 
-            // Check rate limit
-            await this.checkFanartRateLimit();
-
             const file = imageInput.files[0];
-            const user = window.Auth.getUser();
-
-            // Upload image to Storage
-            const storage = window.FirebaseApp.getStorage();
-            const timestamp = Date.now();
-            const ext = file.name.split('.').pop();
-            const filename = `${timestamp}.${ext}`;
-            const path = `fanart/${user.uid}/${filename}`;
-
-            const uploadTask = storage.ref(path).put(file);
-
-            // Wait for upload
-            await uploadTask;
-
-            // Get download URL
-            const imageUrl = await storage.ref(path).getDownloadURL();
-
-            // Submit to Firestore
-            const db = window.FirebaseApp.getDb();
-
-            await db.collection('fanart').add({
-                artist: user.displayName || 'Anonymous',
-                artistId: user.uid,
-                artistLink: artistLink || window.Auth.getProfileLink() || '',
-                artistAvatar: user.photoURL || '',
-                artistProvider: window.Auth.getProviderId() || '',
-                imagePath: path,
-                imageUrl: imageUrl,
-                caption: caption,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                reported: false,
-                reportCount: 0,
-                reportedBy: [],
-                hidden: false
+            const functions = window.FirebaseApp.getFunctions();
+            if (!functions) throw new Error(this.getTranslation('submit_error'));
+            const beginFanartUpload = functions.httpsCallable('beginFanartUpload');
+            const finalizeFanartUpload = functions.httpsCallable('finalizeFanartUpload');
+            const ticketResult = await beginFanartUpload({
+                contentType: file.type,
+                size: file.size
             });
+            const ticket = ticketResult.data;
 
-            // Update user stats
-            await this.updateUserStats('fanart');
+            const storage = window.FirebaseApp.getStorage();
+            await storage.ref(ticket.path).put(file, {
+                contentType: file.type,
+                customMetadata: { ticketId: ticket.ticketId }
+            });
+            await finalizeFanartUpload({
+                ticketId: ticket.ticketId,
+                caption,
+                artistLink
+            });
 
             // Success
             Toast.success(this.getTranslation('fanart_submitted'));
@@ -422,97 +383,20 @@ const Submit = {
 
         } catch (error) {
             console.error('Fanart submission error:', error);
-            Toast.error(error.message || this.getTranslation('submit_error'));
+            const code = String(error.code || '');
+            const message = code.includes('unavailable')
+                ? this.getTranslation('site_maintenance')
+                : code.includes('resource-exhausted')
+                ? this.getTranslation('rate_limit_fanart')
+                : code.includes('permission-denied')
+                    ? this.getTranslation('account_restricted')
+                    : error.message || this.getTranslation('submit_error');
+            Toast.error(message);
         } finally {
             submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
             submitBtn.classList.remove('loading');
             submitBtn.textContent = originalText;
         }
-    },
-
-    async checkMessageRateLimit() {
-        const db = window.FirebaseApp.getDb();
-        const userId = window.Auth.getUserId();
-
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data() || {};
-
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        // Reset daily count if new day
-        if (!userData.dailyResetAt || userData.dailyResetAt.toDate() < todayStart) {
-            return; // New day, no limit yet
-        }
-
-        if (userData.dailyMessageCount >= this.limits.messagesPerDay) {
-            throw new Error(this.getTranslation('rate_limit_message'));
-        }
-    },
-
-    async checkFanartRateLimit() {
-        const db = window.FirebaseApp.getDb();
-        const userId = window.Auth.getUserId();
-
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data() || {};
-
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        // Reset daily count if new day
-        if (!userData.dailyResetAt || userData.dailyResetAt.toDate() < todayStart) {
-            return; // New day, no limit yet
-        }
-
-        if (userData.dailyFanartCount >= this.limits.fanartPerDay) {
-            throw new Error(this.getTranslation('rate_limit_fanart'));
-        }
-    },
-
-    async updateUserStats(type) {
-        const db = window.FirebaseApp.getDb();
-        const userId = window.Auth.getUserId();
-        const user = window.Auth.getUser();
-
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        const userRef = db.collection('users').doc(userId);
-        const userDoc = await userRef.get();
-        const userData = userDoc.data() || {};
-
-        // Check if we need to reset daily counts
-        const needsReset = !userData.dailyResetAt ||
-            userData.dailyResetAt.toDate() < todayStart;
-
-        const updates = {
-            username: user.displayName || 'Anonymous',
-            avatarUrl: user.photoURL || ''
-        };
-
-        if (type === 'message') {
-            updates.messageCount = firebase.firestore.FieldValue.increment(1);
-            updates.lastMessageAt = firebase.firestore.FieldValue.serverTimestamp();
-            updates.dailyMessageCount = needsReset ? 1 :
-                firebase.firestore.FieldValue.increment(1);
-        } else if (type === 'fanart') {
-            updates.fanartCount = firebase.firestore.FieldValue.increment(1);
-            updates.lastFanartAt = firebase.firestore.FieldValue.serverTimestamp();
-            updates.dailyFanartCount = needsReset ? 1 :
-                firebase.firestore.FieldValue.increment(1);
-        }
-
-        if (needsReset) {
-            updates.dailyResetAt = firebase.firestore.FieldValue.serverTimestamp();
-            if (type === 'message') {
-                updates.dailyFanartCount = 0;
-            } else {
-                updates.dailyMessageCount = 0;
-            }
-        }
-
-        await userRef.set(updates, { merge: true });
     },
 
     getTranslation(key) {
@@ -530,6 +414,8 @@ const Submit = {
                 message_submitted: 'メッセージを投稿しました！',
                 fanart_submitted: 'イラストを投稿しました！',
                 submit_error: '投稿に失敗しました。もう一度お試しください。',
+                site_maintenance: 'メンテナンス中のため、現在は投稿できません。',
+                account_restricted: 'このアカウントは現在投稿できません。',
                 rate_limit_message: '本日の投稿上限に達しました（1日3件まで）',
                 rate_limit_fanart: '本日の投稿上限に達しました（1日2件まで）'
             },
@@ -546,6 +432,8 @@ const Submit = {
                 message_submitted: '留言已送出！',
                 fanart_submitted: '繪圖已送出！',
                 submit_error: '送出失敗，請再試一次。',
+                site_maintenance: '網站維護中，目前無法投稿。',
+                account_restricted: '此帳號目前無法投稿。',
                 rate_limit_message: '今日已達投稿上限（每日3則）',
                 rate_limit_fanart: '今日已達投稿上限（每日2張）'
             },
@@ -562,6 +450,8 @@ const Submit = {
                 message_submitted: 'Message submitted!',
                 fanart_submitted: 'Fan art submitted!',
                 submit_error: 'Submission failed. Please try again.',
+                site_maintenance: 'The site is under maintenance and is temporarily read-only.',
+                account_restricted: 'This account cannot submit content right now.',
                 rate_limit_message: 'Daily limit reached (3 messages per day)',
                 rate_limit_fanart: 'Daily limit reached (2 images per day)'
             }

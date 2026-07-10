@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function signedInWithPassword() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    function signedInAsContributor() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider in ['google.com', 'github.com'];
+    }
+
+    function isAdmin() {
+      return signedInWithPassword()
+        && request.auth.token.adminRole in ['owner', 'moderator']
+        && request.auth.token.adminSessionVersion is int
+        && firestore.exists(
+          /databases/(default)/documents/adminAccounts/$(request.auth.uid)
+        )
+        && firestore.get(
+          /databases/(default)/documents/adminAccounts/$(request.auth.uid)
+        ).data.disabled == false
+        && firestore.get(
+          /databases/(default)/documents/adminAccounts/$(request.auth.uid)
+        ).data.role == request.auth.token.adminRole
+        && firestore.get(
+          /databases/(default)/documents/adminAccounts/$(request.auth.uid)
+        ).data.sessionVersion == request.auth.token.adminSessionVersion;
+    }
+
+    function ticket(fanartId) {
+      return firestore.get(
+        /databases/(default)/documents/uploadTickets/$(fanartId)
+      );
+    }
+
+    match /fanart/{userId}/{fanartId}/{fileName} {
+      allow read: if isAdmin();
+
+      allow create: if signedInAsContributor()
+        && request.auth.uid == userId
+        && firestore.exists(/databases/(default)/documents/uploadTickets/$(fanartId))
+        && ticket(fanartId).data.uid == request.auth.uid
+        && ticket(fanartId).data.status == 'pending'
+        && ticket(fanartId).data.expiresAt > request.time
+        && ticket(fanartId).data.fileName == fileName
+        && ticket(fanartId).data.contentType == request.resource.contentType
+        && ticket(fanartId).data.size == request.resource.size
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|gif|webp)');
+
+      allow update, delete: if false;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

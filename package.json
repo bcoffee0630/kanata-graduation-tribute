@@ -1,0 +1,40 @@
+{
+  "name": "kanata-graduation-tribute",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "npm --prefix functions run build",
+    "build:hosting": "node scripts/build-hosting.mjs",
+    "build:hosting:production": "node scripts/build-hosting.mjs --production",
+    "test": "npm run test:functions && npm run test:build && npm run test:rules && npm run test:integration",
+    "test:functions": "npm --prefix functions test",
+    "test:build": "vitest run tests/build",
+    "test:rules": "npm run test:rules:governance && npm run test:rules:maintenance",
+    "test:rules:governance": "firebase emulators:exec --only firestore,storage --project demo-kanata-governance \"vitest run tests/rules/governance.rules.test.js\"",
+    "test:rules:maintenance": "firebase emulators:exec --only firestore,storage --project demo-kanata-maintenance \"vitest run tests/rules/maintenance.rules.test.js\"",
+    "test:integration": "npm run build && firebase emulators:exec --only auth,functions,firestore,storage --project demo-kanata-governance \"vitest run tests/integration\"",
+    "test:e2e": "npm run build && npm run build:hosting && firebase emulators:exec --only auth,functions,firestore,storage,hosting --project demo-kanata-governance \"playwright test\"",
+    "emulators": "firebase emulators:start --project demo-kanata-governance",
+    "seed:emulator": "node scripts/seed-emulator.mjs",
+    "deploy:preview": "node scripts/deploy-preview.mjs",
+    "deploy:production": "node scripts/deploy-production.mjs",
+    "backup:production": "node scripts/backup-production.mjs",
+    "baseline:production": "node scripts/capture-production-baseline.mjs",
+    "setup:production:hosting": "node scripts/setup-production-hosting.mjs",
+    "verify:production:backend": "node scripts/verify-production-backend.mjs",
+    "verify:production:domains": "node scripts/verify-production-domains.mjs",
+    "configure:production:auth": "node scripts/configure-production-auth.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@playwright/test": "^1.61.1",
+    "firebase": "^12.10.0",
+    "firebase-admin": "^13.10.0",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

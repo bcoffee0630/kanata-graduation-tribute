@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function signedInWithPassword() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    function isOwner() {
+      return isAdmin() && request.auth.token.adminRole == 'owner';
+    }
+
+    function isAdmin() {
+      return signedInWithPassword()
+        && request.auth.token.adminRole in ['owner', 'moderator']
+        && request.auth.token.adminSessionVersion is int
+        && exists(/databases/$(database)/documents/adminAccounts/$(request.auth.uid))
+        && get(/databases/$(database)/documents/adminAccounts/$(request.auth.uid)).data.disabled == false
+        && get(/databases/$(database)/documents/adminAccounts/$(request.auth.uid)).data.role == request.auth.token.adminRole
+        && get(/databases/$(database)/documents/adminAccounts/$(request.auth.uid)).data.sessionVersion == request.auth.token.adminSessionVersion;
+    }
+
+    function isPublicContent() {
+      return resource.data.get('hidden', false) == false
+        && resource.data.get('deleted', false) == false;
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAdmin() || isPublicContent();
+      allow write: if false;
+    }
+
+    match /fanart/{fanartId} {
+      allow read: if isAdmin() || isPublicContent();
+      allow write: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /reportCases/{caseId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /reports/{reporterId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /userRestrictions/{userId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /userDirectory/{userId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /userStats/{userId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /uploadTickets/{ticketId} {
+      allow read, write: if false;
+    }
+
+    match /adminAccounts/{adminId} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /system/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -106,6 +106,8 @@ const Gallery = {
 
             // Initial load with pagination
             const snapshot = await db.collection('fanart')
+                .where('hidden', '==', false)
+                .where('deleted', '==', false)
                 .orderBy('createdAt', 'desc')
                 .limit(this.PAGE_SIZE)
                 .get();
@@ -162,6 +164,8 @@ const Gallery = {
 
         try {
             const snapshot = await db.collection('fanart')
+                .where('hidden', '==', false)
+                .where('deleted', '==', false)
                 .orderBy('createdAt', 'desc')
                 .startAfter(this.lastDoc)
                 .limit(this.PAGE_SIZE)
@@ -217,9 +221,10 @@ const Gallery = {
 
         const html = items.map((item, i) => {
             const index = startIndex + i;
-            const imageSrc = item.imageUrl || item.path;
+            const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
             const caption = item.caption || '';
             const artist = this.escapeHtml(item.artist || 'Anonymous');
+            const artistLink = this.safeExternalUrl(item.artistLink);
 
             // Report button (only for Firestore entries)
             let reportBtn = '';
@@ -237,8 +242,8 @@ const Gallery = {
                     >
                     <div class="gallery-overlay">
                         <p class="gallery-artist">
-                            ${item.artistLink
-                                ? `<a href="${this.escapeHtml(item.artistLink)}" target="_blank" rel="noopener">${artist}</a>`
+                            ${artistLink
+                                ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
                                 : artist}
                             ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
                         </p>
@@ -275,9 +280,10 @@ const Gallery = {
         }
 
         this.container.innerHTML = this.data.fanart.map((item, index) => {
-            const imageSrc = item.imageUrl || item.path;
+            const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
             const caption = item.caption || '';
             const artist = this.escapeHtml(item.artist || 'Anonymous');
+            const artistLink = this.safeExternalUrl(item.artistLink);
 
             // Report button (only for Firestore entries)
             let reportBtn = '';
@@ -295,8 +301,8 @@ const Gallery = {
                     >
                     <div class="gallery-overlay">
                         <p class="gallery-artist">
-                            ${item.artistLink
-                                ? `<a href="${this.escapeHtml(item.artistLink)}" target="_blank" rel="noopener">${artist}</a>`
+                            ${artistLink
+                                ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
                                 : artist}
                             ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
                         </p>
@@ -440,9 +446,10 @@ const Gallery = {
         const imgContainer = this.lightbox.querySelector('.lightbox-image');
         const infoContainer = this.lightbox.querySelector('.lightbox-info');
 
-        const imageSrc = item.imageUrl || item.path;
+        const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
         const caption = item.caption || '';
         const artist = this.escapeHtml(item.artist || 'Anonymous');
+        const artistLink = this.safeExternalUrl(item.artistLink);
 
         if (imgContainer) {
             imgContainer.innerHTML = `<img src="${imageSrc}" alt="${this.escapeHtml(caption)}">`;
@@ -451,13 +458,13 @@ const Gallery = {
         if (infoContainer) {
             infoContainer.innerHTML = `
                 <p class="lightbox-artist">
-                    ${item.artistLink
-                        ? `<a href="${this.escapeHtml(item.artistLink)}" target="_blank" rel="noopener">${artist}</a>`
+                    ${artistLink
+                        ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
                         : artist}
                     ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
                 </p>
                 <p class="lightbox-caption">${this.escapeHtml(caption)}</p>
-                <p class="lightbox-date">${item.date || ''}</p>
+                <p class="lightbox-date">${this.escapeHtml(item.date || '')}</p>
             `;
         }
 
@@ -492,6 +499,26 @@ const Gallery = {
         return div.innerHTML;
     },
 
+    safeImageUrl(value) {
+        try {
+            const url = new URL(String(value || ''), document.baseURI);
+            const localHttp = url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname);
+            if (url.protocol === 'https:' || localHttp) return url.href;
+        } catch (error) {
+            console.warn('Invalid gallery image URL:', error);
+        }
+        return new URL('images/kanata-header.png', document.baseURI).href;
+    },
+
+    safeExternalUrl(value) {
+        try {
+            const url = new URL(String(value || ''));
+            return url.protocol === 'https:' ? url.href : '';
+        } catch {
+            return '';
+        }
+    },
+
     // Cleanup when leaving page
     destroy() {
         if (this.unsubscribe) {
@@ -507,6 +534,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Update on language change
-document.addEventListener('languageChanged', () => {
+window.addEventListener('languageChanged', () => {
     Gallery.onLanguageChange();
 });

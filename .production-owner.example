@@ -1,0 +1,3 @@
+# Local-only production Owner identity. Copy values into .production-owner.env.
+PRODUCTION_OWNER_UID=
+PRODUCTION_OWNER_EMAIL=
