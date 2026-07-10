@@ -263,7 +263,10 @@ describe('production Hosting allowlists', () => {
     const adminHeaders = config.hosting[1].headers[0].headers;
     const csp = adminHeaders.find((header) => header.key === 'Content-Security-Policy')?.value;
     expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain('script-src \'self\' https://www.gstatic.com https://apis.google.com');
+    expect(csp).toContain('frame-src https://kanata-memorial.firebaseapp.com');
     expect(csp).not.toContain("'unsafe-inline'");
+    expect(csp).not.toContain('frame-src https://*.firebaseapp.com');
     expect(csp).not.toContain('unpkg.com');
     expect(readFileSync('.hosting-admin/index.html', 'utf8')).not.toContain('unpkg.com');
     expect(readFileSync('.hosting-admin/admin-app.js', 'utf8')).not.toMatch(/\.style\./);
