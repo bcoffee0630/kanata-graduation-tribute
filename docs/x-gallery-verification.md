@@ -32,3 +32,4 @@
 - 後台完整 Playwright：8 項通過，6 個既有桌面／手機限定案例依設定略過，沒有失敗；含新增的兩個側邊欄回歸案例。32 個建置／匯入防護測試與 Production Hosting build 再次通過。
 - 使用者在 691px 正式畫廊指出嵌入偏左。官方 wrapper 的 inline `max-width: 550px` 被網站 `max-width: 100% !important` 覆蓋，擴到 633px，內部貼文本體仍為 550px。修正保留官方寬度限制，並把共用嵌入 frame 的最大寬度設為 550px、左右自動留白，同時套用於畫廊與投稿預覽。
 - 畫廊完整 Playwright：12 項通過，沒有失敗；官方 widget 的測試替身保留 550px 限制。新增兩個案例驗證初始尺寸與 691px → 1440px → 390px → 691px 切換，以及 691px／390px 投稿預覽的左右留白差小於 1px、沒有水平溢出。後台與畫廊最新 E2E 合計 20 項通過、6 個既有條件略過，加上 91 個功能／建置／規則／整合測試，共 111 項通過。
+- 正式 smoke check 發現既有分頁仍使用 `max-age=3600` 的舊 gallery CSS，雖然 Hosting 已發布新檔案，一般 reload 尚未更新。HTML 的 gallery stylesheet 新增版本參數，並將該 CSS 設為 `no-cache`；新網址讓舊分頁重新載入修正，後續 refresh 可重新驗證內容。
