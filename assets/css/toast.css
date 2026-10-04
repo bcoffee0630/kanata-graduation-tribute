@@ -19,7 +19,6 @@
     gap: 12px;
     padding: 14px 16px;
     border: 1px solid rgba(40, 148, 255, 0.18);
-    border-left: 4px solid var(--toast-accent);
     border-radius: 16px;
     background: linear-gradient(135deg, var(--white, #FFF), var(--cream-white, #F8FBFF));
     box-shadow: 0 6px 24px rgba(40, 148, 255, 0.16);
@@ -71,36 +70,46 @@
 
 /* Toast Close Button */
 .toast-close {
+    --toast-close-progress: 0%;
+    position: relative;
     flex-shrink: 0;
     width: 44px;
     height: 44px;
     border: none;
+    padding: 0;
     background: #EDF6FF;
-    color: var(--kanata-blue-dark, #1A6FCC);
+    color: #1A6FCC;
     border-radius: 12px;
+    overflow: hidden;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease;
     font: inherit;
     font-size: 22px;
     line-height: 1;
 }
 
 .toast-close:hover {
-    background: #E0F0FF;
+    box-shadow: inset 0 0 0 1px rgba(26, 111, 204, 0.25);
 }
 .toast-close:focus-visible { outline: 3px solid var(--kanata-blue-dark, #1A6FCC); outline-offset: 2px; }
 
-/* Progress Bar */
-.toast-progress {
+.toast-close-glyph,
+.toast-close-fill {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    background: var(--toast-accent);
-    transition: width linear;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* Clip the inverse background and glyph together as the deadline approaches. */
+.toast-close-fill {
+    background: #1A6FCC;
+    color: #EDF6FF;
+    clip-path: inset(calc(100% - var(--toast-close-progress)) 0 0);
 }
 
 /* Responsive */
@@ -127,5 +136,9 @@
 
     .toast.hide {
         transform: translateX(0);
+    }
+
+    .toast-close-fill {
+        visibility: hidden;
     }
 }

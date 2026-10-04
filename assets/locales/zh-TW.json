@@ -33,9 +33,9 @@
     "open_original": "開啟原始貼文",
     "retry": "重新載入",
     "display_size": "顯示大小",
-    "display_standard": "標準",
+    "display_standard": "預設",
     "display_compact": "較小",
-    "display_hint": "較小模式在寬螢幕顯示三欄，較窄視窗會自動調整，方便閱讀。"
+    "display_compact_notice": "已採用較小顯示；部分螢幕比例下可能沒有明顯變化。"
   },
   "danmaku": {
     "pause": "⏸",

@@ -33,9 +33,9 @@
     "open_original": "Open original post",
     "retry": "Try again",
     "display_size": "Display size",
-    "display_standard": "Standard",
+    "display_standard": "Default",
     "display_compact": "Smaller",
-    "display_hint": "Smaller view shows three columns on wide screens and adapts to narrower screens for easy reading."
+    "display_compact_notice": "Smaller view is enabled; some screen proportions may show little visible difference."
   },
   "danmaku": {
     "pause": "⏸",

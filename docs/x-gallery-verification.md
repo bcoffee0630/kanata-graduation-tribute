@@ -33,3 +33,18 @@
 - 使用者在 691px 正式畫廊指出嵌入偏左。官方 wrapper 的 inline `max-width: 550px` 被網站 `max-width: 100% !important` 覆蓋，擴到 633px，內部貼文本體仍為 550px。修正保留官方寬度限制，並把共用嵌入 frame 的最大寬度設為 550px、左右自動留白，同時套用於畫廊與投稿預覽。
 - 畫廊完整 Playwright：12 項通過，沒有失敗；官方 widget 的測試替身保留 550px 限制。新增兩個案例驗證初始尺寸與 691px → 1440px → 390px → 691px 切換，以及 691px／390px 投稿預覽的左右留白差小於 1px、沒有水平溢出。後台與畫廊最新 E2E 合計 20 項通過、6 個既有條件略過，加上 91 個功能／建置／規則／整合測試，共 111 項通過。
 - 正式 smoke check 發現既有分頁仍使用 `max-age=3600` 的舊 gallery CSS，雖然 Hosting 已發布新檔案，一般 reload 尚未更新。HTML 的 gallery stylesheet 新增版本參數，並將該 CSS 設為 `no-cache`；新網址讓舊分頁重新載入修正，後續 refresh 可重新驗證內容。
+
+## 自適應較小模式與通知倒數
+
+- 採用選定的自適應雙欄方向。預設尺寸維持原規則；較小模式在 CSS 視窗 768px 以下以外層容器 content-box 的 568px 可用寬度判斷單／雙欄，最大寬度分別為 300／648px。768–1023px 為 648px 雙欄；1024px 起為 1040px 三欄。欄距 32px，保留自然高度、已載入資料、分頁游標與檢舉 DOM。
+- 原生 radio 順序為較小／預設，三語同步；沿用 `gallery-display-size` 的 `compact`／`standard` 值。移除段落提示，僅手動改為較小時顯示三語資訊 Toast；初始化、恢復偏好、重選、語系變更與旋轉不通知，也不清除其他通知。
+- 通知移除左色線與底部讀條。44px 關閉按鈕以同一裁切區域由下往上露出深藍背景與淺藍 ×，由單一 monotonic deadline 控制填色與自動關閉；手動關閉取消 timer／rAF，永久通知及減少動畫偏好維持靜態。
+- 修正檢舉通知的可用性判斷：`Toast` 是全域 lexical binding，舊 `window.Toast` 判斷會退回 alert。成功與失敗改用同一 Toast，未改 callable、檢舉規則或管理流程。
+- 本機 Node 22 與既有 npm 套件沿用，另安裝 Playwright WebKit 執行檔。WebKit 的本機 gallery 測試在 Firebase 初始化前啟用 force long polling，透過 `merge: true` 保留模擬器 host／SSL，且限定 `isUsingEmulators()`；正式網站的 Firebase 傳輸設定未改。
+- Hosting 建置／發布防護測試 33 項通過；production build 的 public／admin／maintenance 仍為 25／15／3 個允許檔案。更新 gallery CSS 至 v4、Toast CSS 至 v3，保留兩份 `no-cache`。
+- 完整 E2E 回歸為 87 項通過、8 項依桌面／手機條件略過、3 項初次失敗；最後集中重測 6 項全部通過。兩個 WebKit 儲存失敗案例的錯誤源於 reload 取消舊的模擬器 backchannel（SDK 堆疊、重載後 3–7ms，信心度 99%），測試改為正常結束上一頁的 SDK 連線，保留所有 pageerror 檢查並驗證重新載入後的預設及 20 篇資料。另一項為既有後台側邊欄的偶發焦點競態，來源與測試均未改，原樣重跑通過；未納入本次公開網站修改。
+- 驗收使用既有 Playwright 流程及新增的 WebKit 桌面／手機專案；本次工作階段沒有 Browser plugin。邊界、鍵盤、三語、偏好、分頁、通知觸發、四種狀態、填色／到期／手動關閉、永久通知、背景恢復與減少動畫均已驗證。
+- 真實 X 驗收在短期 staging 公開前端預覽進行，三篇參考作品只放入瀏覽器記憶體，沒有資料庫寫入。Chromium 與 WebKit 各 12 組尺寸／模式切換通過，包含 393px 單欄、734px 雙欄、834px 雙欄及 1440px 三欄；iframe 完整、置中，無重疊或水平溢出，三篇沿用單一 widgets script。驗收記錄保留實際 CSS 視窗、外層可用寬度、欄數、iframe 寬高及 Toast 約 50% 的按鈕填色。
+- WebKit 的官方 X iframe 會產生 `Permission policy 'WebShare' check failed`，堆疊位於 `https://platform.twitter.com/embed/`；主頁錯誤與 console errors 均為空，貼文完整顯示。此第三方權限探測未透過擴大 iframe 權限或修改 X 元件處理。
+
+本次僅發布 public Hosting，依發布當下的 live version 保存回滾 manifest；未修改後台、Functions、Rules、Auth、資料或維護鎖。

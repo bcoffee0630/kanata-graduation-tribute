@@ -33,9 +33,9 @@
     "open_original": "元の投稿を開く",
     "retry": "再読み込み",
     "display_size": "表示サイズ",
-    "display_standard": "標準",
+    "display_standard": "デフォルト",
     "display_compact": "小さめ",
-    "display_hint": "小さめ表示は広い画面で3列、狭い画面では見やすい列数になります。"
+    "display_compact_notice": "小さめ表示に切り替えました。画面の縦横比によっては、見た目に大きな違いがない場合があります。"
   },
   "danmaku": {
     "pause": "⏸",

@@ -159,7 +159,7 @@ const Report = {
                 details
             });
             const message = result.data.autoHidden ? labels.autoHidden : labels.success;
-            if (window.Toast) Toast.success(message); else alert(message);
+            if (typeof Toast !== 'undefined') Toast.success(message); else alert(message);
             this.closeModal();
         } catch (error) {
             const code = String(error.code || '');
@@ -168,7 +168,7 @@ const Report = {
             if (code.includes('failed-precondition') && String(error.message).includes('own')) message = labels.own;
             if (code.includes('permission-denied')) message = labels.restricted;
             if (code.includes('unavailable')) message = labels.maintenance;
-            if (window.Toast) Toast.error(message); else alert(message);
+            if (typeof Toast !== 'undefined') Toast.error(message); else alert(message);
             console.error('Report submission failed:', error);
         } finally {
             this.isSubmitting = false;

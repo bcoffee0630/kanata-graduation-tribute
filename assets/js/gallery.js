@@ -36,13 +36,15 @@ const Gallery = {
         this.displayControls?.addEventListener('change', event => {
             const input = event.target;
             if (input.matches('input[name="gallery-display-size"]') && input.checked) {
-                this.setDisplaySize(input.value, { persist: true });
+                this.setDisplaySize(input.value, { persist: true, notify: true });
             }
         });
     },
 
-    setDisplaySize(size, { persist = false } = {}) {
-        this.displaySize = size === 'compact' ? 'compact' : 'standard';
+    setDisplaySize(size, { persist = false, notify = false } = {}) {
+        const nextSize = size === 'compact' ? 'compact' : 'standard';
+        const changed = nextSize !== this.displaySize;
+        this.displaySize = nextSize;
         this.container.dataset.displaySize = this.displaySize;
         if (this.displayControls) {
             this.displayControls.dataset.displaySize = this.displaySize;
@@ -53,6 +55,10 @@ const Gallery = {
         if (persist) {
             try { localStorage.setItem(this.DISPLAY_STORAGE_KEY, this.displaySize); } catch {}
         }
+        if (notify && changed && typeof Toast !== 'undefined') {
+            if (this.sizeToast) Toast.dismiss(this.sizeToast);
+            this.sizeToast = this.displaySize === 'compact' ? Toast.info(this.t('display_compact_notice')) : null;
+        }
         this.scheduleLayout();
     },
 
@@ -60,7 +66,8 @@ const Gallery = {
         const translated = window.i18n?.t(`gallery.${key}`);
         return translated && translated !== `gallery.${key}` ? translated : {
             no_content: 'まだ投稿がありません', load_error: 'ギャラリーを読み込めませんでした。',
-            submitter: '投稿者', anonymous: '匿名', retry: '再読み込み'
+            submitter: '投稿者', anonymous: '匿名', retry: '再読み込み',
+            display_compact_notice: '小さめ表示に切り替えました。画面の縦横比によっては、見た目に大きな違いがない場合があります。'
         }[key] || key;
     },
 

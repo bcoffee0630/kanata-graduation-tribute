@@ -98,6 +98,17 @@ async function expectGalleryLayout(page, columns) {
     }, columns)).toBe(true);
 }
 
+async function expectCenteredEmbed(page) {
+    const embed = page.locator('#gallery-grid .x-embed').first();
+    await embed.scrollIntoViewIfNeeded();
+    await expect(embed).toHaveAttribute('data-embed-state', 'ready');
+    await expect.poll(() => embed.evaluate(element => {
+        const post = element.querySelector('.twitter-tweet').getBoundingClientRect();
+        const frame = element.getBoundingClientRect();
+        return Math.abs((post.left - frame.left) - (frame.right - post.right));
+    })).toBeLessThan(1);
+}
+
 test.beforeAll(async () => {
     process.env.GCLOUD_PROJECT = projectId;
     process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8180';
@@ -108,9 +119,21 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => { await stopEmbedFixture?.(); });
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }) => {
     await seedGallery();
     await page.addInitScript(() => localStorage.setItem('preferred-language', 'zh-TW'));
+    if (browserName === 'webkit') {
+        await page.addInitScript(() => {
+            // WebKit buffers the emulator's open streaming responses. Close each response
+            // after data arrives; merge retains the local emulator host and SSL settings.
+            window.addEventListener('firebaseReady', () => {
+                if (window.FirebaseApp?.isUsingEmulators()) {
+                    window.FirebaseApp.getDb().settings({ merge: true,
+                        experimentalForceLongPolling: true, experimentalAutoDetectLongPolling: false });
+                }
+            }, { once: true });
+        });
+    }
     await page.route('https://platform.x.com/widgets.js', route => route.fulfill({ contentType: 'application/javascript', body: widgetFixture }));
 });
 
@@ -131,7 +154,7 @@ test('X gallery paginates visible posts and adapts naturally to desktop and mobi
     await expect(page.locator('#lightbox')).toHaveCount(0);
     const cards = page.locator('.gallery-card');
     await expect.poll(async () => (await cards.first().boundingBox())?.height).toBeGreaterThan(440);
-    if (testInfo.project.name === 'mobile') {
+    if (page.viewportSize().width < 768) {
         await expect.poll(async () => {
             const first = await cards.nth(0).boundingBox();
             const second = await cards.nth(1).boundingBox();
@@ -140,7 +163,7 @@ test('X gallery paginates visible posts and adapts naturally to desktop and mobi
     }
     const first = await cards.nth(0).boundingBox();
     const second = await cards.nth(1).boundingBox();
-    if (testInfo.project.name === 'desktop') {
+    if (page.viewportSize().width >= 768) {
         expect(second.x - first.x - first.width).toBeCloseTo(32, 0);
         await expect.poll(async () => Math.abs((await cards.nth(0).boundingBox()).y - (await cards.nth(1).boundingBox()).y))
             .toBeLessThan(1);
@@ -152,7 +175,7 @@ test('X gallery paginates visible posts and adapts naturally to desktop and mobi
     // ResizeObserver must move downstream cards when an embed expands later.
     await page.locator('.gallery-card').first().evaluate(card => { card.querySelector('[role="img"]').style.height = '600px'; });
     await expect.poll(async () => (await cards.first().boundingBox())?.height).toBeGreaterThan(600);
-    if (testInfo.project.name === 'mobile') {
+    if (page.viewportSize().width < 768) {
         await expect.poll(async () => (await cards.nth(1).boundingBox())?.y - (await cards.first().boundingBox())?.y)
             .toBeGreaterThan(630);
     }
@@ -168,7 +191,8 @@ test('X gallery paginates visible posts and adapts naturally to desktop and mobi
 test('link tutorial, preview, translated labels and keyboard focus work without changing navigation', async ({ page }, testInfo) => {
     await page.goto('/#gallery-section');
     await signIn(page, testInfo);
-    await page.locator('#submit-fanart-btn').click();
+    await page.locator('#submit-fanart-btn').focus();
+    await page.keyboard.press('Enter');
     const modal = page.locator('#fanart-modal');
     await expect(modal).toBeVisible();
     await expect(page.locator('#fanart-post-url')).toBeFocused();
@@ -362,6 +386,7 @@ test('display size switches preserve posts, pagination, reports and existing res
         window.__displaySnapshot = {
             data: gallery.data, cursor: gallery.lastDoc, version: gallery.requestVersion,
             items: [...document.querySelectorAll('#gallery-grid .gallery-item')],
+            reports: [...document.querySelectorAll('#gallery-grid .report-btn')],
             calls: window.__xWidgetCalls.filter(call => window.Gallery.data.slice(0, 3).some(item => item.postId === call.id))
         };
         window.__displayQueries = 0;
@@ -375,9 +400,11 @@ test('display size switches preserve posts, pagination, reports and existing res
         expect(await page.evaluate(() => {
             const saved = window.__displaySnapshot;
             const items = [...document.querySelectorAll('#gallery-grid .gallery-item')];
+            const reports = [...document.querySelectorAll('#gallery-grid .report-btn')];
             return window.Gallery.data === saved.data && window.Gallery.lastDoc === saved.cursor &&
                 window.Gallery.requestVersion === saved.version && window.__displayQueries === 0 &&
-                items.every((item, index) => item === saved.items[index]);
+                items.every((item, index) => item === saved.items[index]) &&
+                reports.every((report, index) => report === saved.reports[index]);
         })).toBe(true);
         await expect(page.locator('#gallery-grid .report-btn')).toHaveCount(21);
         await expect(page.locator('#load-more-btn')).toBeHidden();
@@ -388,27 +415,35 @@ test('display size switches preserve posts, pagination, reports and existing res
     expect(await page.locator('script#x-widgets-script').count()).toBe(1);
 });
 
-test('display modes use the agreed responsive boundaries without stale masonry columns', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'One pass covers desktop and mobile widths in the same browser.');
+test('adaptive modes honor available-width and viewport boundaries without stale masonry columns', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.endsWith('mobile'), 'The desktop project exercises every width for this browser.');
     test.setTimeout(60_000);
     await page.goto('/#gallery-section');
     await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
     for (const size of ['standard', 'compact', 'standard']) {
         await selectDisplaySize(page, size);
-        for (const width of [1440, 1024, 1023, 768, 767, 390]) {
+        for (const width of [1440, 1194, 1024, 1023, 834, 768, 767, 734, 608, 607, 393]) {
             await page.setViewportSize({ width, height: 900 });
-            await expectGalleryLayout(page, width < 768 ? 1 : size === 'compact' && width >= 1024 ? 3 : 2);
-            const hint = page.locator('#gallery-size-hint');
-            if (size === 'compact' && width < 1024) await expect(hint).toBeVisible();
-            else await expect(hint).toBeHidden();
-            const embed = page.locator('#gallery-grid .x-embed').first();
-            await embed.scrollIntoViewIfNeeded();
-            await expect(embed).toHaveAttribute('data-embed-state', 'ready');
-            await expect.poll(() => embed.evaluate(element => {
-                const post = element.querySelector('.twitter-tweet').getBoundingClientRect();
-                const frame = element.getBoundingClientRect();
-                return Math.abs((post.left - frame.left) - (frame.right - post.right));
-            })).toBeLessThan(1);
+            const compact = size === 'compact';
+            const columns = compact ? width >= 1024 ? 3 : width >= 608 ? 2 : 1 : width >= 768 ? 2 : 1;
+            await expectGalleryLayout(page, columns);
+            await expect(page.locator('#gallery-size-hint, .gallery-size-hint')).toHaveCount(0);
+            await expectCenteredEmbed(page);
+            const geometry = await page.locator('#gallery-grid').evaluate(grid => {
+                const parent = grid.parentElement;
+                const style = getComputedStyle(parent);
+                return {
+                    available: parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+                    width: grid.getBoundingClientRect().width,
+                    gap: getComputedStyle(grid).columnGap,
+                    embedWidth: grid.querySelector('.twitter-tweet').getBoundingClientRect().width
+                };
+            });
+            const maximum = compact ? width >= 1024 ? 1040 : columns === 2 ? 648 : 300 : 1040;
+            expect(geometry.width).toBeCloseTo(Math.min(geometry.available, maximum), 0);
+            expect(geometry.gap).toBe('32px');
+            if (width === 607 || width === 608) expect(geometry.available).toBe(width - 40);
+            if (compact && columns === 2 && width < 768) expect(geometry.embedWidth).toBeGreaterThanOrEqual(250);
         }
     }
 });
@@ -418,21 +453,24 @@ test('display preference persists through reload, translations, keyboard input a
     await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
     const standard = displayOption(page, 'standard');
     const compact = displayOption(page, 'compact');
+    expect(await page.locator('input[name="gallery-display-size"]').evaluateAll(inputs => inputs.map(input => input.value)))
+        .toEqual(['compact', 'standard']);
+    await expect(compact).not.toHaveAttribute('aria-describedby');
     await standard.focus();
-    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
     await expect(compact).toBeChecked();
     await expect(compact).toBeFocused();
-    await page.keyboard.press('ArrowLeft');
-    await expect(standard).toBeChecked();
     await page.keyboard.press('ArrowRight');
+    await expect(standard).toBeChecked();
+    await page.keyboard.press('ArrowLeft');
     await expect.poll(() => page.evaluate(() => localStorage.getItem('gallery-display-size'))).toBe('compact');
     await page.reload();
     await expect(compact).toBeChecked();
     await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
     for (const [lang, group, standardLabel, compactLabel] of [
-        ['en', 'Display size', 'Standard', 'Smaller'],
-        ['ja', '表示サイズ', '標準', '小さめ'],
-        ['zh-TW', '顯示大小', '標準', '較小']
+        ['en', 'Display size', 'Default', 'Smaller'],
+        ['ja', '表示サイズ', 'デフォルト', '小さめ'],
+        ['zh-TW', '顯示大小', '預設', '較小']
     ]) {
         await page.evaluate(lang => window.i18n.switchLanguage(lang), lang);
         await expect(page.getByRole('group', { name: group, exact: true })).toBeVisible();
@@ -475,7 +513,60 @@ test('unavailable preference storage still permits switching for the current vis
     await selectDisplaySize(page, 'compact');
     await expect(displayOption(page, 'compact')).toBeChecked();
     await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', 'compact');
+    expect(errors).toEqual([]);
+    // End this visit's SDK streams before navigating. WebKit otherwise reports the
+    // canceled emulator backchannel as a native fetch error during page teardown.
+    await page.evaluate(() => window.FirebaseApp.getDb().terminate());
     await page.reload();
     await expect(displayOption(page, 'standard')).toBeChecked();
+    await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', 'standard');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
     expect(errors).toEqual([]);
+});
+
+test('only a manual transition to smaller emits its translated notice without clearing unrelated notifications', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/#gallery-section');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    await expect(page.locator('.toast.info')).toHaveCount(0);
+    await page.evaluate(() => {
+        const info = Toast.info;
+        window.__displayNotices = [];
+        Toast.info = function(message, duration) {
+            const toast = info(message, duration);
+            window.__displayNotices.push(toast);
+            return toast;
+        };
+        Toast.success('Keep this other notification', 0);
+    });
+    const unrelated = page.locator('.toast.success');
+    await selectDisplaySize(page, 'compact');
+    await expect(page.locator('.toast.info.show .toast-content')).toHaveText('已採用較小顯示；部分螢幕比例下可能沒有明顯變化。');
+    await selectDisplaySize(page, 'compact');
+    await page.setViewportSize({ width: 734, height: 393 });
+    await page.evaluate(() => window.i18n.switchLanguage('en'));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await page.locator('#load-more-btn').click();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(21);
+    expect(await page.evaluate(() => window.__displayNotices.length)).toBe(1);
+
+    await selectDisplaySize(page, 'standard');
+    expect(await page.evaluate(() => window.__displayNotices[0].classList.contains('hide'))).toBe(true);
+    await expect(unrelated).toHaveClass(/\bshow\b/);
+    for (const [lang, message] of [
+        ['en', 'Smaller view is enabled; some screen proportions may show little visible difference.'],
+        ['ja', '小さめ表示に切り替えました。画面の縦横比によっては、見た目に大きな違いがない場合があります。']
+    ]) {
+        await page.evaluate(lang => window.i18n.switchLanguage(lang), lang);
+        await selectDisplaySize(page, 'compact');
+        await expect(page.locator('.toast.info.show .toast-content')).toHaveText(message);
+        await expect(page.locator('.toast.info.show')).toHaveCount(1);
+        await expect(unrelated).toHaveClass(/\bshow\b/);
+        if (lang === 'en') await selectDisplaySize(page, 'standard');
+    }
+    expect(await page.evaluate(() => window.__displayNotices.length)).toBe(3);
+    await page.reload();
+    await expect(displayOption(page, 'compact')).toBeChecked();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    await expect(page.locator('.toast.info')).toHaveCount(0);
 });
