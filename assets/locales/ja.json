@@ -65,7 +65,6 @@
     "tutorial_copy": "共有ボタンから「リンクをコピー」を選びます。",
     "tutorial_paste": "下に貼り付けます。プレビューで確認できます。",
     "tutorial_note": "公開されている投稿のリンクを使用してください。作者名はXの埋め込みに表示されます。",
-    "fanart_daily_limit": "1日2件まで投稿できます。",
     "close": "閉じる"
   },
   "footer": {
@@ -83,6 +82,17 @@
     "post_unavailable": "この投稿は埋め込めません。公開されていて削除されていないか確認するか、別の投稿を選んでください。",
     "x_service_unavailable": "Xでの確認が一時的にできません。後でもう一度お試しください。投稿回数は消費されていません。",
     "duplicate_post": "この投稿はすでに共有されています。",
-    "rate_limit_fanart": "本日の投稿上限に達しました（1日2件まで）。"
+    "rate_limit_fanart": "本日の投稿上限に達しました。",
+    "quota_loading": "本日の投稿可能数を確認しています…",
+    "quota_unavailable": "本日の投稿可能数を取得できません。送信時に確認します。",
+    "quota_message_limited": "メッセージは1日 {{limit}} 件まで。本日は {{used}} 件投稿済みです。",
+    "quota_message_unlimited": "メッセージの1日上限はありません。本日は {{used}} 件投稿済みです。",
+    "quota_message_closed": "現在、新しいメッセージは受け付けていません。本日は {{used}} 件投稿済みです。",
+    "quota_fanart_limited": "投稿は1日 {{limit}} 件まで。本日は {{used}} 件投稿済みです。",
+    "quota_fanart_unlimited": "投稿の1日上限はありません。本日は {{used}} 件投稿済みです。",
+    "quota_fanart_closed": "現在、新しい投稿は受け付けていません。本日は {{used}} 件投稿済みです。",
+    "rate_limit_message": "本日のメッセージ投稿上限に達しました。",
+    "rate_limit_message_details": "本日のメッセージ投稿上限に達しました（1日 {{limit}} 件まで、{{used}} 件投稿済み）。",
+    "rate_limit_fanart_details": "本日の投稿上限に達しました（1日 {{limit}} 件まで、{{used}} 件投稿済み）。"
   }
 }

@@ -155,6 +155,26 @@ describe('Firestore governance rules', () => {
     await assertFails(getDoc(doc(moderatorDb, 'adminAccounts', 'owner-1')));
     await assertSucceeds(getDoc(doc(ownerDb, 'adminAccounts', 'owner-1')));
   });
+
+  it('keeps contribution settings server-only for contributors and administrators', async () => {
+    await seed();
+    await environment.withSecurityRulesDisabled(async context => {
+      const firestore = context.firestore();
+      await setDoc(doc(firestore, 'system', 'contributionLimits'), { messageDailyLimit: 3, fanartDailyLimit: 2 });
+      await setDoc(doc(firestore, 'userContributionLimits', 'author-1'), { messageDailyLimit: null, revision: 1 });
+    });
+    const contexts = [environment.unauthenticatedContext(),
+      environment.authenticatedContext('author-1', contributorClaims()),
+      environment.authenticatedContext('moderator-1', adminClaims('moderator')),
+      environment.authenticatedContext('owner-1', adminClaims('owner'))];
+    for (const context of contexts) {
+      for (const [collectionName, id] of [['system', 'contributionLimits'], ['userContributionLimits', 'author-1']]) {
+        const reference = doc(context.firestore(), collectionName, id);
+        await assertFails(getDoc(reference));
+        await assertFails(setDoc(reference, { messageDailyLimit: null }));
+      }
+    }
+  });
 });
 
 describe('legacy Storage media', () => {

@@ -198,6 +198,7 @@
                         <textarea id="message-content" maxlength="500" required placeholder=""></textarea>
                         <div id="char-count">0/500</div>
                     </div>
+                    <p id="message-quota-note" class="fanart-daily-note" role="status" aria-live="polite"></p>
                     <div class="submit-confirmation">
                         <label class="confirm-label">
                             <input type="checkbox" class="confirm-checkbox" required>
@@ -253,7 +254,7 @@
                         <textarea id="fanart-caption" maxlength="300" rows="3" data-i18n-placeholder="modal.caption_placeholder" placeholder="任意" aria-describedby="fanart-caption-count"></textarea>
                         <small id="fanart-caption-count" class="character-count">0/300</small>
                     </div>
-                    <p class="fanart-daily-note" data-i18n="modal.fanart_daily_limit">1日2件まで投稿できます。</p>
+                    <p id="fanart-quota-note" class="fanart-daily-note" role="status" aria-live="polite"></p>
                     <p id="fanart-submit-error" class="field-error" role="alert" hidden></p>
                     <div class="submit-confirmation">
                         <label class="confirm-label">

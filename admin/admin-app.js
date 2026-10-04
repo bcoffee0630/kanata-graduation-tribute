@@ -12,7 +12,8 @@ const AdminApp = {
         reportType: 'all',
         userQuery: '',
         userPageToken: null,
-        userResults: []
+        userResults: [],
+        detailUserUid: null
     },
     refs: {},
     auth: null,
@@ -21,6 +22,8 @@ const AdminApp = {
     modalResolver: null,
     toastTimer: null,
     mediaObjectUrls: [],
+    userDetailRequest: 0,
+    contributionDefaultsRequest: 0,
 
     async init() {
         try {
@@ -107,6 +110,9 @@ const AdminApp = {
         window.addEventListener('adminLanguageChanged', () => {
             this.syncAuthLanguage();
             if (this.state.role) this.renderView();
+            if (this.state.detailUserUid && this.refs.drawer.classList.contains('is-open')) {
+                this.openUser(this.state.detailUserUid);
+            }
             this.updateChrome();
         });
         this.syncNavigationChrome();
@@ -235,6 +241,10 @@ const AdminApp = {
     },
 
     async handleAuthState(user) {
+        if (this.state.user?.uid !== user?.uid) {
+            this.closeDrawer();
+            this.refs.drawerContent.replaceChildren();
+        }
         this.state.user = user;
         if (!user) {
             this.state.role = null;
@@ -401,7 +411,7 @@ const AdminApp = {
     },
 
     setView(view) {
-        if (!['dashboard', 'reports', 'content', 'users', 'admins', 'audit'].includes(view)) return;
+        if (!['dashboard', 'reports', 'content', 'users', 'contributionLimits', 'admins', 'audit'].includes(view)) return;
         if (view === 'admins' && this.state.role !== 'owner') return;
         this.state.view = view;
         document.querySelectorAll('[data-view]').forEach((button) => {
@@ -420,6 +430,7 @@ const AdminApp = {
             if (this.state.view === 'reports') await this.renderReports();
             if (this.state.view === 'content') await this.renderContent();
             if (this.state.view === 'users') await this.renderUsers();
+            if (this.state.view === 'contributionLimits') await this.renderContributionDefaults();
             if (this.state.view === 'admins') await this.renderAdmins();
             if (this.state.view === 'audit') await this.renderAudit();
             this.refreshIcons(this.refs.main);
@@ -983,14 +994,21 @@ const AdminApp = {
     },
 
     async openUser(uid) {
+        const actorUid = this.state.user?.uid;
+        const actorRole = this.state.role;
+        const requestId = ++this.userDetailRequest;
+        const current = () => requestId === this.userDetailRequest && actorUid === this.state.user?.uid &&
+            actorRole === this.state.role && this.state.role;
         try {
             const data = await this.call('getUser', { uid });
+            if (!current()) return;
             const user = data.user;
             const restrictionState = user.restriction?.state || 'active';
             const displayState = restrictionState === 'banned'
                 ? 'banned'
                 : user.disabled ? 'disabled' : restrictionState;
-            this.openDrawer(this.t('users.details'));
+            this.openDrawer(this.t('users.details'), requestId);
+            this.state.detailUserUid = uid;
             this.refs.drawerContent.append(this.drawerSection([
                 this.statusLabel(displayState),
                 this.el('p', '', user.displayName || user.email || uid),
@@ -1002,6 +1020,7 @@ const AdminApp = {
                 this.el('p', '', (user.providers || []).map((provider) => `${provider.providerId}: ${provider.uid}`).join('\n') || this.t('common.none')),
                 this.el('p', 'muted-text', `${this.t('users.lastSignIn')}: ${this.formatDate(user.lastSignInAt)}`)
             ]));
+            this.refs.drawerContent.append(this.userContributionSection(uid, data.contributionLimits, user));
             const recent = this.drawerSection([this.el('h3', '', this.t('users.recentContent'))]);
             [...(data.messages || []), ...(data.fanart || [])].slice(0, 12).forEach((item) => {
                 recent.append(this.el('p', '', item.content || item.caption || this.t('common.none')));
@@ -1037,7 +1056,7 @@ const AdminApp = {
             this.refs.drawerContent.append(actions);
             this.refreshIcons(this.refs.drawer);
         } catch (error) {
-            this.toast(this.humanError(error, 'errors.load'), true);
+            if (current()) this.toast(this.humanError(error, 'errors.load'), true);
         }
     },
 
@@ -1078,6 +1097,244 @@ const AdminApp = {
         } catch (error) {
             this.toast(this.humanError(error), true);
         }
+    },
+
+    contributionField(labelText, input) {
+        const wrap = this.el('div', 'modal-field');
+        const label = this.el('label', '', labelText);
+        label.htmlFor = input.id;
+        wrap.append(label, input);
+        return wrap;
+    },
+
+    contributionNumber(id, value) {
+        const input = this.el('input');
+        input.id = id;
+        input.type = 'number';
+        input.min = '0';
+        input.max = String(Number.MAX_SAFE_INTEGER);
+        input.step = '1';
+        input.required = true;
+        input.value = String(value);
+        input.addEventListener('input', () => input.setCustomValidity(''));
+        return input;
+    },
+
+    contributionReason(id) {
+        const input = this.el('textarea');
+        input.id = id;
+        input.required = true;
+        input.minLength = 3;
+        input.maxLength = 500;
+        input.addEventListener('input', () => input.setCustomValidity(''));
+        return input;
+    },
+
+    validateContributionForm(form, numbers, reason) {
+        for (const input of numbers) {
+            const value = Number(input.value);
+            input.setCustomValidity(input.value.trim() !== '' && Number.isSafeInteger(value) && value >= 0
+                ? '' : this.t('quota.invalidNumber'));
+        }
+        const reasonLength = reason.value.trim().length;
+        reason.setCustomValidity(reasonLength >= 3 && reasonLength <= 500 ? '' : this.t('quota.invalidReason'));
+        return form.reportValidity();
+    },
+
+    contributionError(reload) {
+        const box = this.el('div', 'quota-error');
+        const message = this.el('p', 'form-error');
+        message.setAttribute('role', 'alert');
+        const button = this.command(this.t('quota.reload'), 'refresh-cw', reload, 'secondary-command');
+        button.classList.add('is-hidden');
+        box.append(message, button);
+        return { box, show: (error) => {
+            const conflict = String(error?.code || '').includes('aborted');
+            message.textContent = conflict ? this.t('quota.conflict') : this.humanError(error);
+            button.classList.toggle('is-hidden', !conflict);
+        } };
+    },
+
+    contributionBusy(form, busy) {
+        form.setAttribute('aria-busy', String(busy));
+        if (busy) {
+            form.quotaDisabledControls = Array.from(form.elements, (input) => [input, input.disabled]);
+            form.quotaDisabledControls.forEach(([input]) => { input.disabled = true; });
+        } else {
+            (form.quotaDisabledControls || []).forEach(([input, disabled]) => { input.disabled = disabled; });
+            delete form.quotaDisabledControls;
+        }
+    },
+
+    async renderContributionDefaults() {
+        const actorUid = this.state.user?.uid;
+        const actorRole = this.state.role;
+        const requestId = ++this.contributionDefaultsRequest;
+        const current = () => requestId === this.contributionDefaultsRequest &&
+            actorUid === this.state.user?.uid && actorRole === this.state.role &&
+            this.state.role && this.state.view === 'contributionLimits';
+        let data;
+        try {
+            data = await this.call('getContributionDefaults', {});
+        } catch (error) {
+            if (!current()) return;
+            throw error;
+        }
+        if (!current()) return;
+        const fragment = document.createDocumentFragment();
+        fragment.append(this.heading('quota.title', 'quota.subtitle',
+            this.command(this.t('common.refresh'), 'refresh-cw', () => this.renderView(), 'secondary-command')));
+        const panel = this.el('section', 'quota-panel');
+        panel.append(this.el('p', 'quota-note', this.t('quota.defaultHint')));
+        if (this.state.role !== 'owner') {
+            panel.append(this.el('p', 'quota-note', this.t('quota.readOnly')));
+            for (const kind of ['message', 'fanart']) {
+                const item = this.el('div', 'quota-readonly-value');
+                item.append(this.el('strong', '', this.t(`quota.${kind}`)),
+                    this.el('span', '', this.t('quota.dailyValue', { limit: data.defaults[`${kind}DailyLimit`] })));
+                panel.append(item);
+            }
+        } else {
+            const form = this.el('form', 'quota-form');
+            form.id = 'contribution-defaults-form';
+            form.noValidate = true;
+            const fields = this.el('div', 'quota-default-fields');
+            const message = this.contributionNumber('default-message-limit', data.defaults.messageDailyLimit);
+            const fanart = this.contributionNumber('default-fanart-limit', data.defaults.fanartDailyLimit);
+            fields.append(this.contributionField(this.t('quota.messageDaily'), message),
+                this.contributionField(this.t('quota.fanartDaily'), fanart));
+            const reason = this.contributionReason('defaults-limit-reason');
+            const error = this.contributionError(() => this.renderView());
+            const submit = this.el('button', 'primary-command', this.t('actions.save'));
+            submit.type = 'submit';
+            const actions = this.el('div', 'quota-form-actions');
+            actions.append(submit);
+            form.append(fields, this.contributionField(this.t('quota.reason'), reason),
+                this.el('small', 'modal-field-hint', this.t('quota.reasonHint')), error.box, actions);
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (submit.disabled || !this.validateContributionForm(form, [message, fanart], reason)) return;
+                this.contributionBusy(form, true);
+                try {
+                    await this.call('setContributionDefaults', {
+                        messageDailyLimit: Number(message.value), fanartDailyLimit: Number(fanart.value),
+                        expectedRevision: data.revision, reason: reason.value.trim()
+                    });
+                    if (current()) {
+                        this.toast(this.t('quota.saved'));
+                        await this.renderView();
+                    }
+                } catch (failure) {
+                    if (current()) error.show(failure);
+                } finally {
+                    this.contributionBusy(form, false);
+                }
+            });
+            panel.append(form);
+        }
+        fragment.append(panel);
+        this.refs.main.replaceChildren(fragment);
+    },
+
+    contributionLimitValue(limit) {
+        return limit === null ? this.t('quota.unlimited') : this.t('quota.dailyValue', { limit });
+    },
+
+    userContributionSection(uid, limits, user) {
+        const actorUid = this.state.user?.uid;
+        const requestId = this.userDetailRequest;
+        const current = () => actorUid === this.state.user?.uid && this.state.role === 'owner' &&
+            this.state.detailUserUid === uid && requestId === this.userDetailRequest;
+        const section = this.drawerSection([this.el('h3', '', this.t('quota.userTitle'))]);
+        section.id = 'user-contribution-limits';
+        if (!limits) {
+            section.append(this.el('p', '', this.t('errors.load')));
+            return section;
+        }
+        section.append(this.el('p', 'quota-note', this.t('quota.usageDate', { day: limits.dayKey })),
+            this.el('p', 'quota-note', this.t('quota.userHint')));
+        const hasSocialProvider = (user.providers || []).some((provider) => ['google.com', 'github.com'].includes(provider.providerId));
+        if (!hasSocialProvider) section.append(this.el('p', 'quota-note', this.t('quota.socialRequired')));
+        const editable = this.state.role === 'owner';
+        if (!editable) section.append(this.el('p', 'quota-note', this.t('quota.readOnly')));
+        const form = this.el('form', 'quota-form');
+        form.id = 'user-contribution-limits-form';
+        form.noValidate = true;
+        const controls = {};
+        for (const kind of ['message', 'fanart']) {
+            const fieldset = this.el('fieldset', 'quota-kind');
+            fieldset.dataset.contributionKind = kind;
+            fieldset.append(this.el('legend', '', this.t(`quota.${kind}`)));
+            const effective = limits.effective[kind];
+            fieldset.append(this.el('p', 'quota-effective', this.t('quota.effective', {
+                limit: this.contributionLimitValue(effective.limit)
+            })), this.el('p', 'quota-source', this.t('quota.source', {
+                source: this.t(effective.source === 'override' ? 'quota.overrideSource' : 'quota.defaultSource')
+            })), this.el('p', 'quota-usage', this.t('quota.used', { used: limits.usage[kind] })));
+            if (editable) {
+                const mode = this.el('select');
+                mode.id = `user-${kind}-limit-mode`;
+                for (const value of ['inherit', 'limited', 'unlimited']) {
+                    const option = this.el('option', '', this.t(`quota.${value}`));
+                    option.value = value;
+                    mode.append(option);
+                }
+                mode.value = limits.overrides[kind].mode;
+                const number = this.contributionNumber(`user-${kind}-limit`,
+                    limits.overrides[kind].value ?? limits.defaults[`${kind}DailyLimit`]);
+                const numberWrap = this.contributionField(this.t(`quota.${kind}Custom`), number);
+                const syncMode = () => {
+                    const limited = mode.value === 'limited';
+                    numberWrap.classList.toggle('is-hidden', !limited);
+                    number.disabled = !limited;
+                    number.required = limited;
+                };
+                mode.addEventListener('change', syncMode);
+                syncMode();
+                fieldset.append(this.contributionField(this.t(`quota.${kind}Mode`), mode), numberWrap);
+                controls[kind] = { mode, number };
+            } else {
+                fieldset.append(this.el('p', '', this.t('quota.setting', {
+                    mode: this.t(`quota.${limits.overrides[kind].mode}`)
+                })));
+            }
+            form.append(fieldset);
+        }
+        if (editable) {
+            const reason = this.contributionReason('user-limit-reason');
+            const error = this.contributionError(() => this.openUser(uid));
+            const submit = this.el('button', 'primary-command', this.t('actions.save'));
+            submit.type = 'submit';
+            const actions = this.el('div', 'quota-form-actions');
+            actions.append(submit);
+            form.append(this.contributionField(this.t('quota.reason'), reason),
+                this.el('small', 'modal-field-hint', this.t('quota.reasonHint')), error.box, actions);
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const numbers = Object.values(controls).filter((control) => control.mode.value === 'limited')
+                    .map((control) => control.number);
+                if (submit.disabled || !this.validateContributionForm(form, numbers, reason)) return;
+                const changes = Object.fromEntries(Object.entries(controls).map(([kind, control]) => [kind,
+                    control.mode.value === 'limited' ? { mode: 'limited', value: Number(control.number.value) }
+                        : { mode: control.mode.value }]));
+                this.contributionBusy(form, true);
+                try {
+                    await this.call('setUserContributionLimits', {
+                        uid, ...changes, expectedRevision: limits.revision, reason: reason.value.trim()
+                    });
+                    if (current()) {
+                        this.toast(this.t('quota.saved'));
+                        await this.openUser(uid);
+                    }
+                } catch (failure) {
+                    if (current()) error.show(failure);
+                } finally {
+                    this.contributionBusy(form, false);
+                }
+            });
+        }
+        section.append(form);
+        return section;
     },
 
     async renderAdmins() {
@@ -1213,7 +1470,9 @@ const AdminApp = {
         return section;
     },
 
-    openDrawer(title) {
+    openDrawer(title, userRequestId = null) {
+        if (userRequestId !== this.userDetailRequest) this.userDetailRequest++;
+        this.state.detailUserUid = null;
         this.releaseMediaObjectUrls();
         this.refs.drawerTitle.textContent = title;
         this.refs.drawerContent.replaceChildren();
@@ -1223,6 +1482,8 @@ const AdminApp = {
     },
 
     closeDrawer() {
+        this.userDetailRequest++;
+        this.state.detailUserUid = null;
         this.releaseMediaObjectUrls();
         this.refs.drawer.classList.remove('is-open');
         this.refs.drawer.setAttribute('aria-hidden', 'true');

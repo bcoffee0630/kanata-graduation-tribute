@@ -47,6 +47,18 @@ BOOTSTRAP_OWNER_UID=<staging-auth-uid>
 
 管理員權限同時驗證 Auth custom claims 與 `adminAccounts/{uid}` 的 role、disabled、session version。停用、降級或撤銷工作階段會使舊 token 立即失效。
 
+## 投稿上限
+
+「投稿上限」頁可分別設定留言與畫廊的每日預設值；未儲存時維持 3 則留言／2 件投稿，以 `Asia/Taipei` 的日曆日換日。全站預設接受非負安全整數，0 表示停止該類新投稿。
+
+在「用戶管理 → 用戶詳情 → 投稿上限」可為兩類分別選擇「使用預設」「自訂數量」或「無上限」。只有 Owner 可儲存全站及個別設定，其他管理員可查看來源、生效額度及當日用量。每次儲存須提供 3–500 字原因；若提示設定已變更，先重新載入並確認目前內容，再重新填寫，不會自動覆蓋他人的異動。
+
+變更立即套用於下一次送出，不重置今日用量。無上限期間也持續計數；調回有限值或繼承預設時，沿用當日已用量。調高立即增加差額，調低到已用量以下則停止該類新投稿。全站預設不可設無上限，管理員或創作者也不會依身分自動豁免，需由 Owner 選定 UID 設定。
+
+額度綁定本站 Firebase UID，不綁 Email 或 X 作者。公開投稿仍要求同 UID 的 Google／GitHub 登入；Password-only 後台帳號不會因無上限取得投稿資格。禁言、封鎖、維護、貼文可用性與重複投稿規則均持續生效。
+
+公開兩個投稿彈窗會讀取本人的有效額度及今日用量；取得失敗時仍以送出 API 的後端判定為準。設定與前後值寫入 `adminAuditLogs`，動作為 `contribution.defaults.update` 或 `contribution.user.update`。設定集合禁止直接 client 存取，不需遷移或清空既有計數。發布及回滾見 [投稿上限增量發布](contribution-limits-release.md)。
+
 ## Staging 遷移
 
 預設只輸出 dry-run 統計：

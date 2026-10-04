@@ -966,6 +966,86 @@ textarea:focus-visible {
     font-size: 11px;
 }
 
+.quota-panel {
+    width: min(100%, 740px);
+    padding: 22px;
+    background: var(--brand-blue-pale);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.quota-default-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.quota-note {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.quota-form {
+    min-width: 0;
+}
+
+.quota-form input:disabled,
+.quota-form select:disabled,
+.quota-form textarea:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.quota-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.quota-readonly-value {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 15px 0;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+}
+
+.quota-kind {
+    min-width: 0;
+    margin: 18px 0;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.quota-kind legend {
+    padding: 0 6px;
+    color: var(--brand-blue-dark);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.quota-kind .quota-effective {
+    font-weight: 700;
+}
+
+.quota-kind .quota-source,
+.quota-kind .quota-usage {
+    color: var(--muted);
+}
+
+.quota-error .form-error:empty {
+    display: none;
+}
+
+.quota-error .secondary-command {
+    margin-top: 10px;
+}
+
 .checkbox-field {
     display: flex;
     align-items: flex-start;
@@ -1028,6 +1108,14 @@ textarea:focus-visible {
 }
 
 @media (max-width: 760px) {
+    .quota-panel {
+        padding: 16px;
+    }
+
+    .quota-default-fields {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
     :root {
         --sidebar-width: 0px;
     }

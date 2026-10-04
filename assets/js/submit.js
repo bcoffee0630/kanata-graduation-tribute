@@ -10,11 +10,13 @@ const Submit = {
     isFanartSubmitting: false,
     returnFocus: null,
     previousOverflow: '',
+    quota: null,
+    quotaState: 'idle',
+    quotaUid: null,
+    quotaRequest: 0,
 
-    // Rate limiting
+    // Form validation; daily quotas are enforced by the backend.
     limits: {
-        messagesPerDay: 3,
-        fanartPerDay: 2,
         messageMaxLength: 500,
         messageMinLength: 5
     },
@@ -91,10 +93,23 @@ const Submit = {
         document.getElementById('fanart-preview-btn')?.addEventListener('click', () => this.previewPost());
         document.addEventListener('keydown', (event) => this.handleModalKey(event));
         window.addEventListener('languageChanged', () => {
+            this.renderQuota();
             this.updateFanartSubmitState();
             if (this.preview) this.previewPost();
             const close = this.fanartModal?.querySelector('.modal-close');
             close?.setAttribute('aria-label', window.i18n?.t('modal.close') || 'Close');
+        });
+        window.addEventListener('authStateChanged', (event) => {
+            const uid = event.detail?.user?.uid || null;
+            if (uid === this.quotaUid) return;
+            this.quotaUid = uid;
+            this.quotaRequest += 1;
+            this.quota = null;
+            this.quotaState = 'idle';
+            this.renderQuota();
+            if (uid && [this.messageModal, this.fanartModal].some(modal => modal?.classList.contains('active'))) {
+                this.refreshQuota();
+            }
         });
 
         // Confirmation checkbox validation
@@ -212,6 +227,7 @@ const Submit = {
     openMessageModal() {
         if (!window.Auth.isLoggedIn()) { Toast.warning(this.getTranslation('login_required')); return; }
         this.openModal(this.messageModal);
+        this.refreshQuota();
     },
 
     openFanartModal() {
@@ -221,6 +237,61 @@ const Submit = {
         this.updateFanartSubmitState();
         this.updateCaptionCount();
         this.openModal(this.fanartModal);
+        this.refreshQuota();
+    },
+
+    async refreshQuota() {
+        const uid = window.Auth.currentUser?.uid || null;
+        const request = ++this.quotaRequest;
+        this.quotaUid = uid;
+        this.quota = null;
+        this.quotaState = uid ? 'loading' : 'idle';
+        this.renderQuota();
+        if (!uid) return;
+        try {
+            const functions = window.FirebaseApp.getFunctions();
+            if (!functions) throw new Error('Quota service unavailable');
+            const { data } = await functions.httpsCallable('getMyContributionLimits')({});
+            const valid = ['message', 'fanart'].every(type => {
+                const value = data?.[type];
+                return value && (value.limit === null || (Number.isSafeInteger(value.limit) && value.limit >= 0)) &&
+                    Number.isSafeInteger(value.used) && value.used >= 0;
+            });
+            if (!valid || typeof data.dayKey !== 'string') throw new Error('Invalid quota response');
+            if (request !== this.quotaRequest || uid !== window.Auth.currentUser?.uid) return;
+            this.quota = data;
+            this.quotaState = 'ready';
+        } catch {
+            if (request !== this.quotaRequest || uid !== window.Auth.currentUser?.uid) return;
+            this.quotaState = 'error';
+        }
+        this.renderQuota();
+    },
+
+    renderQuota() {
+        for (const type of ['message', 'fanart']) {
+            const note = document.getElementById(`${type}-quota-note`);
+            if (!note) continue;
+            let key = this.quotaState === 'error' ? 'quota_unavailable' : 'quota_loading';
+            let params = {};
+            if (!window.Auth.currentUser?.uid) key = 'login_required';
+            else if (this.quotaState === 'ready' && this.quotaUid === window.Auth.currentUser.uid) {
+                const { limit, used } = this.quota[type];
+                key = `quota_${type}_${limit === null ? 'unlimited' : limit === 0 ? 'closed' : 'limited'}`;
+                params = { limit, used };
+            }
+            note.textContent = this.getTranslation(key, params);
+        }
+    },
+
+    getQuotaError(error, contentType) {
+        const details = error.details;
+        if (details?.reason === 'daily_limit' && details.contentType === contentType &&
+            Number.isSafeInteger(details.limit) && details.limit >= 0 &&
+            Number.isSafeInteger(details.used) && details.used >= 0) {
+            return this.getTranslation(`rate_limit_${contentType}_details`, details);
+        }
+        return this.getTranslation(`rate_limit_${contentType}`);
     },
 
     openModal(modal) {
@@ -328,6 +399,7 @@ const Submit = {
             Toast.success(this.getTranslation('message_submitted'));
             form.reset();
             this.closeAllModals();
+            this.refreshQuota();
 
         } catch (error) {
             console.error('Message submission error:', error);
@@ -335,7 +407,7 @@ const Submit = {
             const message = code.includes('unavailable')
                 ? this.getTranslation('site_maintenance')
                 : code.includes('resource-exhausted')
-                ? this.getTranslation('rate_limit_message')
+                ? this.getQuotaError(error, 'message')
                 : code.includes('permission-denied')
                     ? this.getTranslation('account_restricted')
                     : error.message || this.getTranslation('submit_error');
@@ -371,6 +443,7 @@ const Submit = {
             form.reset();
             this.updateCaptionCount();
             this.closeAllModals();
+            this.refreshQuota();
             window.Gallery?.loadFromFirestore();
             window.dispatchEvent(new CustomEvent('fanartSubmitted', { detail: { id: result.data.id } }));
         } catch (error) {
@@ -386,7 +459,8 @@ const Submit = {
                 code.includes('permission-denied') ? 'account_restricted' :
                 code.includes('unauthenticated') ? 'login_required' : 'submit_error'
             );
-            const message = this.getTranslation(key);
+            const message = code.includes('resource-exhausted')
+                ? this.getQuotaError(error, 'fanart') : this.getTranslation(key);
             const alert = document.getElementById('fanart-submit-error');
             alert.textContent = message;
             alert.hidden = false;
@@ -399,8 +473,8 @@ const Submit = {
         }
     },
 
-    getTranslation(key) {
-        const localized = window.i18n?.t(`submit.${key}`);
+    getTranslation(key, params = {}) {
+        const localized = window.i18n?.t(`submit.${key}`, params);
         if (localized && localized !== `submit.${key}`) return localized;
         const translations = {
             'ja': {
@@ -414,8 +488,8 @@ const Submit = {
                 submit_error: '投稿に失敗しました。もう一度お試しください。',
                 site_maintenance: 'メンテナンス中のため、現在は投稿できません。',
                 account_restricted: 'このアカウントは現在投稿できません。',
-                rate_limit_message: '本日の投稿上限に達しました（1日3件まで）',
-                rate_limit_fanart: '本日の投稿上限に達しました（1日2件まで）'
+                rate_limit_message: '本日のメッセージ投稿上限に達しました。',
+                rate_limit_fanart: '本日の投稿上限に達しました。'
             },
             'zh-TW': {
                 login_required: '請先登入',
@@ -428,8 +502,8 @@ const Submit = {
                 submit_error: '送出失敗，請再試一次。',
                 site_maintenance: '網站維護中，目前無法投稿。',
                 account_restricted: '此帳號目前無法投稿。',
-                rate_limit_message: '今日已達投稿上限（每日3則）',
-                rate_limit_fanart: '今日已達投稿上限（每日2件）'
+                rate_limit_message: '今日已達留言上限。',
+                rate_limit_fanart: '今日已達投稿上限。'
             },
             'en': {
                 login_required: 'Please log in first',
@@ -442,13 +516,24 @@ const Submit = {
                 submit_error: 'Submission failed. Please try again.',
                 site_maintenance: 'The site is under maintenance and is temporarily read-only.',
                 account_restricted: 'This account cannot submit content right now.',
-                rate_limit_message: 'Daily limit reached (3 messages per day)',
-                rate_limit_fanart: 'Daily limit reached (2 posts per day)'
+                rate_limit_message: 'Today’s message limit has been reached.',
+                rate_limit_fanart: 'Today’s post limit has been reached.',
+                quota_loading: 'Checking today’s submission allowance…',
+                quota_unavailable: 'Today’s allowance is temporarily unavailable. It will be checked when you submit.',
+                quota_message_limited: 'Up to {{limit}} messages per day; {{used}} used today.',
+                quota_message_unlimited: 'No daily message limit; {{used}} used today.',
+                quota_message_closed: 'New messages are currently disabled; {{used}} used today.',
+                quota_fanart_limited: 'Up to {{limit}} posts per day; {{used}} used today.',
+                quota_fanart_unlimited: 'No daily post limit; {{used}} used today.',
+                quota_fanart_closed: 'New posts are currently disabled; {{used}} used today.',
+                rate_limit_message_details: 'Today’s message limit has been reached ({{limit}} per day; {{used}} used).',
+                rate_limit_fanart_details: 'Today’s post limit has been reached ({{limit}} per day; {{used}} used).'
             }
         };
 
         const lang = (typeof i18n !== 'undefined') ? i18n.currentLang : 'ja';
-        return translations[lang]?.[key] || translations['en'][key] || key;
+        const template = translations[lang]?.[key] || translations['en'][key] || key;
+        return template.replace(/\{\{(\w+)\}\}/g, (match, name) => params[name] ?? match);
     }
 };
 

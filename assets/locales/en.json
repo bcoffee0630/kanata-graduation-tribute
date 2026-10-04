@@ -65,7 +65,6 @@
     "tutorial_copy": "Choose “Copy link” from the share button.",
     "tutorial_paste": "Paste it below. You can preview it before submitting.",
     "tutorial_note": "Use a public post link. The original artist is credited by the X embed.",
-    "fanart_daily_limit": "You can share up to 2 posts per day.",
     "close": "Close"
   },
   "footer": {
@@ -83,6 +82,17 @@
     "post_unavailable": "This post cannot be embedded. Check that it is public and still exists, or choose another post.",
     "x_service_unavailable": "X cannot verify this post right now. Please try again later. This attempt did not use your daily allowance.",
     "duplicate_post": "This post has already been shared.",
-    "rate_limit_fanart": "Daily limit reached (2 posts per day)."
+    "rate_limit_fanart": "Today’s post limit has been reached.",
+    "quota_loading": "Checking today’s submission allowance…",
+    "quota_unavailable": "Today’s allowance is temporarily unavailable. It will be checked when you submit.",
+    "quota_message_limited": "Up to {{limit}} messages per day; {{used}} used today.",
+    "quota_message_unlimited": "No daily message limit; {{used}} used today.",
+    "quota_message_closed": "New messages are currently disabled; {{used}} used today.",
+    "quota_fanart_limited": "Up to {{limit}} posts per day; {{used}} used today.",
+    "quota_fanart_unlimited": "No daily post limit; {{used}} used today.",
+    "quota_fanart_closed": "New posts are currently disabled; {{used}} used today.",
+    "rate_limit_message": "Today’s message limit has been reached.",
+    "rate_limit_message_details": "Today’s message limit has been reached ({{limit}} per day; {{used}} used).",
+    "rate_limit_fanart_details": "Today’s post limit has been reached ({{limit}} per day; {{used}} used)."
   }
 }

@@ -21,3 +21,10 @@ export {
   setUserRestriction,
   updateAdminAccount
 } from './admin.js';
+
+export {
+  getContributionDefaults,
+  getMyContributionLimits,
+  setContributionDefaults,
+  setUserContributionLimits
+} from './contribution-limits.js';

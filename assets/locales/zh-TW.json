@@ -65,7 +65,6 @@
     "tutorial_copy": "點選分享按鈕，選擇「複製連結」。",
     "tutorial_paste": "貼上下方欄位，可點選預覽確認。",
     "tutorial_note": "請使用公開貼文的連結。原作者會由 X 嵌入元件署名。",
-    "fanart_daily_limit": "每日最多分享 2 件貼文。",
     "close": "關閉"
   },
   "footer": {
@@ -83,6 +82,17 @@
     "post_unavailable": "這則貼文無法嵌入。請確認貼文公開且仍存在，或選擇其他貼文。",
     "x_service_unavailable": "X 暫時無法驗證這則貼文，請稍後重試。本次未使用投稿額度。",
     "duplicate_post": "這則貼文已經有人分享過了。",
-    "rate_limit_fanart": "今日已達投稿上限（每日 2 件）。"
+    "rate_limit_fanart": "今日已達投稿上限。",
+    "quota_loading": "正在取得今日投稿額度…",
+    "quota_unavailable": "暫時無法取得今日投稿額度，送出時將由系統確認。",
+    "quota_message_limited": "每日最多 {{limit}} 則留言；今日已使用 {{used}} 則。",
+    "quota_message_unlimited": "留言無每日上限；今日已使用 {{used}} 則。",
+    "quota_message_closed": "目前不接受新留言；今日已使用 {{used}} 則。",
+    "quota_fanart_limited": "每日最多 {{limit}} 件投稿；今日已使用 {{used}} 件。",
+    "quota_fanart_unlimited": "投稿無每日上限；今日已使用 {{used}} 件。",
+    "quota_fanart_closed": "目前不接受新投稿；今日已使用 {{used}} 件。",
+    "rate_limit_message": "今日已達留言上限。",
+    "rate_limit_message_details": "今日已達留言上限（每日 {{limit}} 則；已使用 {{used}} 則）。",
+    "rate_limit_fanart_details": "今日已達投稿上限（每日 {{limit}} 件；已使用 {{used}} 件）。"
   }
 }

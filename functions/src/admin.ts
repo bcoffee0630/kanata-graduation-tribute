@@ -30,6 +30,7 @@ import {
   type AdminRole,
   type ContentType
 } from './core.js';
+import { readContributionLimitSnapshot, requiredContributionUid } from './contribution-limits.js';
 
 const bootstrapOwnerUid = defineString('BOOTSTRAP_OWNER_UID', { default: '' });
 
@@ -151,7 +152,7 @@ export const listUsers = onCall(CALLABLE_OPTIONS, async (request) => {
 export const getUser = onCall(CALLABLE_OPTIONS, async (request) => {
   await requireAdmin(request);
   const data = asRecord(request.data);
-  const uid = requiredString(data.uid, 'uid', 1, 128);
+  const uid = requiredContributionUid(data.uid);
   const user = await auth.getUser(uid).catch((error) => {
     if ((error as { code?: string }).code === 'auth/user-not-found') {
       throw new HttpsError('not-found', 'User not found.');
@@ -159,16 +160,18 @@ export const getUser = onCall(CALLABLE_OPTIONS, async (request) => {
     throw error;
   });
 
-  const [restriction, messages, fanart] = await Promise.all([
+  const [restriction, messages, fanart, contributionLimits] = await Promise.all([
     db.collection('userRestrictions').doc(uid).get(),
     db.collection('messages').where('authorId', '==', uid).orderBy('createdAt', 'desc').limit(20).get(),
-    db.collection('fanart').where('artistId', '==', uid).orderBy('createdAt', 'desc').limit(20).get()
+    db.collection('fanart').where('artistId', '==', uid).orderBy('createdAt', 'desc').limit(20).get(),
+    readContributionLimitSnapshot(uid)
   ]);
 
   return {
     user: serializeUser(user, restriction.data()),
     messages: messages.docs.map(serializeDoc),
-    fanart: fanart.docs.map(serializeDoc)
+    fanart: fanart.docs.map(serializeDoc),
+    contributionLimits
   };
 });
 

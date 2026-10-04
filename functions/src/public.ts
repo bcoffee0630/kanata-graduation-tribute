@@ -4,9 +4,7 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import {
   CALLABLE_OPTIONS,
-  FANART_DAILY_LIMIT,
   MAX_IMAGE_BYTES,
-  MESSAGE_DAILY_LIMIT,
   REGION,
   REPORT_AUTO_HIDE_THRESHOLD,
   TIME_ZONE,
@@ -29,6 +27,11 @@ import {
   validatedFanartStoragePath
 } from './core.js';
 import { buildXFanartData, parseXPostUrl, verifyXPost, xFanartDocumentId } from './fanart-link.js';
+import {
+  assertContributionAvailable,
+  buildContributionLimitSnapshot,
+  currentContributionUsage
+} from './contribution-limits.js';
 
 const IMAGE_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -44,15 +47,6 @@ const REPORT_REASONS = new Set([
   'harassment',
   'other'
 ]);
-
-function currentStats(data: Record<string, unknown>, key: string) {
-  const sameDay = data.dailyKey === key;
-  return {
-    message: sameDay && typeof data.dailyMessageCount === 'number' ? data.dailyMessageCount : 0,
-    fanart: sameDay && typeof data.dailyFanartCount === 'number' ? data.dailyFanartCount : 0,
-    pending: sameDay && typeof data.pendingFanartCount === 'number' ? data.pendingFanartCount : 0
-  };
-}
 
 async function assertTransactionWritable(transaction: Transaction): Promise<void> {
   const maintenance = await transaction.get(db.collection('system').doc('maintenance'));
@@ -74,18 +68,20 @@ export const submitMessage = onCall(CALLABLE_OPTIONS, async (request) => {
   );
   const messageRef = db.collection('messages').doc();
   const statsRef = db.collection('userStats').doc(requestAuth.uid);
-  const key = todayKey();
-
   await db.runTransaction(async (transaction) => {
-    const [statsSnapshot] = await Promise.all([
+    const [statsSnapshot, defaultSnapshot, overrideSnapshot] = await Promise.all([
       transaction.get(statsRef),
-      assertTransactionWritable(transaction)
+      transaction.get(db.collection('system').doc('contributionLimits')),
+      transaction.get(db.collection('userContributionLimits').doc(requestAuth.uid)),
+      assertTransactionWritable(transaction),
+      assertCanContribute(requestAuth.uid, transaction)
     ]);
+    const key = todayKey();
     const statsData = (statsSnapshot.data() || {}) as Record<string, unknown>;
-    const counts = currentStats(statsData, key);
-    if (counts.message >= MESSAGE_DAILY_LIMIT) {
-      throw new HttpsError('resource-exhausted', 'Daily message limit reached.');
-    }
+    const counts = currentContributionUsage(statsData, key);
+    assertContributionAvailable(buildContributionLimitSnapshot(
+      defaultSnapshot.data(), overrideSnapshot.data(), statsData, key
+    ), 'message');
 
     transaction.create(messageRef, {
       author: publicSnapshot.displayName,
@@ -161,20 +157,22 @@ export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
     requestAuth.token.firebase?.sign_in_provider
   );
   const statsRef = db.collection('userStats').doc(requestAuth.uid);
-  const key = todayKey();
-
   await db.runTransaction(async (transaction) => {
-    const [existingFanart, statsSnapshot] = await Promise.all([
+    const [existingFanart, statsSnapshot, defaultSnapshot, overrideSnapshot] = await Promise.all([
       transaction.get(fanartRef),
       transaction.get(statsRef),
+      transaction.get(db.collection('system').doc('contributionLimits')),
+      transaction.get(db.collection('userContributionLimits').doc(requestAuth.uid)),
       assertTransactionWritable(transaction),
       assertCanContribute(requestAuth.uid, transaction)
     ]);
     if (existingFanart.exists) throw duplicate();
-    const counts = currentStats((statsSnapshot.data() || {}) as Record<string, unknown>, key);
-    if (counts.fanart >= FANART_DAILY_LIMIT) {
-      throw new HttpsError('resource-exhausted', 'Daily fan art limit reached.');
-    }
+    const key = todayKey();
+    const statsData = (statsSnapshot.data() || {}) as Record<string, unknown>;
+    const counts = currentContributionUsage(statsData, key);
+    assertContributionAvailable(buildContributionLimitSnapshot(
+      defaultSnapshot.data(), overrideSnapshot.data(), statsData, key
+    ), 'fanart');
 
     transaction.create(fanartRef, buildXFanartData({
       post,

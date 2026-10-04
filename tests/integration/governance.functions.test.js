@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { spawn, spawnSync } from 'node:child_process';
 import { deleteApp, initializeApp as initializeClientApp } from 'firebase/app';
 import {
@@ -169,6 +169,244 @@ afterAll(async () => {
   await Promise.all(clientApps.map((app) => deleteApp(app)));
   if (migrationAdminApp) await deleteAdminApp(migrationAdminApp);
   if (stopEmbedFixture) await stopEmbedFixture();
+});
+
+describe.sequential('configurable contribution limits', () => {
+  const specs = {
+    owner: { uid: 'quota-owner', email: 'quota-owner@example.test', displayName: 'Quota Owner' },
+    moderator: { uid: 'quota-moderator', email: 'quota-moderator@example.test', displayName: 'Quota Moderator' },
+    author: { uid: 'quota-author', email: 'quota-author@example.test', displayName: 'Quota Author' },
+    peer: { uid: 'quota-peer', email: 'quota-peer@example.test', displayName: 'Quota Peer' },
+    password: { uid: 'quota-password', email: 'quota-password@example.test', displayName: 'Quota Password' }
+  };
+  let quotaClients;
+  let postSequence = 0n;
+  const inherit = { mode: 'inherit' };
+  const unlimited = { mode: 'unlimited' };
+  const limited = value => ({ mode: 'limited', value });
+  const nextPost = () => `https://x.com/example/status/${1960000000000000000n + ++postSequence}`;
+  const mine = async (client = quotaClients.author) => (await call(client, 'getMyContributionLimits')).data;
+  const defaults = async () => (await call(quotaClients.owner, 'getContributionDefaults')).data;
+  const userLimits = async (spec = specs.author) => (await call(quotaClients.owner, 'getUser', { uid: spec.uid })).data.contributionLimits;
+  async function saveDefaults(messageDailyLimit, fanartDailyLimit, revision) {
+    return (await call(quotaClients.owner, 'setContributionDefaults', {
+      messageDailyLimit, fanartDailyLimit,
+      expectedRevision: revision ?? (await defaults()).revision, reason: 'Quota integration validation'
+    })).data;
+  }
+  async function saveUser(message, fanart, spec = specs.author, revision) {
+    return (await call(quotaClients.owner, 'setUserContributionLimits', {
+      uid: spec.uid, message, fanart,
+      expectedRevision: revision ?? (await userLimits(spec)).revision,
+      reason: 'User quota integration validation'
+    })).data.contributionLimits;
+  }
+  async function cleanLimits() {
+    await db.collection('system').doc('contributionLimits').delete();
+    await db.collection('system').doc('maintenance').delete();
+    await Promise.all(Object.values(specs).flatMap(spec => [
+      db.collection('userContributionLimits').doc(spec.uid).delete(),
+      db.collection('userStats').doc(spec.uid).delete(),
+      db.collection('userRestrictions').doc(spec.uid).delete()
+    ]));
+  }
+
+  beforeAll(async () => {
+    quotaClients = {
+      owner: await createClient(specs.owner, 'owner'),
+      moderator: await createClient(specs.moderator, 'moderator'),
+      author: await createClient(specs.author),
+      peer: await createClient(specs.peer),
+      password: await createClient(specs.password, null, 'password')
+    };
+  }, 30_000);
+  beforeEach(cleanLimits);
+  afterEach(cleanLimits);
+  afterAll(async () => {
+    // These fixtures must not change the later last-Owner governance assertions.
+    await Promise.all(Object.values(specs).flatMap(spec => [
+      db.collection('adminAccounts').doc(spec.uid).delete(),
+      db.collection('userDirectory').doc(spec.uid).delete(),
+      adminAuth.deleteUser(spec.uid)
+    ]));
+  });
+
+  it('retains separate 3/2 defaults and exposes only the authenticated contributor usage', async () => {
+    expect(await defaults()).toEqual({ defaults: { messageDailyLimit: 3, fanartDailyLimit: 2 }, revision: 0 });
+    expect(await mine()).toMatchObject({
+      dayKey: taipeiDate(), message: { limit: 3, used: 0, remaining: 3 }, fanart: { limit: 2, used: 0, remaining: 2 }
+    });
+    await db.collection('userStats').doc(specs.peer.uid).set({ dailyKey: taipeiDate(), dailyMessageCount: 2 });
+    expect((await call(quotaClients.author, 'getMyContributionLimits', { uid: specs.peer.uid })).data.message.used).toBe(0);
+    expect((await mine()).message.used).toBe(0);
+    await expect(call(quotaClients.author, 'getContributionDefaults')).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    await expect(call(quotaClients.password, 'getMyContributionLimits')).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    expect((await call(quotaClients.moderator, 'getContributionDefaults')).data.defaults.messageDailyLimit).toBe(3);
+  });
+
+  it('saves defaults atomically with their audit and requires a current Owner', async () => {
+    const audit = db.collection('adminAuditLogs').where('actorUid', '==', specs.owner.uid);
+    const beforeIds = new Set((await audit.get()).docs.map(doc => doc.id));
+    const result = await saveDefaults(0, 7);
+    expect(result).toEqual({ defaults: { messageDailyLimit: 0, fanartDailyLimit: 7 }, revision: 1 });
+    expect((await mine()).message.limit).toBe(0);
+    const entries = (await audit.get()).docs.filter(doc => !beforeIds.has(doc.id)).map(doc => doc.data());
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ actorRole: 'owner', action: 'contribution.defaults.update',
+      reason: 'Quota integration validation', details: { before: expect.any(Object), after: expect.any(Object) } });
+    await expect(call(quotaClients.moderator, 'setContributionDefaults', {
+      messageDailyLimit: 10, fanartDailyLimit: 10, expectedRevision: 1, reason: 'Unauthorized change'
+    })).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    await adminAuth.setCustomUserClaims(specs.owner.uid, { adminRole: 'moderator', adminSessionVersion: 2 });
+    try {
+      await expect(saveDefaults(10, 10, 1)).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    } finally {
+      await adminAuth.setCustomUserClaims(specs.owner.uid, { adminRole: 'owner', adminSessionVersion: 1 });
+    }
+    expect((await defaults()).revision).toBe(1);
+    expect((await audit.get()).size).toBe(beforeIds.size + 1);
+  });
+
+  it('applies each override separately and clears fields without resetting its revision', async () => {
+    await saveDefaults(5, 6);
+    const custom = await saveUser(limited(1), unlimited);
+    expect(custom).toMatchObject({ revision: 1, effective: {
+      message: { limit: 1, source: 'override' }, fanart: { limit: null, source: 'override' }
+    } });
+    expect((await mine(quotaClients.peer)).message.limit).toBe(5);
+    await saveDefaults(8, 9);
+    expect((await mine()).message.limit).toBe(1);
+    const cleared = await saveUser(inherit, unlimited);
+    expect(cleared.revision).toBe(2);
+    expect(cleared.effective.message).toEqual({ limit: 8, source: 'default' });
+    const stored = (await db.collection('userContributionLimits').doc(specs.author.uid).get()).data();
+    expect(stored).not.toHaveProperty('messageDailyLimit');
+    expect(stored.fanartDailyLimit).toBeNull();
+    await saveUser(inherit, inherit);
+    expect((await userLimits()).revision).toBe(3);
+    expect((await mine()).fanart.limit).toBe(9);
+  });
+
+  it('supports zero without consuming quota and still permits the other content type', async () => {
+    await saveUser(limited(0), limited(1));
+    await expect(call(quotaClients.author, 'submitMessage', { content: 'This message is blocked by zero' }))
+      .rejects.toMatchObject({ code: 'functions/resource-exhausted', details: {
+        reason: 'daily_limit', contentType: 'message', limit: 0, used: 0, dayKey: taipeiDate()
+      } });
+    await call(quotaClients.author, 'submitFanartLink', { postUrl: nextPost() });
+    await expect(call(quotaClients.author, 'submitFanartLink', { postUrl: nextPost() }))
+      .rejects.toMatchObject({ code: 'functions/resource-exhausted', details: { contentType: 'fanart', limit: 1, used: 1 } });
+    expect(await mine()).toMatchObject({ message: { used: 0 }, fanart: { used: 1 } });
+  });
+
+  it('continues counting unlimited submissions and immediately honors raised, lowered and inherited limits', async () => {
+    await saveUser(unlimited, unlimited);
+    for (let i = 0; i < 4; i++) await call(quotaClients.author, 'submitMessage', { content: `Unlimited message number ${i}` });
+    expect((await mine()).message).toEqual({ limit: null, used: 4, remaining: null });
+    await saveUser(limited(3), inherit);
+    await expect(call(quotaClients.author, 'submitMessage', { content: 'Already above the lowered quota' }))
+      .rejects.toMatchObject({ code: 'functions/resource-exhausted', details: { limit: 3, used: 4 } });
+    await saveUser(limited(5), inherit);
+    await call(quotaClients.author, 'submitMessage', { content: 'The increase adds one available message' });
+    await saveUser(inherit, inherit);
+    expect((await mine()).message).toEqual({ limit: 3, used: 5, remaining: 0 });
+    expect((await db.collection('userStats').doc(specs.author.uid).get()).data().messageCount).toBe(5);
+  });
+
+  it('does not charge unlimited accounts for duplicates or unavailable X posts', async () => {
+    await saveUser(unlimited, unlimited);
+    const postUrl = nextPost();
+    await call(quotaClients.author, 'submitFanartLink', { postUrl });
+    await expect(call(quotaClients.author, 'submitFanartLink', { postUrl })).rejects.toMatchObject({ code: 'functions/already-exists' });
+    await expect(call(quotaClients.author, 'submitFanartLink', { postUrl: 'https://x.com/example/status/1960000000000000404' }))
+      .rejects.toMatchObject({ code: 'functions/failed-precondition' });
+    expect((await mine()).fanart).toEqual({ limit: null, used: 1, remaining: null });
+  });
+
+  it('keeps maintenance, muted/banned accounts and social sign-in requirements for unlimited accounts', async () => {
+    await saveUser(unlimited, unlimited);
+    await saveUser(unlimited, unlimited, specs.password);
+    const message = () => call(quotaClients.author, 'submitMessage', { content: 'Unlimited does not bypass governance' });
+    const fanart = () => call(quotaClients.author, 'submitFanartLink', { postUrl: nextPost() });
+    await db.collection('system').doc('maintenance').set({ enabled: true });
+    for (const submit of [message, fanart]) await expect(submit()).rejects.toMatchObject({ code: 'functions/unavailable' });
+    await db.collection('system').doc('maintenance').delete();
+    for (const state of ['muted', 'banned']) {
+      await db.collection('userRestrictions').doc(specs.author.uid).set({ state, mutedUntil: Timestamp.fromMillis(Date.now() + 60_000) });
+      for (const submit of [message, fanart]) await expect(submit()).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    }
+    await expect(call(quotaClients.password, 'submitMessage', { content: 'Password only cannot contribute' }))
+      .rejects.toMatchObject({ code: 'functions/permission-denied' });
+    await expect(call(quotaClients.password, 'submitFanartLink', { postUrl: nextPost() }))
+      .rejects.toMatchObject({ code: 'functions/permission-denied' });
+    expect(await mine()).toMatchObject({ message: { used: 0 }, fanart: { used: 0 } });
+  });
+
+  it('serializes mixed parallel submissions without overshooting or losing the other counter', async () => {
+    await saveUser(limited(2), limited(2));
+    const messages = Array.from({ length: 6 }, (_, i) => call(quotaClients.author, 'submitMessage', { content: `Parallel quota message ${i}` }));
+    const art = Array.from({ length: 6 }, () => call(quotaClients.author, 'submitFanartLink', { postUrl: nextPost() }));
+    const outcomes = await Promise.allSettled([...messages, ...art]);
+    expect(outcomes.slice(0, 6).filter(item => item.status === 'fulfilled')).toHaveLength(2);
+    expect(outcomes.slice(6).filter(item => item.status === 'fulfilled')).toHaveLength(2);
+    expect(await mine()).toMatchObject({ message: { used: 2, remaining: 0 }, fanart: { used: 2, remaining: 0 } });
+    const stats = (await db.collection('userStats').doc(specs.author.uid).get()).data();
+    expect(stats).toMatchObject({ messageCount: 2, fanartCount: 2, dailyMessageCount: 2, dailyFanartCount: 2 });
+  }, 30_000);
+
+  it('rejects stale concurrent editors and writes one audit per committed setting', async () => {
+    const audit = db.collection('adminAuditLogs').where('actorUid', '==', specs.owner.uid);
+    const before = (await audit.get()).size;
+    const globalResults = await Promise.allSettled([saveDefaults(4, 5, 0), saveDefaults(6, 7, 0)]);
+    expect(globalResults.filter(item => item.status === 'fulfilled')).toHaveLength(1);
+    expect(globalResults.find(item => item.status === 'rejected').reason.code).toBe('functions/aborted');
+    const userResults = await Promise.allSettled([
+      saveUser(limited(1), unlimited, specs.author, 0), saveUser(unlimited, limited(1), specs.author, 0)
+    ]);
+    expect(userResults.filter(item => item.status === 'fulfilled')).toHaveLength(1);
+    expect(userResults.find(item => item.status === 'rejected').reason.code).toBe('functions/aborted');
+    expect((await audit.get()).size).toBe(before + 2);
+    expect((await userLimits()).revision).toBe(1);
+  });
+
+  it('reads updated settings during concurrent submission transactions', async () => {
+    await saveDefaults(2, 2);
+    const results = await Promise.allSettled([
+      ...Array.from({ length: 8 }, (_, i) => call(quotaClients.author, 'submitMessage', { content: `Changed during submission ${i}` })),
+      saveDefaults(4, 2, 1)
+    ]);
+    expect(results.at(-1).status).toBe('fulfilled');
+    const accepted = results.slice(0, 8).filter(item => item.status === 'fulfilled').length;
+    expect(accepted).toBeGreaterThanOrEqual(2);
+    expect(accepted).toBeLessThanOrEqual(4);
+    expect((await mine()).message).toEqual({ limit: 4, used: accepted, remaining: 4 - accepted });
+  }, 30_000);
+
+  it('rejects invalid limits and nonexistent targets without writing configuration', async () => {
+    for (const value of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1, '4', null]) {
+      await expect(saveDefaults(value, 2, 0)).rejects.toMatchObject({ code: 'functions/invalid-argument' });
+      await expect(saveUser(limited(value), inherit, specs.author, 0)).rejects.toMatchObject({ code: 'functions/invalid-argument' });
+    }
+    await expect(call(quotaClients.moderator, 'setUserContributionLimits', {
+      uid: specs.author.uid, message: unlimited, fanart: unlimited, expectedRevision: 0, reason: 'Not an Owner'
+    })).rejects.toMatchObject({ code: 'functions/permission-denied' });
+    await expect(saveUser(inherit, inherit, { uid: 'missing-quota-target' }, 0)).rejects.toMatchObject({ code: 'functions/not-found' });
+    expect((await defaults()).revision).toBe(0);
+    expect((await userLimits()).revision).toBe(0);
+  });
+
+  it('rolls over old daily usage while preserving lifetime counts', async () => {
+    await db.collection('userStats').doc(specs.author.uid).set({
+      dailyKey: '2000-01-01', dailyMessageCount: 9, dailyFanartCount: 8, pendingFanartCount: 1,
+      messageCount: 20, fanartCount: 12
+    });
+    expect(await mine()).toMatchObject({ message: { used: 0 }, fanart: { used: 0 } });
+    await call(quotaClients.author, 'submitMessage', { content: 'A fresh Taipei calendar day' });
+    expect((await db.collection('userStats').doc(specs.author.uid).get()).data()).toMatchObject({
+      dailyKey: taipeiDate(), dailyMessageCount: 1, dailyFanartCount: 0, pendingFanartCount: 0,
+      messageCount: 21, fanartCount: 12
+    });
+  });
 });
 
 describe.sequential('governance callable APIs', () => {

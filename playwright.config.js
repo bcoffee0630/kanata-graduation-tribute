@@ -12,7 +12,7 @@ module.exports = defineConfig({
   projects: [
     { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
     { name: 'mobile', use: { viewport: { width: 390, height: 844 } } },
-    { name: 'webkit-desktop', testMatch: /(?:gallery|toast)\.spec\.js$/, use: { browserName: 'webkit', viewport: { width: 1440, height: 900 } } },
-    { name: 'webkit-mobile', testMatch: /(?:gallery|toast)\.spec\.js$/, use: { browserName: 'webkit', viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true } }
+    { name: 'webkit-desktop', testMatch: /(?:gallery|toast|quota)\.spec\.js$/, use: { browserName: 'webkit', viewport: { width: 1440, height: 900 } } },
+    { name: 'webkit-mobile', testMatch: /(?:gallery|toast|quota)\.spec\.js$/, use: { browserName: 'webkit', viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true } }
   ]
 });
