@@ -3,6 +3,7 @@ export {
   cleanupExpiredUploads,
   fanartMedia,
   finalizeFanartUpload,
+  submitFanartLink,
   submitMessage,
   submitReport
 } from './public.js';

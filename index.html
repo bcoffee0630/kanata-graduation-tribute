@@ -153,13 +153,15 @@
         <section id="gallery-section" class="gallery-section reveal-on-scroll">
             <div class="container">
                 <h2 data-i18n="sections.gallery_title">ファンアートギャラリー</h2>
-                <div id="gallery-grid"></div>
+                <p class="gallery-intro" data-i18n="gallery.intro">好きな創作を、思い出とともに。</p>
+                <div id="gallery-grid" aria-busy="true"></div>
+                <p id="gallery-status" class="gallery-status" role="status"></p>
                 <button id="load-more-btn" class="load-more-btn" style="display: none;" data-i18n="gallery.load_more">もっと見る</button>
                 <div class="gallery-contribute">
-                    <p data-i18n="sections.contribute_art">イラストを投稿したい方は、下のボタンをクリックしてください。</p>
+                    <p data-i18n="sections.contribute_art">好きな創作を思い出に。作者のX投稿のリンクをコピーして共有できます。</p>
                     <button id="submit-fanart-btn" class="submit-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                        <span data-i18n="sections.submit_art_button">イラストを投稿</span>
+                        <span data-i18n="sections.submit_art_button">Xの投稿を共有</span>
                     </button>
                     <div class="login-prompt">
                         <p data-i18n="auth.login_to_submit">投稿するにはログインしてください</p>
@@ -168,17 +170,6 @@
             </div>
         </section>
     </main>
-
-    <!-- Lightbox Modal -->
-    <div id="lightbox" class="lightbox">
-        <div class="lightbox-content">
-            <button class="lightbox-close">&times;</button>
-            <button class="lightbox-nav lightbox-prev">&#10094;</button>
-            <button class="lightbox-nav lightbox-next">&#10095;</button>
-            <div class="lightbox-image"></div>
-            <div class="lightbox-info"></div>
-        </div>
-    </div>
 
     <!-- Message Modal -->
     <div id="message-modal" class="modal">
@@ -219,34 +210,38 @@
     </div>
 
     <!-- Fanart Modal -->
-    <div id="fanart-modal" class="modal">
+    <div id="fanart-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="fanart-modal-title" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 data-i18n="modal.fanart_title">イラストを投稿</h3>
-                <button class="modal-close">&times;</button>
+                <h3 id="fanart-modal-title" data-i18n="modal.fanart_title">Xの投稿を共有</h3>
+                <button type="button" class="modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="fanart-form">
+                    <aside class="fanart-tutorial" aria-labelledby="fanart-tutorial-title">
+                        <h4 id="fanart-tutorial-title" data-i18n="modal.tutorial_title">Xの投稿を共有するには</h4>
+                        <ol>
+                            <li data-i18n="modal.tutorial_open">作者の元の投稿を開きます。</li>
+                            <li data-i18n="modal.tutorial_copy">共有ボタンから「リンクをコピー」を選びます。</li>
+                            <li data-i18n="modal.tutorial_paste">下に貼り付けます。プレビューで確認できます。</li>
+                        </ol>
+                        <p data-i18n="modal.tutorial_note">公開されている投稿のリンクを使用してください。作者名はXの埋め込みに表示されます。</p>
+                    </aside>
                     <div class="form-group">
-                        <div class="upload-area">
-                            <input type="file" id="fanart-image" accept="image/png,image/jpeg" required>
-                            <label for="fanart-image">
-                                <div class="upload-icon">📷</div>
-                                <div class="upload-text" data-i18n="modal.upload_image">画像をアップロード</div>
-                                <div class="upload-hint">PNG, JPG (10MB以下)</div>
-                            </label>
-                        </div>
-                        <div id="image-preview"></div>
+                        <label for="fanart-post-url" data-i18n="modal.post_url">Xの投稿リンク</label>
+                        <input type="url" id="fanart-post-url" placeholder="https://x.com/username/status/1234567890" required maxlength="500" autocomplete="off" aria-describedby="fanart-url-hint fanart-url-error">
+                        <small id="fanart-url-hint" data-i18n="modal.post_url_hint">X / Twitterの投稿リンクに対応しています。</small>
+                        <small id="fanart-url-error" class="field-error" role="status" hidden></small>
+                        <button id="fanart-preview-btn" type="button" class="secondary-btn preview-btn" disabled data-i18n="modal.preview">プレビュー（任意）</button>
+                        <div id="fanart-preview" class="x-embed fanart-preview" hidden></div>
                     </div>
                     <div class="form-group">
-                        <label for="fanart-caption" data-i18n="modal.caption">キャプション</label>
-                        <input type="text" id="fanart-caption" data-i18n-placeholder="modal.caption_placeholder" placeholder="任意">
+                        <label for="fanart-caption" data-i18n="modal.caption">説明（任意）</label>
+                        <textarea id="fanart-caption" maxlength="300" rows="3" data-i18n-placeholder="modal.caption_placeholder" placeholder="任意" aria-describedby="fanart-caption-count"></textarea>
+                        <small id="fanart-caption-count" class="character-count">0/300</small>
                     </div>
-                    <div class="form-group">
-                        <label for="artist-link" data-i18n="modal.artist_link">SNSリンク (任意)</label>
-                        <input type="url" id="artist-link" placeholder="https://twitter.com/...">
-                        <small data-i18n="modal.artist_link_hint">Twitter, Pixiv, etc.</small>
-                    </div>
+                    <p class="fanart-daily-note" data-i18n="modal.fanart_daily_limit">1日2件まで投稿できます。</p>
+                    <p id="fanart-submit-error" class="field-error" role="alert" hidden></p>
                     <div class="submit-confirmation">
                         <label class="confirm-label">
                             <input type="checkbox" class="confirm-checkbox" required>
@@ -367,6 +362,7 @@
     <!-- Firebase Integration -->
     <script src="assets/js/firebase-init.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/x-embed.js"></script>
     <script src="assets/js/submit.js"></script>
     <script src="assets/js/report.js"></script>
 

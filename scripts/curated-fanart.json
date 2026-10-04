@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "reviewedDate": "2026-10-04",
+  "reviewTimezone": "Asia/Taipei",
+  "eligibility": "Public Amane Kanata fan artwork with #かなたーと and more than 100 likes at human review",
+  "entries": [
+    {
+      "postUrl": "https://x.com/Cyalume_A1106/status/1787157733575479363",
+      "creatorDisplayName": "Cyalume_A",
+      "description": "四期生團體插畫，包含天音彼方",
+      "observedLikeLabel": "679",
+      "humanVerifiedMoreThan100Likes": true,
+      "humanVerifiedFanartTag": "#かなたーと",
+      "humanVerifiedKanataArtwork": true,
+      "proofSource": "Official X embed and oEmbed; artwork visually inspected"
+    },
+    {
+      "postUrl": "https://x.com/emeralda__/status/1829450233501413859",
+      "creatorDisplayName": "海乃エメ",
+      "description": "《青》天音彼方單人插畫",
+      "observedLikeLabel": "4.4K",
+      "humanVerifiedMoreThan100Likes": true,
+      "humanVerifiedFanartTag": "#かなたーと",
+      "humanVerifiedKanataArtwork": true,
+      "proofSource": "Official X embed and oEmbed; artwork visually inspected"
+    },
+    {
+      "postUrl": "https://x.com/fra9ir/status/1780135601498701835",
+      "creatorDisplayName": "フラギル",
+      "description": "天音彼方單人插畫",
+      "observedLikeLabel": "5.5K",
+      "humanVerifiedMoreThan100Likes": true,
+      "humanVerifiedFanartTag": "#かなたーと",
+      "humanVerifiedKanataArtwork": true,
+      "proofSource": "Official X embed and oEmbed; artwork visually inspected"
+    }
+  ]
+}

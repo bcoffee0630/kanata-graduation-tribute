@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { deleteApp, initializeApp as initializeClientApp } from 'firebase/app';
 import {
   connectAuthEmulator,
@@ -24,6 +24,8 @@ import { deleteApp as deleteAdminApp, getApps, initializeApp } from 'firebase-ad
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import embedFixture from '../helpers/x-oembed-fixture.cjs';
+import { taipeiDate } from '../../scripts/import-curated-fanart.mjs';
 
 const projectId = 'demo-kanata-governance';
 const migrationProjectId = 'demo-kanata-migration';
@@ -50,6 +52,7 @@ let reportedMessageId;
 let uploadedFanartId;
 let uploadedFanartPath;
 let migrationAdminApp;
+let stopEmbedFixture;
 
 async function createClient(spec, role = null, provider = role ? 'password' : 'google.com') {
   const existing = await adminAuth.getUserByEmail(spec.email).catch(() => null);
@@ -134,6 +137,7 @@ function call(client, name, data = {}) {
 }
 
 beforeAll(async () => {
+  stopEmbedFixture = await embedFixture.startXEmbedFixture();
   process.env.GCLOUD_PROJECT = projectId;
   process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
   process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8180';
@@ -164,9 +168,74 @@ beforeAll(async () => {
 afterAll(async () => {
   await Promise.all(clientApps.map((app) => deleteApp(app)));
   if (migrationAdminApp) await deleteAdminApp(migrationAdminApp);
+  if (stopEmbedFixture) await stopEmbedFixture();
 });
 
 describe.sequential('governance callable APIs', () => {
+  it('imports curated references through the actual Owner CLI without consuming daily quota and reruns without changes', async () => {
+    const spec = { uid: 'integration-curated-owner', email: 'curated-owner@example.test', displayName: 'Curated Owner' };
+    const ids = ['x_1787157733575479363', 'x_1829450233501413859', 'x_1780135601498701835'];
+    try {
+      const client = await createClient(spec, 'owner');
+      await Promise.all(ids.map((id) => db.collection('fanart').doc(id).delete()));
+      const statsRef = db.collection('userStats').doc(spec.uid);
+      await statsRef.set({ dailyKey: taipeiDate(), dailyFanartCount: 2, pendingFanartCount: 1, fanartCount: 0 });
+      const runImporter = async (apply = false) => {
+        const token = apply ? await client.auth.currentUser.getIdToken(true) : '';
+        return new Promise((resolve, reject) => {
+          const child = spawn(process.execPath, ['scripts/import-curated-fanart.mjs',
+            '--project', projectId, '--owner-uid', spec.uid,
+            ...(apply ? ['--apply', '--confirm-eligibility-date', taipeiDate()] : [])
+          ], { cwd: process.cwd(), env: { ...process.env,
+            GCLOUD_PROJECT: projectId, GOOGLE_CLOUD_PROJECT: projectId, GCP_PROJECT: projectId,
+            FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8180',
+            FUNCTIONS_EMULATOR: 'true', X_OEMBED_EMULATOR_URL: 'http://127.0.0.1:9394/oembed'
+          }, stdio: ['pipe', 'pipe', 'pipe'] });
+          let stdout = '', stderr = '';
+          const timer = setTimeout(() => { child.kill(); reject(new Error('Importer fixture timed out.')); }, 20_000);
+          child.stdout.on('data', (chunk) => { stdout += chunk; });
+          child.stderr.on('data', (chunk) => { stderr += chunk; });
+          child.once('error', (error) => { clearTimeout(timer); reject(error); });
+          child.once('close', (status) => { clearTimeout(timer); resolve({ status, stdout, stderr }); });
+          child.stdin.end(token ? `${token}\n` : '');
+        });
+      };
+      const dryRun = await runImporter();
+      expect(dryRun.status, dryRun.stderr).toBe(0);
+      expect(JSON.parse(dryRun.stdout)).toMatchObject({ mode: 'dry-run', ownerValidated: true, add: 3, skip: 0 });
+      expect((await statsRef.get()).data().fanartCount).toBe(0);
+      const first = await runImporter(true);
+      expect(first.status, first.stderr).toBe(0);
+      expect(JSON.parse(first.stdout).results.map((result) => result.result)).toEqual(['added', 'added', 'added']);
+      const before = await Promise.all(ids.map((id) => db.collection('fanart').doc(id).get()));
+      before.forEach((snapshot) => {
+        expect(snapshot.data()).toMatchObject({ sourceType: 'x', submissionSource: 'curated', artistId: spec.uid });
+        expect(snapshot.data().createdAt).toBeInstanceOf(Timestamp);
+      });
+      const second = await runImporter(true);
+      expect(second.status, second.stderr).toBe(0);
+      expect(JSON.parse(second.stdout).results.map((result) => result.result)).toEqual(['skipped', 'skipped', 'skipped']);
+      const after = await Promise.all(ids.map((id) => db.collection('fanart').doc(id).get()));
+      after.forEach((snapshot, index) => expect(snapshot.updateTime.isEqual(before[index].updateTime)).toBe(true));
+      expect((await statsRef.get()).data()).toMatchObject({ fanartCount: 3, dailyFanartCount: 2, pendingFanartCount: 1 });
+      const audits = await db.collection('adminAuditLogs').where('actorUid', '==', spec.uid).get();
+      expect(audits.size).toBe(3);
+      expect(audits.docs.every((snapshot) => snapshot.data().action === 'fanart.import_curated')).toBe(true);
+    } finally {
+      // This additional Owner must not alter the later last-Owner protection fixtures.
+      const audits = await db.collection('adminAuditLogs').where('actorUid', '==', spec.uid).get();
+      await Promise.all([
+        adminAuth.deleteUser(spec.uid).catch((error) => {
+          if (error.code !== 'auth/user-not-found') throw error;
+        }),
+        db.collection('adminAccounts').doc(spec.uid).delete(),
+        db.collection('userStats').doc(spec.uid).delete(),
+        ...ids.map((id) => db.collection('fanart').doc(id).delete()),
+        ...audits.docs.map((snapshot) => snapshot.ref.delete())
+      ]);
+    }
+  }, 60_000);
+
   it('binds submissions to the authenticated UID and enforces server quotas', async () => {
     await expect(call(clients.passwordOnly, 'submitMessage', {
       content: 'Password-only contribution attempt'
@@ -190,10 +259,6 @@ describe.sequential('governance callable APIs', () => {
   });
 
   it('blocks every public mutation while the production maintenance lock is enabled', async () => {
-    const pendingTicket = await call(clients.reporter1, 'beginFanartUpload', {
-      contentType: 'image/png',
-      size: 8
-    });
     const maintenanceRef = db.collection('system').doc('maintenance');
     await maintenanceRef.set({ enabled: true });
     try {
@@ -203,7 +268,10 @@ describe.sequential('governance callable APIs', () => {
         contentType: 'image/png', size: 8
       })).rejects.toMatchObject({ code: 'functions/unavailable' });
       await expect(call(clients.reporter1, 'finalizeFanartUpload', {
-        ticketId: pendingTicket.data.ticketId
+        ticketId: 'legacy-pending-ticket'
+      })).rejects.toMatchObject({ code: 'functions/unavailable' });
+      await expect(call(clients.reporter1, 'submitFanartLink', {
+        postUrl: 'https://x.com/example/status/1900000000000000001'
       })).rejects.toMatchObject({ code: 'functions/unavailable' });
       await expect(call(clients.reporter1, 'submitReport', {
         contentType: 'message', contentId: reportedMessageId, reason: 'spam',
@@ -272,40 +340,102 @@ describe.sequential('governance callable APIs', () => {
     expect(audits.size).toBe(1);
   });
 
-  it('uses upload tickets and records a trusted fan art submitter', async () => {
+  it('disables both image endpoints while preserving legacy media', async () => {
+    for (const name of ['beginFanartUpload', 'finalizeFanartUpload']) {
+      await expect(call(clients.author, name, { contentType: 'image/png', size: 8 }))
+        .rejects.toMatchObject({ code: 'functions/failed-precondition', details: { reason: 'image_submission_disabled' } });
+      await expect(call(clients.passwordOnly, name))
+        .rejects.toMatchObject({ code: 'functions/permission-denied' });
+    }
+    const tickets = await db.collection('uploadTickets').where('uid', '==', users.author.uid).get();
+    expect(tickets.empty).toBe(true);
     const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
-    const ticket = await call(clients.author, 'beginFanartUpload', {
-      contentType: 'image/png',
-      size: bytes.byteLength
+    uploadedFanartId = 'integration-legacy-fanart';
+    uploadedFanartPath = `fanart/${users.author.uid}/${uploadedFanartId}/original.png`;
+    await adminStorage.bucket().file(uploadedFanartPath).save(bytes, {
+      resumable: false, metadata: { contentType: 'image/png' }
     });
-    await uploadBytes(ref(clients.author.storage, ticket.data.path), bytes, {
-      contentType: 'image/png'
+    await db.collection('fanart').doc(uploadedFanartId).set({
+      artist: 'Legacy artist', artistId: users.author.uid,
+      caption: 'Previously uploaded artwork', imagePath: uploadedFanartPath,
+      imageUrl: `/api/fanart-media?fanartId=${uploadedFanartId}`,
+      hidden: false, deleted: false, reportCount: 0, createdAt: Timestamp.now()
     });
-    const [uploadedMetadata] = await adminStorage.bucket().file(ticket.data.path).getMetadata();
-    const uploadToken = uploadedMetadata.metadata?.firebaseStorageDownloadTokens;
-    expect(uploadToken).toBeTruthy();
-    const finalized = await call(clients.author, 'finalizeFanartUpload', {
-      ticketId: ticket.data.ticketId,
-      caption: 'Ticket-backed fan art',
-      artistLink: 'https://example.com/artist'
-    });
-    uploadedFanartId = finalized.data.id;
-    uploadedFanartPath = ticket.data.path;
-    const fanart = (await db.collection('fanart').doc(finalized.data.id).get()).data();
-    expect(fanart.artistId).toBe(users.author.uid);
-    expect(fanart.submitter.uid).toBe(users.author.uid);
-    expect(fanart.submitter.providerId).toBe('google.com');
-    expect(fanart.imagePath).toBe(ticket.data.path);
-    expect(fanart.imageUrl).toBe(`/api/fanart-media?fanartId=${finalized.data.id}`);
-    const [storedMetadata] = await adminStorage.bucket().file(ticket.data.path).getMetadata();
-    expect(storedMetadata.metadata?.firebaseStorageDownloadTokens).toBeFalsy();
-    const leakedUploadUrl = `http://127.0.0.1:9199/v0/b/${projectId}.appspot.com/o/${encodeURIComponent(ticket.data.path)}?alt=media&token=${encodeURIComponent(uploadToken)}`;
-    expect((await fetch(leakedUploadUrl)).status).not.toBe(200);
     const media = await fetch(
-      `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${finalized.data.id}`
+      `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`
     );
     expect(media.status).toBe(200);
     expect((await media.arrayBuffer()).byteLength).toBe(bytes.byteLength);
+  });
+
+  it('binds X submissions to the real contributor and rejects duplicates without charging quota', async () => {
+    const postUrl = 'https://twitter.com/example/status/1900000000000000001?s=20';
+    const first = await call(clients.author, 'submitFanartLink', {
+      postUrl, caption: 'A shared memory', artistId: 'spoofed-author'
+    });
+    expect(first.data.id).toBe('x_1900000000000000001');
+    const stored = (await db.collection('fanart').doc(first.data.id).get()).data();
+    expect(stored).toMatchObject({
+      sourceType: 'x', postId: '1900000000000000001',
+      postUrl: 'https://x.com/example/status/1900000000000000001',
+      artistId: users.author.uid, submitter: { uid: users.author.uid, providerId: 'google.com' },
+      imagePath: '', imageUrl: '', hidden: false, deleted: false
+    });
+    await expect(call(clients.author, 'submitFanartLink', { postUrl }))
+      .rejects.toMatchObject({ code: 'functions/already-exists' });
+    expect((await db.collection('userStats').doc(users.author.uid).get()).data().dailyFanartCount).toBe(1);
+    await call(clients.author, 'submitFanartLink', { postUrl: 'https://x.com/example/status/1900000000000000002' });
+    await expect(call(clients.author, 'submitFanartLink', { postUrl: 'https://x.com/example/status/1900000000000000003' }))
+      .rejects.toMatchObject({ code: 'functions/resource-exhausted' });
+    await expect(call(clients.passwordOnly, 'submitFanartLink', { postUrl }))
+      .rejects.toMatchObject({ code: 'functions/permission-denied' });
+  });
+
+  it('handles parallel submissions and rejects unavailable or invalid posts without charging quota', async () => {
+    for (const [postUrl, code] of [
+      ['https://attacker.example/example/status/1900000000000000004', 'functions/invalid-argument'],
+      ['https://x.com/example/status/1900000000000000404', 'functions/failed-precondition'],
+      ['https://x.com/example/status/1900000000000000503', 'functions/unavailable']
+    ]) {
+      await expect(call(clients.reporter1, 'submitFanartLink', { postUrl }))
+        .rejects.toMatchObject({ code });
+    }
+    expect((await db.collection('userStats').doc(users.reporter1.uid).get()).data()?.dailyFanartCount || 0).toBe(0);
+    const postUrl = 'https://x.com/example/status/1900000000000000004';
+    const results = await Promise.allSettled([
+      call(clients.reporter1, 'submitFanartLink', { postUrl }),
+      call(clients.reporter1, 'submitFanartLink', { postUrl })
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    expect((await db.collection('userStats').doc(users.reporter1.uid).get()).data().dailyFanartCount).toBe(1);
+  });
+
+  it('keeps X posts reportable and clears original links on permanent removal', async () => {
+    const contentId = 'x_1900000000000000001';
+    for (const client of [clients.reporter1, clients.reporter2, clients.reporter3]) {
+      await call(client, 'submitReport', {
+        contentType: 'fanart', contentId, reason: 'spam', details: 'Review this linked artwork'
+      });
+    }
+    const target = db.collection('fanart').doc(contentId);
+    const report = db.collection('reportCases').doc(`fanart_${contentId}`);
+    expect((await target.get()).data()).toMatchObject({ hidden: true, reportCount: 3 });
+    expect((await report.get()).data().targetPostUrl).toBe('https://x.com/example/status/1900000000000000001');
+    await call(clients.moderator, 'moderateContent', {
+      contentType: 'fanart', contentId, action: 'restore', reason: 'Review complete'
+    });
+    expect((await target.get()).data().hidden).toBe(false);
+    await target.update({ curation: { description: 'Curated artwork source' } });
+    await call(clients.owner, 'moderateContent', {
+      contentType: 'fanart', contentId, action: 'remove', reason: 'Confirmed violation'
+    });
+    expect((await target.get()).data()).toMatchObject({ deleted: true, hidden: true, postUrl: '', postId: '' });
+    expect((await target.get()).data()).not.toHaveProperty('curation');
+    expect((await report.get()).data()).toMatchObject({ targetPostUrl: '', targetPreview: '', targetRemoved: true });
+    await expect(call(clients.reporter2, 'submitFanartLink', {
+      postUrl: 'https://x.com/example/status/1900000000000000001'
+    })).rejects.toMatchObject({ code: 'functions/already-exists' });
   });
 
   it('honors mute expiry and disables banned Auth accounts', async () => {
@@ -316,6 +446,8 @@ describe.sequential('governance callable APIs', () => {
       mutedUntil: Timestamp.fromMillis(Date.now() + 60_000)
     });
     await expect(call(clients.restricted, 'submitMessage', { content: 'Muted message attempt' }))
+      .rejects.toMatchObject({ code: 'functions/permission-denied' });
+    await expect(call(clients.restricted, 'submitFanartLink', { postUrl: 'https://x.com/example/status/1900000000000000005' }))
       .rejects.toMatchObject({ code: 'functions/permission-denied' });
 
     await restriction.update({ mutedUntil: Timestamp.fromMillis(Date.now() - 1_000) });

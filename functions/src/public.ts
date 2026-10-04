@@ -18,7 +18,6 @@ import {
   contentAuthorId,
   contentCollection,
   db,
-  optionalHttpsUrl,
   optionalString,
   parseContentType,
   requiredString,
@@ -29,6 +28,7 @@ import {
   validateAdminIdentity,
   validatedFanartStoragePath
 } from './core.js';
+import { buildXFanartData, parseXPostUrl, verifyXPost, xFanartDocumentId } from './fanart-link.js';
 
 const IMAGE_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -127,177 +127,67 @@ export const beginFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
   await assertSiteWritable();
   await assertCanContribute(requestAuth.uid);
-
-  const data = asRecord(request.data);
-  const contentType = requiredString(data.contentType, 'contentType', 3, 100);
-  const extension = IMAGE_TYPES[contentType];
-  if (!extension) throw new HttpsError('invalid-argument', 'Unsupported image type.');
-
-  const size = data.size;
-  if (!Number.isInteger(size) || (size as number) <= 0 || (size as number) > MAX_IMAGE_BYTES) {
-    throw new HttpsError('invalid-argument', 'Image size is invalid.');
-  }
-
-  const ticketRef = db.collection('uploadTickets').doc();
-  const statsRef = db.collection('userStats').doc(requestAuth.uid);
-  const key = todayKey();
-  const fileName = `original.${extension}`;
-  const path = `fanart/${requestAuth.uid}/${ticketRef.id}/${fileName}`;
-  const expiresAt = Timestamp.fromMillis(Date.now() + 15 * 60 * 1000);
-
-  await db.runTransaction(async (transaction) => {
-    const [statsSnapshot] = await Promise.all([
-      transaction.get(statsRef),
-      assertTransactionWritable(transaction)
-    ]);
-    const statsData = (statsSnapshot.data() || {}) as Record<string, unknown>;
-    const counts = currentStats(statsData, key);
-    if (counts.fanart + counts.pending >= FANART_DAILY_LIMIT) {
-      throw new HttpsError('resource-exhausted', 'Daily fan art limit reached.');
-    }
-
-    transaction.create(ticketRef, {
-      uid: requestAuth.uid,
-      status: 'pending',
-      path,
-      fileName,
-      contentType,
-      size,
-      dailyKey: key,
-      createdAt: FieldValue.serverTimestamp(),
-      expiresAt
-    });
-
-    transaction.set(statsRef, {
-      uid: requestAuth.uid,
-      dailyKey: key,
-      dailyMessageCount: counts.message,
-      dailyFanartCount: counts.fanart,
-      pendingFanartCount: counts.pending + 1,
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+  throw new HttpsError('failed-precondition', 'Image submissions are disabled. Submit an X post URL instead.', {
+    reason: 'image_submission_disabled'
   });
-
-  return {
-    ticketId: ticketRef.id,
-    path,
-    expiresAt: expiresAt.toDate().toISOString()
-  };
 });
 
 export const finalizeFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
   await assertSiteWritable();
   await assertCanContribute(requestAuth.uid);
+  throw new HttpsError('failed-precondition', 'Image submissions are disabled. Submit an X post URL instead.', {
+    reason: 'image_submission_disabled'
+  });
+});
+
+export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
+  const requestAuth = requireContributorAuth(request);
+  await assertSiteWritable();
+  await assertCanContribute(requestAuth.uid);
 
   const data = asRecord(request.data);
-  const ticketId = requiredString(data.ticketId, 'ticketId', 1, 128);
+  const post = parseXPostUrl(data.postUrl);
   const caption = optionalString(data.caption, 'caption', 300);
-  const artistLink = optionalHttpsUrl(data.artistLink, 'artistLink');
-  const ticketRef = db.collection('uploadTickets').doc(ticketId);
-  const initialTicket = await ticketRef.get();
-  const ticket = initialTicket.data();
-
-  if (!initialTicket.exists || !ticket || ticket.uid !== requestAuth.uid || ticket.status !== 'pending') {
-    throw new HttpsError('not-found', 'Upload ticket not found.');
-  }
-  if (!(ticket.expiresAt instanceof Timestamp) || ticket.expiresAt.toMillis() <= Date.now()) {
-    throw new HttpsError('deadline-exceeded', 'Upload ticket expired.');
-  }
-
-  const bucket = storage.bucket();
-  const file = bucket.file(ticket.path as string);
-  const [exists] = await file.exists();
-  if (!exists) throw new HttpsError('failed-precondition', 'Uploaded image was not found.');
-
-  const [metadata] = await file.getMetadata();
-  const actualSize = Number(metadata.size || 0);
-  if (
-    metadata.contentType !== ticket.contentType ||
-    actualSize <= 0 ||
-    actualSize > MAX_IMAGE_BYTES ||
-    actualSize !== ticket.size
-  ) {
-    await file.delete({ ignoreNotFound: true });
-    throw new HttpsError('invalid-argument', 'Uploaded image does not match its ticket.');
-  }
-
-  const [imageBytes] = await file.download();
-  const safeMetadata = { ...(metadata.metadata || {}) };
-  delete safeMetadata.firebaseStorageDownloadTokens;
-  await file.save(imageBytes, {
-    resumable: false,
-    validation: 'crc32c',
-    metadata: {
-      contentType: ticket.contentType,
-      cacheControl: 'no-store',
-      metadata: safeMetadata
-    }
+  const fanartRef = db.collection('fanart').doc(xFanartDocumentId(post));
+  const duplicate = () => new HttpsError('already-exists', 'This X post has already been submitted.', {
+    reason: 'duplicate_post'
   });
-  const imageUrl = `/api/fanart-media?fanartId=${encodeURIComponent(ticketId)}`;
+  if ((await fanartRef.get()).exists) throw duplicate();
+
+  await verifyXPost(post);
   const { user, publicSnapshot } = await buildSubmitter(
     requestAuth.uid,
     requestAuth.token.firebase?.sign_in_provider
   );
-  const fanartRef = db.collection('fanart').doc(ticketId);
   const statsRef = db.collection('userStats').doc(requestAuth.uid);
   const key = todayKey();
 
   await db.runTransaction(async (transaction) => {
-    const [latestTicket, statsSnapshot] = await Promise.all([
-      transaction.get(ticketRef),
+    const [existingFanart, statsSnapshot] = await Promise.all([
+      transaction.get(fanartRef),
       transaction.get(statsRef),
-      assertTransactionWritable(transaction)
+      assertTransactionWritable(transaction),
+      assertCanContribute(requestAuth.uid, transaction)
     ]);
-    const latestData = latestTicket.data();
-    if (!latestTicket.exists || latestData?.uid !== requestAuth.uid || latestData.status !== 'pending') {
-      throw new HttpsError('failed-precondition', 'Upload ticket is no longer available.');
-    }
-    if (!(latestData.expiresAt instanceof Timestamp) || latestData.expiresAt.toMillis() <= Date.now()) {
-      throw new HttpsError('deadline-exceeded', 'Upload ticket expired.');
-    }
-
-    const statsData = (statsSnapshot.data() || {}) as Record<string, unknown>;
-    const counts = currentStats(statsData, key);
+    if (existingFanart.exists) throw duplicate();
+    const counts = currentStats((statsSnapshot.data() || {}) as Record<string, unknown>, key);
     if (counts.fanart >= FANART_DAILY_LIMIT) {
       throw new HttpsError('resource-exhausted', 'Daily fan art limit reached.');
     }
 
-    transaction.create(fanartRef, {
-      artist: publicSnapshot.displayName,
-      artistId: publicSnapshot.uid,
-      artistLink: artistLink || publicSnapshot.profileLink,
-      artistAvatar: publicSnapshot.avatarUrl,
-      artistProvider: publicSnapshot.providerId,
-      submitter: publicSnapshot,
-      imagePath: ticket.path,
-      imageUrl,
+    transaction.create(fanartRef, buildXFanartData({
+      post,
       caption,
-      createdAt: FieldValue.serverTimestamp(),
-      hidden: false,
-      deleted: false,
-      reportCount: 0,
-      moderation: {
-        status: 'visible',
-        updatedAt: null,
-        updatedBy: '',
-        reason: ''
-      }
-    });
-
-    transaction.update(ticketRef, {
-      status: 'finalized',
-      finalizedAt: FieldValue.serverTimestamp()
-    });
-
+      submitter: publicSnapshot,
+      createdAt: FieldValue.serverTimestamp()
+    }));
     transaction.set(statsRef, {
       uid: requestAuth.uid,
       dailyKey: key,
       dailyMessageCount: counts.message,
       dailyFanartCount: counts.fanart + 1,
-      pendingFanartCount: latestData.dailyKey === key
-        ? Math.max(0, counts.pending - 1)
-        : counts.pending,
+      pendingFanartCount: counts.pending,
       fanartCount: FieldValue.increment(1),
       lastFanartAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
@@ -305,7 +195,7 @@ export const finalizeFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => 
   });
 
   await syncUserDirectory(user).catch((error) => console.error('User directory sync failed', error));
-  return { id: fanartRef.id, imageUrl };
+  return { id: fanartRef.id };
 });
 
 export const submitReport = onCall(CALLABLE_OPTIONS, async (request) => {
@@ -375,6 +265,7 @@ export const submitReport = onCall(CALLABLE_OPTIONS, async (request) => {
         ? String(target.content || '').slice(0, 200)
         : String(target.caption || '').slice(0, 200),
       targetImageUrl: type === 'fanart' ? String(target.imageUrl || '') : '',
+      targetPostUrl: type === 'fanart' && target.sourceType === 'x' ? String(target.postUrl || '') : '',
       status: caseData.status === 'reviewing' ? 'reviewing' : 'open',
       reportCount,
       latestReason: reason,

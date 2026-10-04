@@ -18,6 +18,7 @@ const callableNames = [
   'resolveReportCase',
   'setUserRestriction',
   'submitMessage',
+  'submitFanartLink',
   'submitReport',
   'updateAdminAccount'
 ];

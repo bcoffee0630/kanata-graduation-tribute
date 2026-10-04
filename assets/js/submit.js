@@ -6,6 +6,10 @@
 const Submit = {
     messageModal: null,
     fanartModal: null,
+    preview: null,
+    isFanartSubmitting: false,
+    returnFocus: null,
+    previousOverflow: '',
 
     // Rate limiting
     limits: {
@@ -16,10 +20,14 @@ const Submit = {
     },
 
     init() {
-        window.addEventListener('firebaseReady', () => {
+        const setup = () => {
+            if (this.initialized) return;
+            this.initialized = true;
             this.setupModals();
             this.setupEventListeners();
-        });
+        };
+        window.addEventListener('firebaseReady', setup);
+        if (window.FirebaseApp?.getDb()) setup();
     },
 
     setupModals() {
@@ -70,14 +78,28 @@ const Submit = {
             messageInput.addEventListener('input', () => this.updateCharCount());
         }
 
-        // Image preview
-        const imageInput = document.getElementById('fanart-image');
-        if (imageInput) {
-            imageInput.addEventListener('change', (e) => this.previewImage(e));
-        }
+        document.getElementById('fanart-post-url')?.addEventListener('input', () => {
+            this.clearPreview();
+            this.clearFanartError();
+            this.updateFanartSubmitState();
+        });
+        document.getElementById('fanart-caption')?.addEventListener('input', () => {
+            this.clearFanartError();
+            this.updateCaptionCount();
+            this.updateFanartSubmitState();
+        });
+        document.getElementById('fanart-preview-btn')?.addEventListener('click', () => this.previewPost());
+        document.addEventListener('keydown', (event) => this.handleModalKey(event));
+        window.addEventListener('languageChanged', () => {
+            this.updateFanartSubmitState();
+            if (this.preview) this.previewPost();
+            const close = this.fanartModal?.querySelector('.modal-close');
+            close?.setAttribute('aria-label', window.i18n?.t('modal.close') || 'Close');
+        });
 
         // Confirmation checkbox validation
         this.setupConfirmationCheckboxes();
+        this.fanartModal?.querySelector('.modal-close')?.setAttribute('aria-label', window.i18n?.t('modal.close') || 'Close');
     },
 
     setupConfirmationCheckboxes() {
@@ -127,48 +149,41 @@ const Submit = {
             }
         }
 
-        // Fanart modal
-        const fanartModal = document.getElementById('fanart-modal');
-        if (fanartModal) {
-            const checkboxes = fanartModal.querySelectorAll('.confirm-checkbox');
-            const submitBtn = fanartModal.querySelector('.submit-form-btn');
-            const imageInput = document.getElementById('fanart-image');
+        this.fanartModal?.querySelectorAll('.confirm-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => this.updateFanartSubmitState());
+        });
+        this.updateFanartSubmitState();
+    },
 
-            if (checkboxes.length > 0 && submitBtn) {
-                const updateSubmitState = () => {
-                    const allChecked = [...checkboxes].every(cb => cb.checked);
-                    const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+    updateFanartSubmitState() {
+        const form = document.getElementById('fanart-form');
+        const input = document.getElementById('fanart-post-url');
+        if (!form || !input) return;
+        const post = window.XPost.parseUrl(input.value);
+        const error = document.getElementById('fanart-url-error');
+        const valid = Boolean(post);
+        const checked = [...form.querySelectorAll('.confirm-checkbox')].every(checkbox => checkbox.checked);
+        const captionValid = (document.getElementById('fanart-caption')?.value || '').length <= 300;
+        const message = this.getTranslation('invalid_post_url');
+        input.setCustomValidity(input.value && !valid ? message : '');
+        input.setAttribute('aria-invalid', input.value && !valid ? 'true' : 'false');
+        error.textContent = input.value && !valid ? message : '';
+        error.hidden = !input.value || valid;
+        const button = form.querySelector('.submit-form-btn');
+        button.disabled = this.isFanartSubmitting || !valid || !checked || !captionValid;
+        button.title = !valid ? message : !checked ? this.getValidationTooltip('checkboxes_required') : '';
+        document.getElementById('fanart-preview-btn').disabled = this.isFanartSubmitting || !valid;
+    },
 
-                    // Determine why button is disabled and set tooltip
-                    let tooltip = '';
-                    if (!hasImage) {
-                        tooltip = this.getValidationTooltip('image_required');
-                    } else if (!allChecked) {
-                        tooltip = this.getValidationTooltip('checkboxes_required');
-                    }
+    updateCaptionCount() {
+        const input = document.getElementById('fanart-caption');
+        const count = document.getElementById('fanart-caption-count');
+        if (input && count) count.textContent = `${input.value.length}/300`;
+    },
 
-                    submitBtn.disabled = !(allChecked && hasImage);
-                    submitBtn.title = submitBtn.disabled ? tooltip : '';
-                };
-
-                checkboxes.forEach(cb => cb.addEventListener('change', updateSubmitState));
-                if (imageInput) {
-                    imageInput.addEventListener('change', updateSubmitState);
-                }
-
-                // Reset when modal opens
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach(mutation => {
-                        if (mutation.attributeName === 'class' && fanartModal.classList.contains('active')) {
-                            checkboxes.forEach(cb => cb.checked = false);
-                            submitBtn.disabled = true;
-                            submitBtn.title = this.getValidationTooltip('image_required');
-                        }
-                    });
-                });
-                observer.observe(fanartModal, { attributes: true });
-            }
-        }
+    clearFanartError() {
+        const error = document.getElementById('fanart-submit-error');
+        if (error) { error.hidden = true; error.textContent = ''; }
     },
 
     getValidationTooltip(key, param) {
@@ -176,19 +191,16 @@ const Submit = {
             'ja': {
                 message_empty: 'メッセージを入力してください',
                 message_too_short: `最低${param}文字以上入力してください`,
-                image_required: '画像を選択してください',
                 checkboxes_required: 'すべての確認項目にチェックしてください'
             },
             'zh-TW': {
                 message_empty: '請輸入留言內容',
                 message_too_short: `請輸入至少 ${param} 個字元`,
-                image_required: '請選擇圖片',
                 checkboxes_required: '請勾選所有確認項目'
             },
             'en': {
                 message_empty: 'Please enter a message',
                 message_too_short: `Please enter at least ${param} characters`,
-                image_required: 'Please select an image',
                 checkboxes_required: 'Please check all confirmation items'
             }
         };
@@ -198,32 +210,56 @@ const Submit = {
     },
 
     openMessageModal() {
-        if (!window.Auth.isLoggedIn()) {
-            Toast.warning(this.getTranslation('login_required'));
-            return;
-        }
-        if (this.messageModal) {
-            this.messageModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+        if (!window.Auth.isLoggedIn()) { Toast.warning(this.getTranslation('login_required')); return; }
+        this.openModal(this.messageModal);
     },
 
     openFanartModal() {
-        if (!window.Auth.isLoggedIn()) {
-            Toast.warning(this.getTranslation('login_required'));
-            return;
-        }
-        if (this.fanartModal) {
-            this.fanartModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+        if (!window.Auth.isLoggedIn()) { Toast.warning(this.getTranslation('login_required')); return; }
+        this.fanartModal?.querySelectorAll('.confirm-checkbox').forEach(checkbox => { checkbox.checked = false; });
+        this.clearFanartError();
+        this.updateFanartSubmitState();
+        this.updateCaptionCount();
+        this.openModal(this.fanartModal);
+    },
+
+    openModal(modal) {
+        if (!modal) return;
+        this.returnFocus = document.activeElement;
+        this.previousOverflow = document.body.style.overflow;
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        const initialFocus = modal.querySelector('input:not([type="checkbox"]), textarea') || modal.querySelector('.modal-close');
+        // Opening visibility is immediate; flush it before moving keyboard focus.
+        modal.getBoundingClientRect();
+        initialFocus?.focus();
+    },
+
+    handleModalKey(event) {
+        const modal = [this.messageModal, this.fanartModal].find(item => item?.classList.contains('active'));
+        if (!modal) return;
+        if (event.key === 'Escape') { event.preventDefault(); this.closeAllModals(); return; }
+        if (event.key !== 'Tab') return;
+        const controls = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href], iframe')]
+            .filter(element => element.getClientRects().length && !element.closest('[hidden]'));
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+            event.preventDefault(); last?.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+            event.preventDefault(); first?.focus();
         }
     },
 
     closeAllModals() {
-        [this.messageModal, this.fanartModal].filter(Boolean).forEach(modal => {
-            modal.classList.remove('active');
-        });
-        document.body.style.overflow = '';
+        const active = [this.messageModal, this.fanartModal].filter(modal => modal?.classList.contains('active'));
+        if (!active.length) return;
+        active.forEach(modal => { modal.classList.remove('active'); modal.setAttribute('aria-hidden', 'true'); });
+        this.clearPreview();
+        document.body.style.overflow = this.previousOverflow;
+        this.returnFocus?.focus();
+        this.returnFocus = null;
     },
 
     updateCharCount() {
@@ -237,32 +273,20 @@ const Submit = {
         }
     },
 
-    previewImage(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('image-preview');
+    previewPost() {
+        const post = window.XPost.parseUrl(document.getElementById('fanart-post-url')?.value);
+        if (!post) return;
+        this.clearPreview();
+        const container = document.getElementById('fanart-preview');
+        container.hidden = false;
+        this.preview = window.XPost.mount(container, post.postUrl);
+    },
 
-        if (file && preview) {
-            // Validate file type
-            if (!file.type.match(/^image\/(png|jpeg|jpg)$/)) {
-                Toast.error(this.getTranslation('invalid_image_type'));
-                e.target.value = '';
-                return;
-            }
-
-            // Validate file size (10MB max)
-            if (file.size > 10 * 1024 * 1024) {
-                Toast.error(this.getTranslation('image_too_large'));
-                e.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
+    clearPreview() {
+        this.preview?.destroy();
+        this.preview = null;
+        const container = document.getElementById('fanart-preview');
+        if (container) { container.hidden = true; container.replaceChildren(); }
     },
 
     async handleMessageSubmit(e) {
@@ -325,92 +349,66 @@ const Submit = {
 
     async handleFanartSubmit(e) {
         e.preventDefault();
-
-        if (!window.Auth.isLoggedIn()) {
-            Toast.warning(this.getTranslation('login_required'));
-            return;
-        }
-
+        if (this.isFanartSubmitting) return;
+        if (!window.Auth.isLoggedIn()) { Toast.warning(this.getTranslation('login_required')); return; }
         const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-
+        const post = window.XPost.parseUrl(document.getElementById('fanart-post-url').value);
+        const caption = document.getElementById('fanart-caption').value.trim();
+        const checked = [...form.querySelectorAll('.confirm-checkbox')].every(checkbox => checkbox.checked);
+        this.updateFanartSubmitState();
+        if (!post || caption.length > 300 || !checked || !form.reportValidity()) return;
+        const button = form.querySelector('button[type="submit"]');
+        this.isFanartSubmitting = true;
+        this.clearFanartError();
+        this.updateFanartSubmitState();
+        button.classList.add('loading');
+        button.textContent = this.getTranslation('submitting');
         try {
-            submitBtn.disabled = true;
-            submitBtn.classList.add('loading');
-            submitBtn.textContent = this.getTranslation('uploading');
-
-            const imageInput = document.getElementById('fanart-image');
-            const caption = document.getElementById('fanart-caption')?.value.trim() || '';
-            const artistLink = document.getElementById('artist-link')?.value.trim() || '';
-
-            if (!imageInput.files[0]) {
-                throw new Error(this.getTranslation('no_image'));
-            }
-
-            const file = imageInput.files[0];
             const functions = window.FirebaseApp.getFunctions();
             if (!functions) throw new Error(this.getTranslation('submit_error'));
-            const beginFanartUpload = functions.httpsCallable('beginFanartUpload');
-            const finalizeFanartUpload = functions.httpsCallable('finalizeFanartUpload');
-            const ticketResult = await beginFanartUpload({
-                contentType: file.type,
-                size: file.size
-            });
-            const ticket = ticketResult.data;
-
-            const storage = window.FirebaseApp.getStorage();
-            await storage.ref(ticket.path).put(file, {
-                contentType: file.type,
-                customMetadata: { ticketId: ticket.ticketId }
-            });
-            await finalizeFanartUpload({
-                ticketId: ticket.ticketId,
-                caption,
-                artistLink
-            });
-
-            // Success
+            const result = await functions.httpsCallable('submitFanartLink')({ postUrl: post.postUrl, caption });
             Toast.success(this.getTranslation('fanart_submitted'));
             form.reset();
-            document.getElementById('image-preview').style.display = 'none';
+            this.updateCaptionCount();
             this.closeAllModals();
-
-            // Refresh gallery
-            if (window.Gallery) {
-                window.Gallery.loadFromFirestore();
-            }
-
+            window.Gallery?.loadFromFirestore();
+            window.dispatchEvent(new CustomEvent('fanartSubmitted', { detail: { id: result.data.id } }));
         } catch (error) {
-            console.error('Fanart submission error:', error);
             const code = String(error.code || '');
-            const message = code.includes('unavailable')
-                ? this.getTranslation('site_maintenance')
-                : code.includes('resource-exhausted')
-                ? this.getTranslation('rate_limit_fanart')
-                : code.includes('permission-denied')
-                    ? this.getTranslation('account_restricted')
-                    : error.message || this.getTranslation('submit_error');
+            const reasons = {
+                invalid_post_url: 'invalid_post_url', post_unavailable: 'post_unavailable',
+                x_service_unavailable: 'x_service_unavailable', duplicate_post: 'duplicate_post'
+            };
+            const key = reasons[error.details?.reason] || (
+                code.includes('already-exists') ? 'duplicate_post' :
+                code.includes('unavailable') ? 'site_maintenance' :
+                code.includes('resource-exhausted') ? 'rate_limit_fanart' :
+                code.includes('permission-denied') ? 'account_restricted' :
+                code.includes('unauthenticated') ? 'login_required' : 'submit_error'
+            );
+            const message = this.getTranslation(key);
+            const alert = document.getElementById('fanart-submit-error');
+            alert.textContent = message;
+            alert.hidden = false;
             Toast.error(message);
         } finally {
-            submitBtn.disabled = true; // Keep disabled until checkboxes are checked again
-            submitBtn.classList.remove('loading');
-            submitBtn.textContent = originalText;
+            this.isFanartSubmitting = false;
+            button.classList.remove('loading');
+            button.textContent = window.i18n?.t('modal.submit') || 'Submit';
+            this.updateFanartSubmitState();
         }
     },
 
     getTranslation(key) {
+        const localized = window.i18n?.t(`submit.${key}`);
+        if (localized && localized !== `submit.${key}`) return localized;
         const translations = {
             'ja': {
                 login_required: 'ログインが必要です',
                 submitting: '送信中...',
-                uploading: 'アップロード中...',
                 empty_message: 'メッセージを入力してください',
                 message_too_short: `最低${this.limits.messageMinLength}文字以上入力してください`,
                 message_too_long: 'メッセージが長すぎます',
-                no_image: '画像を選択してください',
-                invalid_image_type: 'PNG または JPG 画像のみ対応しています',
-                image_too_large: '画像サイズは10MB以下にしてください',
                 message_submitted: 'メッセージを投稿しました！',
                 fanart_submitted: 'イラストを投稿しました！',
                 submit_error: '投稿に失敗しました。もう一度お試しください。',
@@ -422,38 +420,30 @@ const Submit = {
             'zh-TW': {
                 login_required: '請先登入',
                 submitting: '送出中...',
-                uploading: '上傳中...',
                 empty_message: '請輸入留言內容',
                 message_too_short: `請輸入至少 ${this.limits.messageMinLength} 個字元`,
                 message_too_long: '留言內容過長',
-                no_image: '請選擇圖片',
-                invalid_image_type: '僅支援 PNG 或 JPG 圖片',
-                image_too_large: '圖片大小請小於 10MB',
                 message_submitted: '留言已送出！',
                 fanart_submitted: '繪圖已送出！',
                 submit_error: '送出失敗，請再試一次。',
                 site_maintenance: '網站維護中，目前無法投稿。',
                 account_restricted: '此帳號目前無法投稿。',
                 rate_limit_message: '今日已達投稿上限（每日3則）',
-                rate_limit_fanart: '今日已達投稿上限（每日2張）'
+                rate_limit_fanart: '今日已達投稿上限（每日2件）'
             },
             'en': {
                 login_required: 'Please log in first',
                 submitting: 'Submitting...',
-                uploading: 'Uploading...',
                 empty_message: 'Please enter a message',
                 message_too_short: `Please enter at least ${this.limits.messageMinLength} characters`,
                 message_too_long: 'Message is too long',
-                no_image: 'Please select an image',
-                invalid_image_type: 'Only PNG or JPG images are supported',
-                image_too_large: 'Image size must be under 10MB',
                 message_submitted: 'Message submitted!',
                 fanart_submitted: 'Fan art submitted!',
                 submit_error: 'Submission failed. Please try again.',
                 site_maintenance: 'The site is under maintenance and is temporarily read-only.',
                 account_restricted: 'This account cannot submit content right now.',
                 rate_limit_message: 'Daily limit reached (3 messages per day)',
-                rate_limit_fanart: 'Daily limit reached (2 images per day)'
+                rate_limit_fanart: 'Daily limit reached (2 posts per day)'
             }
         };
 

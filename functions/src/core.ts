@@ -4,7 +4,8 @@ import {
   FieldValue,
   Timestamp,
   getFirestore,
-  type DocumentData
+  type DocumentData,
+  type Transaction
 } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
@@ -303,8 +304,9 @@ export async function syncUserDirectory(user: UserRecord): Promise<void> {
   }, { merge: true });
 }
 
-export async function assertCanContribute(uid: string): Promise<void> {
-  const restriction = await db.collection('userRestrictions').doc(uid).get();
+export async function assertCanContribute(uid: string, transaction?: Transaction): Promise<void> {
+  const restrictionRef = db.collection('userRestrictions').doc(uid);
+  const restriction = transaction ? await transaction.get(restrictionRef) : await restrictionRef.get();
   if (!restriction.exists) return;
 
   const data = restriction.data() || {};

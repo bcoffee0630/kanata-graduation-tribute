@@ -38,12 +38,13 @@
     }
   },
   "content": {
+    "xOriginalLink": "View original post on X",
     "title": "Submissions", "subtitle": "Review, hide, restore, or permanently remove user submissions.", "messages": "Messages", "fanart": "Fan art",
     "visibility": "Visibility", "authorUid": "Author UID", "dateFrom": "Submitted from", "dateTo": "Submitted through",
     "content": "Content", "author": "Author", "createdAt": "Submitted",
     "reportCount": "Reports", "noContent": "No submissions match the current filters.", "details": "Submission details",
     "hide": "Hide content", "restore": "Restore content", "remove": "Permanently remove", "reason": "Moderation reason",
-    "removeWarning": "This clears the message body or Storage image and cannot be undone."
+    "removeWarning": "This permanently clears the message, X post link, or Storage image and cannot be undone."
   },
   "users": {
     "title": "Users", "subtitle": "Find accounts and submissions by exact UID or email.", "searchPlaceholder": "Enter an exact UID or email",

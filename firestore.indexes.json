@@ -30,6 +30,16 @@
       "collectionGroup": "fanart",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "sourceType", "order": "ASCENDING" },
+        { "fieldPath": "hidden", "order": "ASCENDING" },
+        { "fieldPath": "deleted", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fanart",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "artistId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]

@@ -1,269 +1,185 @@
-/**
- * Gallery functionality for fan art display
- * Supports both Firestore and local JSON fallback
- * With pagination (Load More button)
- */
-
+/** Public X-post gallery with cursor pagination and natural-height masonry. */
 const Gallery = {
-    data: null,
-    container: null,
-    lightbox: null,
-    loadMoreBtn: null,
-    currentIndex: 0,
-    useFirestore: false,
-    unsubscribe: null,
-
-    // Pagination settings
     PAGE_SIZE: 20,
+    data: [],
     lastDoc: null,
-    hasMore: true,
+    hasMore: false,
     isLoading: false,
+    requestVersion: 0,
+    embeds: [],
 
-    async init() {
+    init() {
         this.container = document.getElementById('gallery-grid');
-        this.lightbox = document.getElementById('lightbox');
         this.loadMoreBtn = document.getElementById('load-more-btn');
-
+        this.status = document.getElementById('gallery-status');
         if (!this.container) return;
-
-        this.setupLightbox();
-        this.setupLoadMoreButton();
-
-        // Show skeleton loading immediately
-        this.showSkeleton();
-
-        // Check if Firebase is already initialized
-        if (window.FirebaseApp && window.FirebaseApp.getDb()) {
-            this.loadFromFirestore();
-        } else {
-            // Listen for Firebase ready event
-            window.addEventListener('firebaseReady', () => {
-                this.loadFromFirestore();
-            });
+        this.loadMoreBtn?.addEventListener('click', () => this.loadMore());
+        if ('ResizeObserver' in window) {
+            this.resizeObserver = new ResizeObserver(() => this.scheduleLayout());
+            this.resizeObserver.observe(this.container);
         }
-
-        // Also try loading from JSON as fallback
-        setTimeout(() => {
-            if (!this.useFirestore && !this.data) {
-                this.loadFromJSON();
-            }
-        }, 2000);
+        window.addEventListener('resize', () => this.scheduleLayout());
+        window.addEventListener('firebaseReady', () => this.loadFromFirestore());
+        window.addEventListener('firebaseError', () => this.showError());
+        this.showSkeleton();
+        if (window.FirebaseApp?.getDb()) this.loadFromFirestore();
     },
 
-    showSkeleton(count = 6) {
-        const skeletonHtml = Array(count).fill(0).map(() =>
-            '<div class="gallery-skeleton"></div>'
-        ).join('');
-        this.container.innerHTML = skeletonHtml;
+    t(key) {
+        const translated = window.i18n?.t(`gallery.${key}`);
+        return translated && translated !== `gallery.${key}` ? translated : {
+            no_content: 'まだ投稿がありません', load_error: 'ギャラリーを読み込めませんでした。',
+            submitter: '投稿者', anonymous: '匿名', retry: '再読み込み'
+        }[key] || key;
     },
 
-    hideSkeleton() {
-        const skeletons = this.container.querySelectorAll('.gallery-skeleton');
-        skeletons.forEach(skeleton => skeleton.remove());
+    query() {
+        return window.FirebaseApp.getDb().collection('fanart')
+            .where('sourceType', '==', 'x')
+            .where('hidden', '==', false)
+            .where('deleted', '==', false)
+            .orderBy('createdAt', 'desc');
     },
 
-    setupLoadMoreButton() {
-        if (!this.loadMoreBtn) return;
-
-        this.loadMoreBtn.addEventListener('click', () => {
-            this.loadMore();
+    items(snapshot) {
+        return snapshot.docs.flatMap(doc => {
+            const data = doc.data();
+            const post = window.XPost.parseUrl(data.postUrl);
+            if (data.sourceType !== 'x' || data.hidden || data.deleted || !post || post.postId !== data.postId) return [];
+            return [{ id: doc.id, ...post, caption: data.caption || '',
+                submitter: data.submitter?.displayName || data.artist || this.t('anonymous'),
+                createdAt: data.createdAt?.toDate?.() }];
         });
     },
 
-    async loadFromJSON() {
-        try {
-            const response = await fetch('memories/fanart/index.json');
-            const jsonData = await response.json();
-
-            this.data = {
-                fanart: jsonData.fanart.map(item => ({
-                    id: item.id || item.path,
-                    artist: item.artist,
-                    artistLink: item.artistLink,
-                    path: item.path,
-                    imageUrl: item.path, // Use same path for local files
-                    caption: item.caption,
-                    date: item.date,
-                    isOfficial: item.isOfficial
-                }))
-            };
-
-            this.render();
-            this.setupLazyLoading();
-        } catch (error) {
-            console.error('Failed to load gallery from JSON:', error);
-            this.showNoContent();
-        }
-    },
-
     async loadFromFirestore() {
+        if (!this.container || !window.FirebaseApp?.getDb()) return;
+        const version = ++this.requestVersion;
+        this.isLoading = true;
+        this.updateLoadMoreButton();
+        this.setStatus('');
         try {
-            const db = window.FirebaseApp.getDb();
-            if (!db) return;
-
-            this.useFirestore = true;
-            this.isLoading = true;
-
-            // Initial load with pagination
-            const snapshot = await db.collection('fanart')
-                .where('hidden', '==', false)
-                .where('deleted', '==', false)
-                .orderBy('createdAt', 'desc')
-                .limit(this.PAGE_SIZE)
-                .get();
-
-            const fanart = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                // Skip hidden content
-                if (data.hidden) return;
-
-                fanart.push({
-                    id: doc.id,
-                    artist: data.artist,
-                    artistLink: data.artistLink,
-                    artistAvatar: data.artistAvatar,
-                    path: data.imagePath,
-                    imageUrl: data.imageUrl,
-                    caption: data.caption,
-                    date: data.createdAt?.toDate?.()?.toLocaleDateString() || '',
-                    isOfficial: false
-                });
-            });
-
-            // Track pagination state
-            if (snapshot.docs.length > 0) {
-                this.lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            }
+            const snapshot = await this.query().limit(this.PAGE_SIZE).get();
+            if (version !== this.requestVersion) return;
+            this.lastDoc = snapshot.docs.at(-1) || null;
             this.hasMore = snapshot.docs.length === this.PAGE_SIZE;
-
-            this.data = { fanart };
+            this.data = this.items(snapshot);
+            this.loadFailed = false;
             this.render();
-            this.setupLazyLoading();
-            this.updateLoadMoreButton();
-            this.isLoading = false;
-
         } catch (error) {
-            console.error('Failed to load from Firestore:', error);
-            this.isLoading = false;
-            this.loadFromJSON();
+            if (version !== this.requestVersion) return;
+            console.error('Failed to load X gallery:', error);
+            this.showError();
+        } finally {
+            if (version === this.requestVersion) {
+                this.isLoading = false;
+                this.updateLoadMoreButton();
+                this.applyPendingLanguage();
+            }
         }
     },
 
     async loadMore() {
-        if (!this.hasMore || this.isLoading || !this.lastDoc) return;
-
-        const db = window.FirebaseApp?.getDb();
-        if (!db) return;
-
+        if (this.isLoading || !this.hasMore || !this.lastDoc) return;
+        const version = this.requestVersion;
         this.isLoading = true;
-        if (this.loadMoreBtn) {
-            this.loadMoreBtn.disabled = true;
-            this.loadMoreBtn.classList.add('loading');
-        }
-
+        this.setStatus('');
+        this.updateLoadMoreButton();
         try {
-            const snapshot = await db.collection('fanart')
-                .where('hidden', '==', false)
-                .where('deleted', '==', false)
-                .orderBy('createdAt', 'desc')
-                .startAfter(this.lastDoc)
-                .limit(this.PAGE_SIZE)
-                .get();
-
-            const newFanart = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                // Skip hidden content
-                if (data.hidden) return;
-
-                newFanart.push({
-                    id: doc.id,
-                    artist: data.artist,
-                    artistLink: data.artistLink,
-                    artistAvatar: data.artistAvatar,
-                    path: data.imagePath,
-                    imageUrl: data.imageUrl,
-                    caption: data.caption,
-                    date: data.createdAt?.toDate?.()?.toLocaleDateString() || '',
-                    isOfficial: false
-                });
-            });
-
-            // Update pagination state
-            if (snapshot.docs.length > 0) {
-                this.lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            }
+            const snapshot = await this.query().startAfter(this.lastDoc).limit(this.PAGE_SIZE).get();
+            if (version !== this.requestVersion) return;
+            this.lastDoc = snapshot.docs.at(-1) || this.lastDoc;
             this.hasMore = snapshot.docs.length === this.PAGE_SIZE;
-
-            // Append new items
-            if (newFanart.length > 0) {
-                this.data.fanart = [...this.data.fanart, ...newFanart];
-                this.appendItems(newFanart);
-                this.setupLazyLoading();
-            }
-
-            this.updateLoadMoreButton();
-
+            const existing = new Set(this.data.map(item => item.id));
+            const items = this.items(snapshot).filter(item => !existing.has(item.id));
+            this.data.push(...items);
+            this.appendItems(items);
         } catch (error) {
-            console.error('Failed to load more:', error);
+            if (version === this.requestVersion) this.setStatus(this.t('load_error'));
+            console.error('Failed to load more X posts:', error);
         } finally {
-            this.isLoading = false;
-            if (this.loadMoreBtn) {
-                this.loadMoreBtn.disabled = false;
-                this.loadMoreBtn.classList.remove('loading');
+            if (version === this.requestVersion) {
+                this.isLoading = false;
+                this.updateLoadMoreButton();
+                this.applyPendingLanguage();
             }
         }
     },
 
+    showSkeleton() {
+        this.container.replaceChildren();
+        for (let index = 0; index < 4; index++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'gallery-skeleton';
+            skeleton.setAttribute('aria-hidden', 'true');
+            this.container.append(skeleton);
+        }
+        this.container.setAttribute('aria-busy', 'true');
+    },
+
+    render() {
+        this.clearEmbeds();
+        this.container.replaceChildren();
+        this.container.setAttribute('aria-busy', 'false');
+        if (this.data.length) this.appendItems(this.data);
+        else {
+            const empty = document.createElement('p');
+            empty.className = 'no-content';
+            empty.textContent = this.t('no_content');
+            this.container.append(empty);
+        }
+    },
+
     appendItems(items) {
-        const startIndex = this.data.fanart.length - items.length;
-
-        const html = items.map((item, i) => {
-            const index = startIndex + i;
-            const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
-            const caption = item.caption || '';
-            const artist = this.escapeHtml(item.artist || 'Anonymous');
-            const artistLink = this.safeExternalUrl(item.artistLink);
-
-            // Report button (only for Firestore entries)
-            let reportBtn = '';
-            if (this.useFirestore && window.Report && item.id) {
-                reportBtn = window.Report.createReportButton(item.id, 'fanart');
+        items.forEach(item => {
+            const article = document.createElement('article');
+            article.className = 'gallery-item';
+            article.dataset.postId = item.postId;
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+            const embed = document.createElement('div');
+            embed.className = 'x-embed';
+            card.append(embed);
+            if (item.caption) {
+                const caption = document.createElement('p');
+                caption.className = 'gallery-caption';
+                caption.textContent = item.caption;
+                card.append(caption);
             }
+            const footer = document.createElement('div');
+            footer.className = 'gallery-meta';
+            const identity = document.createElement('p');
+            identity.className = 'gallery-submitter';
+            identity.textContent = `${this.t('submitter')} · ${item.submitter}`;
+            footer.append(identity);
+            if (item.createdAt) {
+                const date = document.createElement('time');
+                date.dateTime = item.createdAt.toISOString();
+                date.textContent = item.createdAt.toLocaleDateString(window.i18n?.currentLang || 'ja');
+                footer.append(date);
+            }
+            if (window.Report) footer.insertAdjacentHTML('beforeend', window.Report.createReportButton(item.id, 'fanart'));
+            card.append(footer);
+            article.append(card);
+            this.container.append(article);
+            this.resizeObserver?.observe(card);
+            this.embeds.push(window.XPost.mount(embed, item.postUrl, { lazy: true }));
+        });
+        this.scheduleLayout();
+    },
 
-            return `
-                <div class="gallery-item" data-index="${index}">
-                    <img
-                        data-src="${imageSrc}"
-                        alt="${this.escapeHtml(caption)}"
-                        class="gallery-image lazy"
-                        loading="lazy"
-                    >
-                    <div class="gallery-overlay">
-                        <p class="gallery-artist">
-                            ${artistLink
-                                ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
-                                : artist}
-                            ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
-                        </p>
-                        <p class="gallery-caption">${this.escapeHtml(caption)}</p>
-                        ${reportBtn}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        this.container.insertAdjacentHTML('beforeend', html);
-
-        // Add click handlers for new items
-        const newItems = this.container.querySelectorAll('.gallery-item:not([data-bound])');
-        newItems.forEach(item => {
-            item.setAttribute('data-bound', 'true');
-            item.addEventListener('click', (e) => {
-                if (e.target.tagName !== 'A' && !e.target.closest('.report-btn')) {
-                    this.openLightbox(parseInt(item.dataset.index));
-                }
+    scheduleLayout() {
+        if (this.layoutFrame) return;
+        this.layoutFrame = requestAnimationFrame(() => {
+            this.layoutFrame = null;
+            const columns = window.matchMedia('(min-width: 768px)').matches ? 2 : 1;
+            const rows = Array(columns).fill(1);
+            this.container.querySelectorAll('.gallery-item').forEach(item => {
+                const column = rows.indexOf(Math.min(...rows));
+                const span = Math.ceil((item.firstElementChild.getBoundingClientRect().height + 32) / 8);
+                item.style.gridColumn = String(column + 1);
+                item.style.gridRow = `${rows[column]} / span ${span}`;
+                rows[column] += span;
             });
         });
     },
@@ -271,269 +187,54 @@ const Gallery = {
     updateLoadMoreButton() {
         if (!this.loadMoreBtn) return;
         this.loadMoreBtn.style.display = this.hasMore ? 'block' : 'none';
+        this.loadMoreBtn.disabled = this.isLoading;
+        this.loadMoreBtn.classList.toggle('loading', this.isLoading);
     },
 
-    render() {
-        if (!this.data || !this.data.fanart || this.data.fanart.length === 0) {
-            this.showNoContent();
-            return;
-        }
+    setStatus(message) { if (this.status) this.status.textContent = message; },
 
-        this.container.innerHTML = this.data.fanart.map((item, index) => {
-            const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
-            const caption = item.caption || '';
-            const artist = this.escapeHtml(item.artist || 'Anonymous');
-            const artistLink = this.safeExternalUrl(item.artistLink);
-
-            // Report button (only for Firestore entries)
-            let reportBtn = '';
-            if (this.useFirestore && window.Report && item.id) {
-                reportBtn = window.Report.createReportButton(item.id, 'fanart');
-            }
-
-            return `
-                <div class="gallery-item" data-index="${index}">
-                    <img
-                        data-src="${imageSrc}"
-                        alt="${this.escapeHtml(caption)}"
-                        class="gallery-image lazy"
-                        loading="lazy"
-                    >
-                    <div class="gallery-overlay">
-                        <p class="gallery-artist">
-                            ${artistLink
-                                ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
-                                : artist}
-                            ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
-                        </p>
-                        <p class="gallery-caption">${this.escapeHtml(caption)}</p>
-                        ${reportBtn}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Add click handlers
-        this.container.querySelectorAll('.gallery-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.tagName !== 'A' && !e.target.closest('.report-btn')) {
-                    this.openLightbox(parseInt(item.dataset.index));
-                }
-            });
-        });
+    showError() {
+        if (!this.container) return;
+        this.loadFailed = true;
+        this.clearEmbeds();
+        this.container.replaceChildren();
+        this.container.setAttribute('aria-busy', 'false');
+        const error = document.createElement('div');
+        error.className = 'no-content';
+        const message = document.createElement('p');
+        message.textContent = this.t('load_error');
+        const retry = document.createElement('button');
+        retry.className = 'x-embed-retry';
+        retry.textContent = this.t('retry');
+        retry.type = 'button';
+        retry.addEventListener('click', () => this.loadFromFirestore());
+        error.append(message, retry);
+        this.container.append(error);
+        this.hasMore = false;
+        this.updateLoadMoreButton();
     },
 
-    setupLazyLoading() {
-        const images = this.container.querySelectorAll('img.lazy');
-
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src;
-                        img.classList.remove('lazy');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            }, { rootMargin: '50px' });
-
-            images.forEach(img => imageObserver.observe(img));
-        } else {
-            // Fallback for older browsers
-            images.forEach(img => {
-                img.src = img.dataset.src;
-                img.classList.remove('lazy');
-            });
-        }
-    },
-
-    setupLightbox() {
-        if (!this.lightbox) return;
-
-        // Close on background click
-        this.lightbox.addEventListener('click', (e) => {
-            if (e.target === this.lightbox || e.target.classList.contains('lightbox-close')) {
-                this.closeLightbox();
-            }
-        });
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (!this.lightbox.classList.contains('active')) return;
-
-            switch(e.key) {
-                case 'Escape':
-                    this.closeLightbox();
-                    break;
-                case 'ArrowLeft':
-                    this.navigate(-1);
-                    break;
-                case 'ArrowRight':
-                    this.navigate(1);
-                    break;
-            }
-        });
-
-        // Navigation buttons
-        this.lightbox.querySelector('.lightbox-prev')?.addEventListener('click', () => this.navigate(-1));
-        this.lightbox.querySelector('.lightbox-next')?.addEventListener('click', () => this.navigate(1));
-
-        // Touch swipe navigation
-        this.setupTouchSwipe();
-    },
-
-    setupTouchSwipe() {
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-        const minSwipeDistance = 50;
-
-        const lightboxContent = this.lightbox.querySelector('.lightbox-content');
-        if (!lightboxContent) return;
-
-        lightboxContent.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
-
-        lightboxContent.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
-
-            // Only trigger swipe if horizontal movement is greater than vertical
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-                if (deltaX > 0) {
-                    // Swipe right - go to previous
-                    this.navigate(-1);
-                } else {
-                    // Swipe left - go to next
-                    this.navigate(1);
-                }
-            }
-        }, { passive: true });
-    },
-
-    openLightbox(index) {
-        if (!this.lightbox || !this.data) return;
-
-        this.currentIndex = index;
-        this.updateLightboxContent();
-        this.lightbox.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    },
-
-    closeLightbox() {
-        if (!this.lightbox) return;
-
-        this.lightbox.classList.remove('active');
-        document.body.style.overflow = '';
-    },
-
-    navigate(direction) {
-        const total = this.data.fanart.length;
-        this.currentIndex = (this.currentIndex + direction + total) % total;
-        this.updateLightboxContent();
-    },
-
-    updateLightboxContent() {
-        const item = this.data.fanart[this.currentIndex];
-
-        const imgContainer = this.lightbox.querySelector('.lightbox-image');
-        const infoContainer = this.lightbox.querySelector('.lightbox-info');
-
-        const imageSrc = this.escapeHtml(this.safeImageUrl(item.imageUrl || item.path));
-        const caption = item.caption || '';
-        const artist = this.escapeHtml(item.artist || 'Anonymous');
-        const artistLink = this.safeExternalUrl(item.artistLink);
-
-        if (imgContainer) {
-            imgContainer.innerHTML = `<img src="${imageSrc}" alt="${this.escapeHtml(caption)}">`;
-        }
-
-        if (infoContainer) {
-            infoContainer.innerHTML = `
-                <p class="lightbox-artist">
-                    ${artistLink
-                        ? `<a href="${this.escapeHtml(artistLink)}" target="_blank" rel="noopener">${artist}</a>`
-                        : artist}
-                    ${item.isOfficial ? '<span class="official-badge">Official</span>' : ''}
-                </p>
-                <p class="lightbox-caption">${this.escapeHtml(caption)}</p>
-                <p class="lightbox-date">${this.escapeHtml(item.date || '')}</p>
-            `;
-        }
-
-        // Update navigation visibility
-        const prevBtn = this.lightbox.querySelector('.lightbox-prev');
-        const nextBtn = this.lightbox.querySelector('.lightbox-next');
-        const showNav = this.data.fanart.length > 1;
-        if (prevBtn) prevBtn.style.display = showNav ? '' : 'none';
-        if (nextBtn) nextBtn.style.display = showNav ? '' : 'none';
-    },
-
-    // Update gallery when language changes
     onLanguageChange() {
-        this.render();
-        this.setupLazyLoading();
-        if (this.lightbox?.classList.contains('active')) {
-            this.updateLightboxContent();
-        }
+        if (!this.container) return;
+        if (this.isLoading) { this.pendingLanguage = true; return; }
+        if (this.loadFailed) this.showError(); else this.render();
     },
 
-    // Show no content message with proper translation
-    showNoContent() {
-        const text = window.i18n ? i18n.t('gallery.no_content') : 'まだ投稿がありません';
-        this.container.innerHTML = `<p class="no-content" data-i18n="gallery.no_content">${text}</p>`;
+    applyPendingLanguage() {
+        if (!this.pendingLanguage) return;
+        this.pendingLanguage = false;
+        this.onLanguageChange();
     },
 
-    // Escape HTML to prevent XSS
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    clearEmbeds() {
+        this.embeds.forEach(embed => embed.destroy());
+        this.embeds = [];
+        this.container?.querySelectorAll('.gallery-card').forEach(card => this.resizeObserver?.unobserve(card));
     },
 
-    safeImageUrl(value) {
-        try {
-            const url = new URL(String(value || ''), document.baseURI);
-            const localHttp = url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname);
-            if (url.protocol === 'https:' || localHttp) return url.href;
-        } catch (error) {
-            console.warn('Invalid gallery image URL:', error);
-        }
-        return new URL('images/kanata-header.png', document.baseURI).href;
-    },
-
-    safeExternalUrl(value) {
-        try {
-            const url = new URL(String(value || ''));
-            return url.protocol === 'https:' ? url.href : '';
-        } catch {
-            return '';
-        }
-    },
-
-    // Cleanup when leaving page
-    destroy() {
-        if (this.unsubscribe) {
-            this.unsubscribe();
-            this.unsubscribe = null;
-        }
-    }
+    destroy() { this.clearEmbeds(); this.resizeObserver?.disconnect(); cancelAnimationFrame(this.layoutFrame); }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    Gallery.init();
-});
-
-// Update on language change
-window.addEventListener('languageChanged', () => {
-    Gallery.onLanguageChange();
-});
+document.addEventListener('DOMContentLoaded', () => Gallery.init());
+window.addEventListener('languageChanged', () => Gallery.onLanguageChange());
+window.Gallery = Gallery;

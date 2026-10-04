@@ -187,7 +187,7 @@
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
     padding: 20px;
     overflow-y: auto;
 }
@@ -195,6 +195,7 @@
 .modal.active {
     opacity: 1;
     visibility: visible;
+    transition-delay: 0s, 0s;
 }
 
 .modal-content {
@@ -313,61 +314,33 @@
     font-weight: 500;
 }
 
-/* ==================== */
-/* Image Upload         */
-/* ==================== */
-.upload-area {
-    border: 2px dashed #ccc;
+/* X-link submission tutorial and optional preview */
+.fanart-tutorial {
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #edf6ff, #f8fbff);
+    border: 1px solid #dcecff;
     border-radius: 10px;
-    padding: 30px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.3s ease, background 0.3s ease;
+    color: #4c657b;
+    font-size: 13px;
+    line-height: 1.7;
 }
-
-.upload-area:hover {
-    border-color: var(--kanata-blue);
-    background: rgba(40, 148, 255, 0.05);
-}
-
-.upload-area input[type="file"] {
-    display: none;
-}
-
-.upload-area label {
-    cursor: pointer;
-    display: block;
-}
-
-.upload-icon {
-    font-size: 48px;
-    color: #ccc;
-    margin-bottom: 10px;
-}
-
-.upload-text {
-    color: #666;
-    font-size: 14px;
-}
-
-.upload-hint {
-    color: #999;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-#image-preview {
-    display: none;
-    margin-top: 15px;
-    text-align: center;
-}
-
-#image-preview img {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+.fanart-tutorial h4 { color: var(--kanata-blue-dark); font-size: 14px; margin: 0 0 8px; }
+.fanart-tutorial ol { padding-left: 20px; margin: 0; }
+.fanart-tutorial li + li { margin-top: 6px; }
+.fanart-tutorial p { margin: 10px 0 0; font-size: 12px; }
+.preview-btn { margin-top: 12px; font-size: 13px; }
+.preview-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.fanart-preview { margin-top: 16px; border: 1px solid #dcecff; border-radius: 10px; padding: 6px; }
+.fanart-preview[hidden] { display: none; }
+#fanart-caption { min-height: 90px; }
+.character-count { text-align: right; }
+.field-error, .form-group small.field-error { color: #b02d35; }
+.field-error[hidden] { display: none; }
+.fanart-daily-note { font-size: 12px; color: #65768a; margin: 0 0 12px; }
+#fanart-submit-error { margin: 0 0 12px; font-size: 13px; line-height: 1.6; }
+.modal-close:focus-visible { outline: 2px solid white; outline-offset: 4px; }
+.preview-btn:focus-visible { outline: 3px solid var(--kanata-blue-light); outline-offset: 3px; }
 
 /* ==================== */
 /* Submit Button        */

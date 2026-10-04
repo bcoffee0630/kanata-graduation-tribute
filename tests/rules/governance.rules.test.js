@@ -157,8 +157,8 @@ describe('Firestore governance rules', () => {
   });
 });
 
-describe('Storage upload tickets', () => {
-  it('allows only the ticket owner to upload the exact file', async () => {
+describe('legacy Storage media', () => {
+  it('rejects image uploads even with an unexpired matching ticket', async () => {
     const bytes = new Uint8Array([137, 80, 78, 71]);
     await environment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'uploadTickets', 'fanart-1'), {
@@ -174,7 +174,7 @@ describe('Storage upload tickets', () => {
       'user-1', contributorClaims('password')
     ).storage();
     await assertFails(uploadBytes(ref(passwordStorage, path), bytes, { contentType: 'image/png' }));
-    await assertSucceeds(uploadBytes(ref(ownerStorage, path), bytes, { contentType: 'image/png' }));
+    await assertFails(uploadBytes(ref(ownerStorage, path), bytes, { contentType: 'image/png' }));
   });
 
   it('keeps Storage private while allowing administrator review', async () => {
@@ -189,9 +189,10 @@ describe('Storage upload tickets', () => {
         role: 'moderator', disabled: false, sessionVersion: 1
       });
     });
-    const ownerStorage = environment.authenticatedContext('user-1', contributorClaims()).storage();
     const path = 'fanart/user-1/fanart-2/original.png';
-    await assertSucceeds(uploadBytes(ref(ownerStorage, path), bytes, { contentType: 'image/png' }));
+    await environment.withSecurityRulesDisabled(async (context) => {
+      await uploadBytes(ref(context.storage(), path), bytes, { contentType: 'image/png' });
+    });
     const publicStorage = environment.unauthenticatedContext().storage();
     await assertFails(getBytes(ref(publicStorage, path)));
     const adminStorage = environment.authenticatedContext(

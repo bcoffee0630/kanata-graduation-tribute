@@ -16,14 +16,22 @@
     "fan_messages": "Messages From Heimin",
     "gallery_title": "Memory Gallery",
     "contribute_message": "Want to share your thoughts? Click the button below.",
-    "contribute_art": "Want to share your artwork? Click the button below.",
+    "contribute_art": "Keep a favorite creation among our memories. Copy the original artist’s X post link to share it.",
     "contribute_button": "Share Your Thoughts",
     "submit_message_button": "Submit Message",
-    "submit_art_button": "Submit Artwork"
+    "submit_art_button": "Share an X post"
   },
   "gallery": {
     "no_content": "No submissions yet",
-    "load_more": "Load More"
+    "load_more": "Load More",
+    "intro": "Favorite creations, treasured memories.",
+    "submitter": "Submitted by",
+    "anonymous": "Anonymous",
+    "load_error": "The gallery could not load. Please try again.",
+    "embed_loading": "Loading X post…",
+    "embed_error": "This X post cannot be displayed right now. Open the original post or try again later.",
+    "open_original": "Open original post",
+    "retry": "Try again"
   },
   "danmaku": {
     "pause": "⏸",
@@ -36,18 +44,25 @@
   },
   "modal": {
     "message_title": "Submit Message",
-    "fanart_title": "Submit Artwork",
+    "fanart_title": "Share an X post",
     "message": "Message",
-    "upload_image": "Upload Image",
-    "caption": "Caption",
+    "caption": "Description (optional)",
     "caption_placeholder": "Optional",
-    "artist_link": "Social Link (optional)",
-    "artist_link_hint": "Twitter, Pixiv, etc.",
     "confirm_appropriate": "Content does not contain inappropriate or discriminatory remarks",
     "confirm_political": "Content does not contain politically sensitive material",
     "confirm_copyright": "Content does not infringe on others' copyrights",
     "confirm_guidelines": "I agree to the community guidelines",
-    "submit": "Submit"
+    "submit": "Submit",
+    "post_url": "X post link",
+    "post_url_hint": "X / Twitter post links are supported. Sharing parameters are removed automatically.",
+    "preview": "Preview (optional)",
+    "tutorial_title": "How to share an X post",
+    "tutorial_open": "Open the original artist’s post.",
+    "tutorial_copy": "Choose “Copy link” from the share button.",
+    "tutorial_paste": "Paste it below. You can preview it before submitting.",
+    "tutorial_note": "Use a public post link. The original artist is credited by the X embed.",
+    "fanart_daily_limit": "You can share up to 2 posts per day.",
+    "close": "Close"
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
@@ -56,5 +71,14 @@
     "disclaimer": "This is an unofficial fan memorial website and is not affiliated with COVER Corp. in any way.",
     "copyright_notice": "Images and videos used on this site are copyrighted by:",
     "non_commercial": "This site does not engage in any commercial activities, including but not limited to advertisements, sponsorships, merchandise sales, or paid memorabilia."
+  },
+  "submit": {
+    "submitting": "Submitting…",
+    "fanart_submitted": "X post shared!",
+    "invalid_post_url": "Paste a valid HTTPS X / Twitter post link, rather than a profile or embed code.",
+    "post_unavailable": "This post cannot be embedded. Check that it is public and still exists, or choose another post.",
+    "x_service_unavailable": "X cannot verify this post right now. Please try again later. This attempt did not use your daily allowance.",
+    "duplicate_post": "This post has already been shared.",
+    "rate_limit_fanart": "Daily limit reached (2 posts per day)."
   }
 }

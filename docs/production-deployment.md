@@ -1,5 +1,7 @@
 # Production 治理後台部署手冊
 
+既有 production 的 X 回憶畫廊功能更新，使用 [X 畫廊增量發布與回滾](x-gallery-release.md)。它沿用 release guards 與備份流程，不重跑本手冊的初次 Auth／Owner 安裝。
+
 ## 固定邊界
 
 - Production project: `kanata-memorial`

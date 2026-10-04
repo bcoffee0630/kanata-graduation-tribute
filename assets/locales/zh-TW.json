@@ -16,14 +16,22 @@
     "fan_messages": "嘿民的心意",
     "gallery_title": "回憶畫廊",
     "contribute_message": "想傳達您的心意嗎？請點擊下方按鈕。",
-    "contribute_art": "想分享您的作品嗎？請點擊下方按鈕。",
+    "contribute_art": "把喜歡的創作，留在回憶裡。複製原作者的 X 貼文連結，即可分享。",
     "contribute_button": "傳達心意",
     "submit_message_button": "投稿留言",
-    "submit_art_button": "投稿繪圖"
+    "submit_art_button": "分享 X 貼文"
   },
   "gallery": {
     "no_content": "目前還沒有投稿",
-    "load_more": "載入更多"
+    "load_more": "載入更多",
+    "intro": "把喜歡的創作，留在這裡",
+    "submitter": "投稿者",
+    "anonymous": "匿名",
+    "load_error": "畫廊暫時無法載入，請再試一次。",
+    "embed_loading": "正在載入 X 貼文…",
+    "embed_error": "這則 X 貼文目前無法顯示。您可以開啟原文，或稍後重試。",
+    "open_original": "開啟原始貼文",
+    "retry": "重新載入"
   },
   "danmaku": {
     "pause": "⏸",
@@ -36,18 +44,25 @@
   },
   "modal": {
     "message_title": "投稿留言",
-    "fanart_title": "投稿繪圖",
+    "fanart_title": "分享 X 貼文",
     "message": "留言內容",
-    "upload_image": "上傳圖片",
-    "caption": "說明文字",
+    "caption": "說明文字（選填）",
     "caption_placeholder": "選填",
-    "artist_link": "社群連結（選填）",
-    "artist_link_hint": "Twitter, Pixiv 等",
     "confirm_appropriate": "內容不包含不當言論或歧視性內容",
     "confirm_political": "內容不包含政治敏感內容",
     "confirm_copyright": "內容不侵犯他人著作權",
     "confirm_guidelines": "我已閱讀並同意社群規範",
-    "submit": "送出"
+    "submit": "送出",
+    "post_url": "X 貼文連結",
+    "post_url_hint": "支援 X／Twitter 的貼文連結，分享參數會自動移除。",
+    "preview": "預覽（選填）",
+    "tutorial_title": "如何分享 X 貼文",
+    "tutorial_open": "開啟原作者的貼文。",
+    "tutorial_copy": "點選分享按鈕，選擇「複製連結」。",
+    "tutorial_paste": "貼上下方欄位，可點選預覽確認。",
+    "tutorial_note": "請使用公開貼文的連結。原作者會由 X 嵌入元件署名。",
+    "fanart_daily_limit": "每日最多分享 2 件貼文。",
+    "close": "關閉"
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
@@ -56,5 +71,14 @@
     "disclaimer": "此網站為非官方粉絲紀念網站，與 COVER 株式會社無任何關聯。",
     "copyright_notice": "本站使用之圖片及影像素材版權屬於：",
     "non_commercial": "本站不進行任何營利活動，包含但不限於廣告、贊助、周邊販售或收費紀念品等。"
+  },
+  "submit": {
+    "submitting": "送出中…",
+    "fanart_submitted": "X 貼文已分享！",
+    "invalid_post_url": "請貼上有效的 HTTPS X／Twitter 貼文連結，而非個人頁或嵌入程式碼。",
+    "post_unavailable": "這則貼文無法嵌入。請確認貼文公開且仍存在，或選擇其他貼文。",
+    "x_service_unavailable": "X 暫時無法驗證這則貼文，請稍後重試。本次未使用投稿額度。",
+    "duplicate_post": "這則貼文已經有人分享過了。",
+    "rate_limit_fanart": "今日已達投稿上限（每日 2 件）。"
   }
 }

@@ -16,14 +16,22 @@
     "fan_messages": "へい民からの想い",
     "gallery_title": "思い出のギャラリー",
     "contribute_message": "あなたの想いを届けませんか？下のボタンをクリックしてください。",
-    "contribute_art": "あなたの作品を共有しませんか？下のボタンをクリックしてください。",
+    "contribute_art": "好きな創作を思い出に。作者のX投稿のリンクをコピーして共有できます。",
     "contribute_button": "想いを届ける",
     "submit_message_button": "メッセージを投稿",
-    "submit_art_button": "イラストを投稿"
+    "submit_art_button": "Xの投稿を共有"
   },
   "gallery": {
     "no_content": "まだ投稿がありません",
-    "load_more": "もっと見る"
+    "load_more": "もっと見る",
+    "intro": "好きな創作を、思い出とともに。",
+    "submitter": "投稿者",
+    "anonymous": "匿名",
+    "load_error": "ギャラリーを読み込めませんでした。もう一度お試しください。",
+    "embed_loading": "Xの投稿を読み込み中…",
+    "embed_error": "このXの投稿は表示できません。元の投稿を開くか、再読み込みしてください。",
+    "open_original": "元の投稿を開く",
+    "retry": "再読み込み"
   },
   "danmaku": {
     "pause": "⏸",
@@ -36,18 +44,25 @@
   },
   "modal": {
     "message_title": "メッセージを投稿",
-    "fanart_title": "イラストを投稿",
+    "fanart_title": "Xの投稿を共有",
     "message": "メッセージ",
-    "upload_image": "画像をアップロード",
-    "caption": "キャプション",
+    "caption": "説明（任意）",
     "caption_placeholder": "任意",
-    "artist_link": "SNSリンク（任意）",
-    "artist_link_hint": "Twitter, Pixiv など",
     "confirm_appropriate": "不当な発言や差別的な内容を含んでいません",
     "confirm_political": "政治的に敏感な内容を含んでいません",
     "confirm_copyright": "他者の著作権を侵害していません",
     "confirm_guidelines": "コミュニティガイドラインに同意します",
-    "submit": "送信"
+    "submit": "送信",
+    "post_url": "Xの投稿リンク",
+    "post_url_hint": "X / Twitterの投稿リンクに対応。共有用パラメーターは自動で削除されます。",
+    "preview": "プレビュー（任意）",
+    "tutorial_title": "Xの投稿を共有するには",
+    "tutorial_open": "作者の元の投稿を開きます。",
+    "tutorial_copy": "共有ボタンから「リンクをコピー」を選びます。",
+    "tutorial_paste": "下に貼り付けます。プレビューで確認できます。",
+    "tutorial_note": "公開されている投稿のリンクを使用してください。作者名はXの埋め込みに表示されます。",
+    "fanart_daily_limit": "1日2件まで投稿できます。",
+    "close": "閉じる"
   },
   "footer": {
     "forever_kanata": "絶対的アイドル",
@@ -56,5 +71,14 @@
     "disclaimer": "このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。",
     "copyright_notice": "使用している画像・映像の著作権：",
     "non_commercial": "当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。"
+  },
+  "submit": {
+    "submitting": "送信中…",
+    "fanart_submitted": "Xの投稿を共有しました！",
+    "invalid_post_url": "HTTPSのX / Twitter投稿リンクを入力してください。プロフィールや埋め込みコードは使用できません。",
+    "post_unavailable": "この投稿は埋め込めません。公開されていて削除されていないか確認するか、別の投稿を選んでください。",
+    "x_service_unavailable": "Xでの確認が一時的にできません。後でもう一度お試しください。投稿回数は消費されていません。",
+    "duplicate_post": "この投稿はすでに共有されています。",
+    "rate_limit_fanart": "本日の投稿上限に達しました（1日2件まで）。"
   }
 }

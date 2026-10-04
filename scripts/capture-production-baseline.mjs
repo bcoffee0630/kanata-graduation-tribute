@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -8,6 +8,7 @@ import { requireProductionReleaseTag } from './production-release-guard.mjs';
 const PROJECT = 'kanata-memorial';
 const PUBLIC_SITE = 'kanata-memorial';
 const MANIFEST_DIRECTORY = '.production-backups';
+const incrementalRelease = process.argv.includes('--incremental-release');
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -31,6 +32,25 @@ function gitValue(args) {
   return result.stdout.trim();
 }
 
+let previousRelease = null;
+let adminSite = '';
+if (incrementalRelease) {
+  const previousTag = argument('--previous-release-tag');
+  if (!/^governance-production-\d{8}T\d{6}Z$/.test(previousTag) ||
+      gitValue(['cat-file', '-t', `refs/tags/${previousTag}`]) !== 'tag') {
+    throw new Error('Incremental capture requires an existing annotated --previous-release-tag.');
+  }
+  previousRelease = { tag: previousTag, commit: gitValue(['rev-parse', `${previousTag}^{commit}`]) };
+  if (previousRelease.commit === release.commit) {
+    throw new Error('The previous release must identify the currently deployed earlier revision.');
+  }
+  const targets = JSON.parse(readFileSync('.firebaserc', 'utf8')).targets?.[PROJECT]?.hosting;
+  adminSite = targets?.admin?.length === 1 ? targets.admin[0] : '';
+  if (!['eienkanata-admin', 'kanata-memorial-governance', 'eienkanata-governance'].includes(adminSite)) {
+    throw new Error('Incremental capture requires the configured production admin Hosting target.');
+  }
+}
+
 const credential = applicationDefault();
 const app = initializeApp({ projectId: PROJECT, credential });
 const auth = getAuth(app);
@@ -46,7 +66,7 @@ async function getJson(url) {
   return response.json();
 }
 
-const [hosting, rules, authConfig, providers, projectConfig] = await Promise.all([
+const [hosting, rules, authConfig, providers, projectConfig, adminHosting, deployedFunctions] = await Promise.all([
   getJson(
     `https://firebasehosting.googleapis.com/v1beta1/sites/${PUBLIC_SITE}/channels/live/releases?pageSize=100`
   ),
@@ -55,13 +75,27 @@ const [hosting, rules, authConfig, providers, projectConfig] = await Promise.all
   getJson(
     `https://identitytoolkit.googleapis.com/admin/v2/projects/${PROJECT}/defaultSupportedIdpConfigs?pageSize=100`
   ),
-  auth.projectConfigManager().getProjectConfig()
+  auth.projectConfigManager().getProjectConfig(),
+  incrementalRelease ? getJson(
+    `https://firebasehosting.googleapis.com/v1beta1/sites/${adminSite}/channels/live/releases?pageSize=100`
+  ) : null,
+  incrementalRelease ? getJson(
+    `https://cloudfunctions.googleapis.com/v2/projects/${PROJECT}/locations/asia-east1/functions?pageSize=100`
+  ) : null
 ]);
 
 const liveRelease = [...(hosting.releases || [])]
   .sort((left, right) => String(right.releaseTime || '').localeCompare(String(left.releaseTime || '')))[0];
 if (!liveRelease?.name || !liveRelease?.version?.name) {
   throw new Error('The current public Hosting live release could not be identified.');
+}
+
+const adminLiveRelease = incrementalRelease
+  ? [...(adminHosting.releases || [])]
+    .sort((left, right) => String(right.releaseTime || '').localeCompare(String(left.releaseTime || '')))[0]
+  : null;
+if (incrementalRelease && (!adminLiveRelease?.name || !adminLiveRelease?.version?.name)) {
+  throw new Error('The current admin Hosting live release could not be identified.');
 }
 
 const ruleReleases = (rules.releases || [])
@@ -86,6 +120,7 @@ const providerStates = Object.fromEntries((providers.defaultSupportedIdpConfigs 
 const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 const baseline = {
   projectId: PROJECT,
+  mode: incrementalRelease ? 'incremental-release' : 'initial-governance',
   capturedAt: new Date().toISOString(),
   git: {
     commit: release.commit,
@@ -111,11 +146,28 @@ const baseline = {
   }
 };
 
+if (incrementalRelease) {
+  baseline.previousRelease = previousRelease;
+  baseline.adminHosting = {
+    site: adminSite, releaseName: adminLiveRelease.name,
+    versionName: adminLiveRelease.version.name, releaseTime: adminLiveRelease.releaseTime || ''
+  };
+  baseline.functions = (deployedFunctions.functions || []).map((fn) => ({
+    name: fn.name, state: fn.state, runtime: fn.buildConfig?.runtime || '', updateTime: fn.updateTime || ''
+  }));
+  if (!baseline.functions.length || baseline.functions.some((fn) => fn.state !== 'ACTIVE')) {
+    throw new Error('Incremental capture requires a nonempty ACTIVE production Function inventory.');
+  }
+}
+
 if (!baseline.auth.providers.google || !baseline.auth.providers.github) {
   throw new Error('Google and GitHub must both be enabled in the production baseline.');
 }
-if (baseline.auth.emailPasswordEnabled) {
+if (!incrementalRelease && baseline.auth.emailPasswordEnabled) {
   throw new Error('Capture the production baseline before enabling Email/Password.');
+}
+if (incrementalRelease && (!baseline.auth.emailPasswordEnabled || !baseline.auth.emailPasswordRequired)) {
+  throw new Error('Incremental capture requires the existing governance Password provider to remain enabled.');
 }
 
 if (!existsSync(MANIFEST_DIRECTORY)) mkdirSync(MANIFEST_DIRECTORY, { recursive: true });

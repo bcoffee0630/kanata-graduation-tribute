@@ -232,6 +232,9 @@ export const moderateContent = onCall(CALLABLE_OPTIONS, async (request) => {
       update.removedImagePath = imagePathToDelete;
       update.imagePath = '';
       update.imageUrl = '';
+      update.postUrl = '';
+      update.postId = '';
+      update.curation = FieldValue.delete();
     }
   }
 
@@ -255,6 +258,7 @@ export const moderateContent = onCall(CALLABLE_OPTIONS, async (request) => {
       transaction.update(reportCaseRef, {
         targetPreview: '',
         targetImageUrl: '',
+        targetPostUrl: '',
         targetRemoved: true,
         targetRemovedAt: FieldValue.serverTimestamp()
       });

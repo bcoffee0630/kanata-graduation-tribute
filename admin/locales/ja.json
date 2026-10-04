@@ -38,12 +38,13 @@
     }
   },
   "content": {
+    "xOriginalLink": "X で元の投稿を見る",
     "title": "投稿管理", "subtitle": "ユーザー投稿の確認、非表示、復元、完全削除を行います。", "messages": "メッセージ", "fanart": "ファンアート",
     "visibility": "表示状態", "authorUid": "投稿者 UID", "dateFrom": "開始日", "dateTo": "終了日",
     "content": "内容", "author": "投稿者", "createdAt": "投稿日時",
     "reportCount": "報告数", "noContent": "条件に一致する投稿はありません。", "details": "投稿詳細",
     "hide": "非表示にする", "restore": "表示を復元", "remove": "完全に削除", "reason": "対応理由",
-    "removeWarning": "メッセージ本文または Storage 画像が削除され、元に戻せません。"
+    "removeWarning": "メッセージ本文、X の投稿リンク、または Storage 画像が削除されます。この操作は取り消せません。"
   },
   "users": {
     "title": "ユーザー管理", "subtitle": "完全な UID またはメールアドレスでアカウントを検索します。", "searchPlaceholder": "完全な UID またはメールアドレス",

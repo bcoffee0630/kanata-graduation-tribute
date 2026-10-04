@@ -36,6 +36,20 @@ test.beforeAll(async () => {
     hidden: false, deleted: false, reportCount: 0, createdAt: Timestamp.now(),
     moderation: { status: 'visible' }
   });
+  await db.collection('fanart').doc('x-admin-preview').set({
+    sourceType: 'x', postId: '1900000000000000006',
+    postUrl: 'https://x.com/example/status/1900000000000000006',
+    artist: 'Website contributor', artistId: 'contributor-1', caption: 'X link moderation preview',
+    hidden: true, deleted: false, reportCount: 0,
+    createdAt: Timestamp.fromMillis(Date.now() - 1000), moderation: { status: 'admin_hidden' }
+  });
+  await db.collection('fanart').doc('x-invalid-admin-preview').set({
+    sourceType: 'x', postId: '1900000000000000007',
+    postUrl: 'https://attacker.example/collect-admin-token',
+    artist: 'Website contributor', artistId: 'contributor-1', caption: 'Untrusted X link moderation preview',
+    hidden: true, deleted: false, reportCount: 0,
+    createdAt: Timestamp.fromMillis(Date.now() - 2000), moderation: { status: 'admin_hidden' }
+  });
   await db.collection('reportCases').doc('message_reported-message').set({
     targetType: 'message', targetId: 'reported-message', targetAuthorUid: 'reported-user',
     targetPreview: 'A reported preview message', status: 'open', reportCount: 2,
@@ -107,6 +121,31 @@ test('fan art preview never sends an administrator token to a stored image URL',
   expect(mediaRequest).toBeTruthy();
   expect(mediaRequest?.authorization).toMatch(/^Bearer /);
   expect(new URL(mediaRequest.url).origin).toBe(new URL(page.url()).origin);
+});
+
+test('X moderation uses safe original links without loading embeds or sending administrator tokens', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'Desktop moderation workflow');
+  const requests = [];
+  page.on('request', (request) => requests.push(request.url()));
+  await page.goto('/admin/');
+  await page.getByLabel('電子郵件').fill(owner.email);
+  await page.getByLabel('密碼').fill(owner.password);
+  await page.getByRole('button', { name: '登入' }).click();
+  await expect(page.getByRole('heading', { name: '治理總覽' })).toBeVisible();
+  await page.getByRole('button', { name: '投稿管理' }).click();
+  await page.getByRole('button', { name: '創作', exact: true }).click();
+  await page.getByRole('row').filter({ hasText: 'X link moderation preview' })
+    .filter({ hasNotText: 'Untrusted' }).getByRole('button', { name: '查看' }).click();
+  const original = page.getByRole('link', { name: '前往 X 查看原貼文' });
+  await expect(original).toHaveAttribute('href', 'https://x.com/example/status/1900000000000000006');
+  await expect(original).toHaveAttribute('rel', 'noopener noreferrer');
+  await page.locator('#drawer-close').click();
+  await page.getByRole('row').filter({ hasText: 'Untrusted X link moderation preview' })
+    .getByRole('button', { name: '查看' }).click();
+  await expect(page.getByRole('heading', { name: '投稿詳情' })).toBeVisible();
+  await expect(original).toHaveCount(0);
+  expect(requests.some((url) => /platform\.(?:x|twitter)\.com|attacker\.example/.test(url))).toBe(false);
+  expect(requests.some((url) => url.includes('fanartId=x-admin-preview'))).toBe(false);
 });
 
 test('administrator resets a password through the custom action handler', async ({ page, request }, testInfo) => {

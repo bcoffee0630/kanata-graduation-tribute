@@ -127,6 +127,24 @@ const AdminApp = {
         return element;
     },
 
+    xPostLink(item) {
+        if (item.deleted || item.sourceType !== 'x') return null;
+        try {
+            const url = new URL(item.postUrl);
+            const match = url.pathname.match(/^\/(?:[A-Za-z0-9_]{1,15}|i\/web)\/status\/(\d+)$/);
+            if (url.protocol !== 'https:' || url.hostname !== 'x.com' || url.port ||
+                url.username || url.password || !match || match[1] !== item.postId) return null;
+            const link = this.el('a', 'secondary-command', this.t('content.xOriginalLink'));
+            link.href = `${url.origin}${url.pathname}`;
+            link.target = '_blank';
+            // Open the original without loading third-party scripts in the admin session.
+            link.rel = 'noopener noreferrer';
+            return link;
+        } catch {
+            return null;
+        }
+    },
+
     iconButton(icon, label, handler, className = 'table-command') {
         const button = this.el('button', className);
         button.type = 'button';
@@ -605,11 +623,16 @@ const AdminApp = {
 
         const targetNodes = [this.el('h3', '', this.t('reports.target'))];
         if (target && item.targetType === 'fanart') {
-            const image = await this.adminMediaImage(
-                item.targetId,
-                target.caption || this.t('content.fanart')
-            );
-            if (image) targetNodes.push(image);
+            if (target.sourceType === 'x') {
+                const link = this.xPostLink(target);
+                if (link) targetNodes.push(link);
+            } else {
+                const image = await this.adminMediaImage(
+                    item.targetId,
+                    target.caption || this.t('content.fanart')
+                );
+                if (image) targetNodes.push(image);
+            }
         }
         targetNodes.push(this.el('p', '', target
             ? (item.targetType === 'message' ? target.content : target.caption) || this.t('common.none')
@@ -781,11 +804,16 @@ const AdminApp = {
             this.el('p', 'muted-text', item.id)
         ]));
         if (type === 'fanart') {
-            const image = await this.adminMediaImage(
-                item.id,
-                item.caption || this.t('content.fanart')
-            );
-            if (image) this.refs.drawerContent.append(this.drawerSection([image]));
+            if (item.sourceType === 'x') {
+                const link = this.xPostLink(item);
+                if (link) this.refs.drawerContent.append(this.drawerSection([link]));
+            } else {
+                const image = await this.adminMediaImage(
+                    item.id,
+                    item.caption || this.t('content.fanart')
+                );
+                if (image) this.refs.drawerContent.append(this.drawerSection([image]));
+            }
         }
         this.refs.drawerContent.append(this.drawerSection([
             this.el('h3', '', this.t('content.content')),

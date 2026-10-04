@@ -38,12 +38,13 @@
     }
   },
   "content": {
+    "xOriginalLink": "前往 X 查看原貼文",
     "title": "投稿管理", "subtitle": "查看、隱藏、恢復或永久移除用戶投稿。", "messages": "留言", "fanart": "創作",
     "visibility": "顯示狀態", "authorUid": "投稿者 UID", "dateFrom": "起始日期", "dateTo": "結束日期",
     "content": "內容", "author": "投稿者", "createdAt": "投稿時間",
     "reportCount": "舉報數", "noContent": "目前沒有符合條件的投稿。", "details": "投稿詳情",
     "hide": "隱藏內容", "restore": "恢復內容", "remove": "永久移除", "reason": "處置原因",
-    "removeWarning": "此操作會清除留言內文或 Storage 圖片，且無法復原。"
+    "removeWarning": "此操作會清除留言內文、X 貼文連結或 Storage 圖片，且無法復原。"
   },
   "users": {
     "title": "用戶管理", "subtitle": "使用完整 UID 或 Email 查詢帳號與投稿紀錄。", "searchPlaceholder": "輸入完整 UID 或 Email",
