@@ -68,11 +68,23 @@ const AdminApp = {
         document.getElementById('access-logout').addEventListener('click', () => this.auth.signOut());
         document.getElementById('link-google').addEventListener('click', () => this.linkGoogleAccount());
         document.getElementById('bootstrap-owner').addEventListener('click', () => this.bootstrapOwner());
+        this.sidebarMedia = window.matchMedia('(max-width: 760px)');
         document.getElementById('sidebar-collapse').addEventListener('click', () => {
-            this.refs.app.classList.toggle('sidebar-collapsed');
+            if (this.sidebarMedia.matches) this.setMobileNavigation(false);
+            else {
+                this.refs.app.classList.toggle('sidebar-collapsed');
+                this.syncNavigationChrome();
+            }
         });
         document.getElementById('mobile-menu').addEventListener('click', () => {
-            this.refs.app.classList.toggle('mobile-nav-open');
+            this.setMobileNavigation(!this.refs.app.classList.contains('mobile-nav-open'));
+        });
+        this.sidebarMedia.addEventListener('change', () => {
+            const mobileToggleFocused = document.activeElement === document.getElementById('mobile-menu');
+            this.setMobileNavigation(false);
+            if (!this.sidebarMedia.matches && mobileToggleFocused) {
+                document.getElementById('sidebar-collapse').focus({ preventScroll: true });
+            }
         });
         document.querySelectorAll('[data-view]').forEach((button) => {
             button.addEventListener('click', () => this.setView(button.dataset.view));
@@ -86,7 +98,10 @@ const AdminApp = {
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 if (this.refs.modal.classList.contains('is-open')) this.closeModal(null);
-                else this.closeDrawer();
+                else if (this.refs.drawer.classList.contains('is-open')) this.closeDrawer();
+                else if (this.sidebarMedia.matches && this.refs.app.classList.contains('mobile-nav-open')) {
+                    this.setMobileNavigation(false);
+                }
             }
         });
         window.addEventListener('adminLanguageChanged', () => {
@@ -94,6 +109,49 @@ const AdminApp = {
             if (this.state.role) this.renderView();
             this.updateChrome();
         });
+        this.syncNavigationChrome();
+    },
+
+    setMobileNavigation(open) {
+        const sidebar = document.getElementById('admin-sidebar');
+        const returnFocus = this.sidebarMedia.matches && !open && sidebar.contains(document.activeElement);
+        this.refs.app.classList.toggle('mobile-nav-open', open);
+        this.syncNavigationChrome();
+        if (returnFocus) document.getElementById('mobile-menu').focus({ preventScroll: true });
+        if (open && this.sidebarMedia.matches) {
+            sidebar.querySelector('.nav-item:not(.is-hidden)')?.focus({ preventScroll: true });
+        }
+    },
+
+    syncNavigationChrome() {
+        const mobile = this.sidebarMedia.matches;
+        const open = this.refs.app.classList.contains('mobile-nav-open');
+        const collapsed = this.refs.app.classList.contains('sidebar-collapsed');
+        const sidebar = document.getElementById('admin-sidebar');
+        sidebar.inert = mobile && !open;
+        sidebar.setAttribute('aria-hidden', String(mobile && !open));
+        const toggle = document.getElementById('sidebar-collapse');
+        const key = mobile ? 'nav.close' : collapsed ? 'nav.expand' : 'nav.collapse';
+        const label = this.t(key);
+        toggle.title = label;
+        toggle.setAttribute('aria-label', label);
+        toggle.setAttribute('aria-expanded', String(mobile ? open : !collapsed));
+        const text = toggle.querySelector('span');
+        text.dataset.adminI18n = key;
+        text.textContent = label;
+        const icon = document.createElement('i');
+        icon.dataset.lucide = !mobile && collapsed ? 'panel-left-open' : 'panel-left-close';
+        icon.setAttribute('aria-hidden', 'true');
+        toggle.querySelector('svg, i[data-lucide]')?.replaceWith(icon);
+        const mobileToggle = document.getElementById('mobile-menu');
+        mobileToggle.setAttribute('aria-expanded', String(mobile && open));
+        mobileToggle.setAttribute('aria-label', this.t(mobile && open ? 'nav.close' : 'nav.open'));
+        document.querySelectorAll('.admin-nav .nav-item').forEach((item) => {
+            const label = item.querySelector('[data-admin-i18n]')?.textContent || '';
+            item.setAttribute('aria-label', label);
+            item.title = label;
+        });
+        this.refreshIcons();
     },
 
     syncAuthLanguage() {
@@ -232,7 +290,7 @@ const AdminApp = {
         });
         this.refs.viewTitle.textContent = this.t(`nav.${this.state.view}`);
         window.AdminI18n.apply(document);
-        this.refreshIcons();
+        this.syncNavigationChrome();
     },
 
     async signIn(event) {
@@ -349,7 +407,7 @@ const AdminApp = {
         document.querySelectorAll('[data-view]').forEach((button) => {
             button.classList.toggle('is-active', button.dataset.view === view);
         });
-        this.refs.app.classList.remove('mobile-nav-open');
+        this.setMobileNavigation(false);
         this.refs.viewTitle.textContent = this.t(`nav.${view}`);
         this.closeDrawer();
         this.renderView();

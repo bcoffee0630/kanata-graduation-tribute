@@ -36,8 +36,8 @@
     box-shadow: 0 4px 20px rgba(40, 148, 255, 0.08);
 }
 .x-embed { min-width: 0; }
-.x-embed-frame { width: 100%; }
-.x-embed-frame .twitter-tweet { margin: 0 auto !important; max-width: 100% !important; }
+.x-embed-frame { width: 100%; max-width: 550px; margin-inline: auto; }
+.x-embed-frame .twitter-tweet { margin: 0 auto !important; }
 .x-embed-frame iframe { max-width: 100%; }
 .x-embed-message {
     color: var(--text-light, #666);

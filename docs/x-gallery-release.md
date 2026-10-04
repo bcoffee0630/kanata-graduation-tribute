@@ -39,13 +39,15 @@ npm run baseline:production -- \
 4. 執行 `deploy:production --phase backend`，不加 `--allow-owner-bootstrap`。執行 `verify:production:backend --expect-bootstrap disabled --verify`，確認新版 18 個 Functions、所有宣告索引 READY、HTTP invoker 與匿名 callable 拒絕。檢查合法登入者呼叫舊圖片 API 明確拒收，新連結 API 在 maintenance 拒收。
 5. 執行 `deploy:production --phase governance` 發布最終 Rules、Storage 禁止新圖片寫入及新版 admin。確認舊圖片仍能透過 proxy 讀取，隱藏／刪除內容不能公開讀；後台只提供安全的 X 原文連結，不載入 X widgets，不擴大 admin CSP。
 6. 在 maintenance 中執行下節的 Owner 參考作品匯入，先重新 dry-run。驗收後執行 `deploy:production --phase release`；public Hosting 成功後腳本才解除 lock。
-7. 驗證 Google/GitHub 一般使用者的連結投稿、重複提示、配額、教學、X 不可用後援、檢舉與 admin 管理；保留 baseline、backup 與 release tag，觀察至少 24 小時。
+7. 驗證 Google/GitHub 一般使用者的連結投稿、重複提示、配額、教學、X 不可用後援、檢舉與 admin 管理；保留 baseline、backup 與 release tag。完整流程可使用模擬器，正式 smoke check 避免建立不必要的投稿／檢舉資料。
 
 上述 production npm commands 均須沿用部署手冊要求的 `--project kanata-memorial --confirm-production kanata-memorial --release-tag <new-release-tag>`。維護窗口開始前確認沒有管理資料異動；final export 完成前不匯入或治理。
 
 ## Owner 匯入操作
 
-Apply 同時需要 ADC 資料存取權與**實際 Owner 的 Password session**，僅持有 ADC 或指定 Owner UID 不足。先在 `admin.eienkanata.com` 以 Owner Password 登入，確認後台顯示 Owner。使用該頁 DevTools 的 `copy(await FirebaseApp.getAuth().currentUser.getIdToken(true))` 將短效 ID token 複製至本機剪貼簿；不要在 Console 顯示 token，不貼到聊天、不存檔、不放 command argument、environment variable 或 shell history。
+Apply 同時需要 ADC 資料存取權與**實際 Owner 的 Password session**，僅持有 ADC 或指定 Owner UID 不足。先在 `admin.eienkanata.com` 以 Owner Password 登入，確認後台顯示 Owner。若瀏覽器提供 DevTools，可使用該頁的 `copy(await FirebaseApp.getAuth().currentUser.getIdToken(true))` 將短效 ID token 複製至本機剪貼簿；不要在 Console 顯示 token，不貼到聊天、不存檔、不放 command argument、environment variable 或 shell history。
+
+Codex 的 in-app-browser 未提供可執行指令的 Console，不能要求使用者在其中操作 DevTools。此時可由一次性本機登入交接重新驗證既有 Owner 密碼：使用已安裝的 Firebase client SDK、`inMemoryPersistence` 與明確 production 設定，token 只經 child stdin 交給同一 importer。登入頁若採 localhost，僅綁定 `127.0.0.1`，使用精確 Host／Origin、隨機 nonce、no-store 與登入嘗試／有效時間限制；不修改 production admin CSP，不跨來源讀取既有瀏覽器 session，不新增常駐 API。完成或取消時清除本機 client session；不得在 importer child 尚未結束時取消交接，也應在有效期限保留足夠餘裕。
 
 在執行 apply 前，人必須重新打開清單中的三篇貼文，確認仍為公開、包含彼方粉絲繪圖與 `#かなたーと`，且當下超過 100 個讚。`--confirm-eligibility-date` 必須是當日台北日期，代表此次人工核實；程式不自動抓取讚數。官方 oEmbed 另確認當下可嵌入，失敗即停止。
 

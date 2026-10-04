@@ -17,7 +17,7 @@ window.twttr = { widgets: { createTweet: async (id, target, options) => {
     post.className = 'twitter-tweet';
     post.dataset.testEmbed = id;
     post.dataset.embedLang = options.lang;
-    post.style.cssText = 'border:1px solid #dce6ef;border-radius:12px;padding:16px;background:white;box-sizing:border-box';
+    post.style.cssText = 'width:100%;max-width:550px;margin:10px auto;border:1px solid #dce6ef;border-radius:12px;padding:16px;background:white;box-sizing:border-box';
     const author = document.createElement('p');
     author.textContent = '@original_artist · X';
     const copy = document.createElement('p');
@@ -179,6 +179,49 @@ test('link tutorial, preview, translated labels and keyboard focus work without 
     await expect(modal).toHaveAttribute('aria-hidden', 'true');
     await expect(page.locator('#submit-fanart-btn')).toBeFocused();
     await expect(page.locator('.site-nav a[href="#gallery-section"]')).toHaveCount(1);
+});
+
+test('official-width X embeds stay centered at 691px and across gallery and preview resizes', async ({ page }, testInfo) => {
+    await page.goto('/#gallery-section');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    await expect(page.locator('#gallery-grid .x-embed').first()).toHaveAttribute('data-embed-state', 'ready');
+    async function expectCentered(container) {
+        await expect.poll(() => container.evaluate(element => {
+            const post = element.querySelector('.twitter-tweet');
+            if (!post) return Infinity;
+            const outer = element.getBoundingClientRect();
+            const inner = post.getBoundingClientRect();
+            return Math.abs((inner.left - outer.left) - (outer.right - inner.right));
+        })).toBeLessThan(1);
+        const bounds = await container.evaluate(element => {
+            const post = element.querySelector('.twitter-tweet');
+            return { width: post.getBoundingClientRect().width, maximum: getComputedStyle(post).maxWidth,
+                available: element.getBoundingClientRect().width };
+        });
+        expect(bounds.maximum).toBe('550px');
+        expect(bounds.width).toBeLessThanOrEqual(550);
+        expect(bounds.width).toBeLessThanOrEqual(bounds.available);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+    }
+    const card = page.locator('#gallery-grid .gallery-card').first();
+    await expectCentered(card);
+    for (const width of [691, 1440, 390, 691]) {
+        await page.setViewportSize({ width, height: 827 });
+        await expectCentered(card);
+        if (width === 691) {
+            await expect.poll(() => card.locator('.twitter-tweet').evaluate(post => post.getBoundingClientRect().width))
+                .toBe(550);
+        }
+    }
+    await signIn(page, testInfo);
+    await page.locator('#submit-fanart-btn').click();
+    await page.locator('#fanart-post-url').fill(`https://x.com/artist/status/${idAt(2)}`);
+    await page.getByRole('button', { name: '預覽（選填）' }).click();
+    const preview = page.locator('#fanart-preview');
+    await expect(preview).toHaveAttribute('data-embed-state', 'ready');
+    await expectCentered(preview);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expectCentered(preview);
 });
 
 test('a language change while pagination waits updates every existing card and embed', async ({ page }) => {

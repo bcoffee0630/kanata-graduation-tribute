@@ -17,7 +17,7 @@
   },
   "nav": {
     "dashboard": "Overview", "reports": "Report cases", "content": "Submissions", "users": "Users",
-    "admins": "Administrators", "audit": "Audit log", "site": "Open memorial site", "collapse": "Collapse navigation"
+    "admins": "Administrators", "audit": "Audit log", "site": "Open memorial site", "collapse": "Collapse navigation", "expand": "Expand navigation", "open": "Open navigation", "close": "Close navigation"
   },
   "dashboard": {
     "title": "Governance overview", "subtitle": "Track pending cases, hidden content, and recent administrator activity.",

@@ -110,7 +110,7 @@
                     <i data-lucide="external-link"></i><span data-admin-i18n="nav.site">前往紀念網站</span>
                 </a>
             </nav>
-            <button id="sidebar-collapse" type="button" class="sidebar-collapse" title="Collapse navigation">
+            <button id="sidebar-collapse" type="button" class="sidebar-collapse" aria-controls="admin-sidebar" aria-expanded="true" title="Collapse navigation">
                 <i data-lucide="panel-left-close"></i>
                 <span data-admin-i18n="nav.collapse">收合選單</span>
             </button>
@@ -118,7 +118,7 @@
 
         <section class="admin-workspace">
             <header class="admin-topbar">
-                <button id="mobile-menu" type="button" class="icon-command mobile-menu" aria-label="Open navigation">
+                <button id="mobile-menu" type="button" class="icon-command mobile-menu" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation">
                     <i data-lucide="menu"></i>
                 </button>
                 <h1 id="view-title" data-admin-i18n="nav.dashboard">總覽</h1>

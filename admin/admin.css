@@ -432,21 +432,23 @@ textarea:focus-visible {
     border-radius: 0;
 }
 
-.admin-app.sidebar-collapsed {
-    --sidebar-width: 68px;
-}
+@media (min-width: 761px) {
+    .admin-app.sidebar-collapsed {
+        --sidebar-width: 68px;
+    }
 
-.admin-app.sidebar-collapsed .sidebar-brand div,
-.admin-app.sidebar-collapsed .sidebar-art,
-.admin-app.sidebar-collapsed .nav-item span,
-.admin-app.sidebar-collapsed .sidebar-collapse span {
-    display: none;
-}
+    .admin-app.sidebar-collapsed .sidebar-brand div,
+    .admin-app.sidebar-collapsed .sidebar-art,
+    .admin-app.sidebar-collapsed .nav-item span,
+    .admin-app.sidebar-collapsed .sidebar-collapse span {
+        display: none;
+    }
 
-.admin-app.sidebar-collapsed .sidebar-brand,
-.admin-app.sidebar-collapsed .nav-item,
-.admin-app.sidebar-collapsed .sidebar-collapse {
-    justify-content: center;
+    .admin-app.sidebar-collapsed .sidebar-brand,
+    .admin-app.sidebar-collapsed .nav-item,
+    .admin-app.sidebar-collapsed .sidebar-collapse {
+        justify-content: center;
+    }
 }
 
 .admin-workspace {

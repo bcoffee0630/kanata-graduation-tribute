@@ -148,6 +148,57 @@ test('X moderation uses safe original links without loading embeds or sending ad
   expect(requests.some((url) => url.includes('fanartId=x-admin-preview'))).toBe(false);
 });
 
+test('sidebar collapse respects mobile drawers and keeps desktop controls accessible', async ({ page }, testInfo) => {
+  await page.goto('/admin/');
+  await page.getByLabel('電子郵件').fill(owner.email);
+  await page.getByLabel('密碼').fill(owner.password);
+  await page.getByRole('button', { name: '登入', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '治理總覽' })).toBeVisible();
+  const sidebar = page.locator('#admin-sidebar');
+  const collapse = page.locator('#sidebar-collapse');
+  const mobileMenu = page.locator('#mobile-menu');
+  if (testInfo.project.name === 'desktop') {
+    await collapse.click();
+    await expect(collapse).toHaveAccessibleName('展開選單');
+    await expect(collapse).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('button', { name: '投稿管理', exact: true })).toBeVisible();
+    await expect.poll(() => sidebar.evaluate(element => element.getBoundingClientRect().width)).toBe(68);
+    await page.locator('#admin-app [data-language-select]').selectOption('en');
+    await expect(collapse).toHaveAccessibleName('Expand navigation');
+    await collapse.focus();
+    await page.keyboard.press('Enter');
+    await expect(collapse).toHaveAccessibleName('Collapse navigation');
+    await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    await collapse.click();
+    await page.setViewportSize({ width: 691, height: 827 });
+  } else {
+    await page.setViewportSize({ width: 691, height: 827 });
+  }
+  await expect(mobileMenu).toHaveAttribute('aria-expanded', 'false');
+  await mobileMenu.click();
+  await expect(sidebar).toHaveAttribute('aria-hidden', 'false');
+  await expect.poll(() => sidebar.evaluate(element => element.getBoundingClientRect().width)).toBe(224);
+  await expect(sidebar.locator('.nav-item[data-view="content"] span')).toBeVisible();
+  await expect(collapse).toHaveAccessibleName(testInfo.project.name === 'desktop' ? 'Close navigation' : '關閉選單');
+  await collapse.click();
+  await expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+  expect(await sidebar.evaluate(element => element.inert)).toBe(true);
+  await expect(mobileMenu).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(sidebar.locator('[data-view="dashboard"]')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+  await expect(mobileMenu).toBeFocused();
+  if (testInfo.project.name === 'desktop') {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(collapse).toHaveAccessibleName('Expand navigation');
+    await expect(collapse).toBeFocused();
+    await expect(sidebar).toHaveAttribute('aria-hidden', 'false');
+    expect(await sidebar.evaluate(element => element.inert)).toBe(false);
+    await expect.poll(() => sidebar.evaluate(element => element.getBoundingClientRect().width)).toBe(68);
+  }
+});
+
 test('administrator resets a password through the custom action handler', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Desktop password workflow assertion');
   await page.goto('/admin/');

@@ -17,7 +17,7 @@
   },
   "nav": {
     "dashboard": "概要", "reports": "報告案件", "content": "投稿管理", "users": "ユーザー管理",
-    "admins": "管理者", "audit": "監査ログ", "site": "記念サイトを開く", "collapse": "メニューを折りたたむ"
+    "admins": "管理者", "audit": "監査ログ", "site": "記念サイトを開く", "collapse": "メニューを折りたたむ", "expand": "メニューを展開", "open": "メニューを開く", "close": "メニューを閉じる"
   },
   "dashboard": {
     "title": "管理概要", "subtitle": "未処理案件、非表示コンテンツ、最近の管理操作を確認します。",

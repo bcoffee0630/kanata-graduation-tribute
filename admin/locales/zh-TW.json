@@ -17,7 +17,7 @@
   },
   "nav": {
     "dashboard": "總覽", "reports": "舉報案件", "content": "投稿管理", "users": "用戶管理",
-    "admins": "管理員", "audit": "稽核紀錄", "site": "前往紀念網站", "collapse": "收合選單"
+    "admins": "管理員", "audit": "稽核紀錄", "site": "前往紀念網站", "collapse": "收合選單", "expand": "展開選單", "open": "開啟選單", "close": "關閉選單"
   },
   "dashboard": {
     "title": "治理總覽", "subtitle": "掌握待審案件、內容處置與近期管理操作。",
