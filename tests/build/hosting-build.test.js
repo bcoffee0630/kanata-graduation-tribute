@@ -30,6 +30,18 @@ function runReleaseGuard(directory, releaseTag) {
 }
 
 describe('production Hosting allowlists', () => {
+  it('refreshes changed public gallery and toast styles without altering Admin caching', () => {
+    const config = JSON.parse(readFileSync('firebase.production.json', 'utf8'));
+    const publicHeaders = config.hosting.find(hosting => hosting.target === 'public').headers;
+    for (const stylesheet of ['gallery', 'toast']) {
+      expect(publicHeaders.find(header => header.source === `/assets/css/${stylesheet}.css`)
+        ?.headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-cache');
+      expect(readFileSync('index.html', 'utf8')).toMatch(new RegExp(`assets/css/${stylesheet}\\.css\\?v=\\d+`));
+    }
+    expect(config.hosting.find(hosting => hosting.target === 'admin').headers[0]
+      .headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-store');
+  });
+
   it('builds isolated public, admin, and maintenance outputs', () => {
     execFileSync('node', ['scripts/build-hosting.mjs', '--production'], { stdio: 'pipe' });
 

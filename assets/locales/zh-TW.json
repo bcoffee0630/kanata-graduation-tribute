@@ -31,7 +31,11 @@
     "embed_loading": "正在載入 X 貼文…",
     "embed_error": "這則 X 貼文目前無法顯示。您可以開啟原文，或稍後重試。",
     "open_original": "開啟原始貼文",
-    "retry": "重新載入"
+    "retry": "重新載入",
+    "display_size": "顯示大小",
+    "display_standard": "標準",
+    "display_compact": "較小",
+    "display_hint": "較小模式在寬螢幕顯示三欄，較窄視窗會自動調整，方便閱讀。"
   },
   "danmaku": {
     "pause": "⏸",

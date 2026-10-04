@@ -31,7 +31,11 @@
     "embed_loading": "Xの投稿を読み込み中…",
     "embed_error": "このXの投稿は表示できません。元の投稿を開くか、再読み込みしてください。",
     "open_original": "元の投稿を開く",
-    "retry": "再読み込み"
+    "retry": "再読み込み",
+    "display_size": "表示サイズ",
+    "display_standard": "標準",
+    "display_compact": "小さめ",
+    "display_hint": "小さめ表示は広い画面で3列、狭い画面では見やすい列数になります。"
   },
   "danmaku": {
     "pause": "⏸",

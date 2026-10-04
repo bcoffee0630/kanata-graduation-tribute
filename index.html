@@ -15,10 +15,10 @@
 
     <link rel="icon" type="image/png" href="shooting-star.png">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/gallery.css?v=2">
+    <link rel="stylesheet" href="assets/css/gallery.css?v=3">
     <link rel="stylesheet" href="assets/css/danmaku.css">
     <link rel="stylesheet" href="assets/css/modal.css">
-    <link rel="stylesheet" href="assets/css/toast.css">
+    <link rel="stylesheet" href="assets/css/toast.css?v=2">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,7 +154,21 @@
             <div class="container">
                 <h2 data-i18n="sections.gallery_title">ファンアートギャラリー</h2>
                 <p class="gallery-intro" data-i18n="gallery.intro">好きな創作を、思い出とともに。</p>
-                <div id="gallery-grid" aria-busy="true"></div>
+                <fieldset id="gallery-display-controls" class="gallery-display-controls" data-display-size="standard">
+                    <legend data-i18n="gallery.display_size">表示サイズ</legend>
+                    <div class="gallery-size-options">
+                        <label class="gallery-size-option">
+                            <input type="radio" name="gallery-display-size" value="standard" checked aria-controls="gallery-grid">
+                            <span data-i18n="gallery.display_standard">標準</span>
+                        </label>
+                        <label class="gallery-size-option">
+                            <input type="radio" name="gallery-display-size" value="compact" aria-controls="gallery-grid" aria-describedby="gallery-size-hint">
+                            <span data-i18n="gallery.display_compact">小さめ</span>
+                        </label>
+                    </div>
+                    <p id="gallery-size-hint" class="gallery-size-hint" data-i18n="gallery.display_hint">小さめ表示は広い画面で3列、狭い画面では見やすい列数になります。</p>
+                </fieldset>
+                <div id="gallery-grid" data-display-size="standard" aria-busy="true"></div>
                 <p id="gallery-status" class="gallery-status" role="status"></p>
                 <button id="load-more-btn" class="load-more-btn" style="display: none;" data-i18n="gallery.load_more">もっと見る</button>
                 <div class="gallery-contribute">

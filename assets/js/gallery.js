@@ -7,12 +7,15 @@ const Gallery = {
     isLoading: false,
     requestVersion: 0,
     embeds: [],
+    displaySize: 'standard',
+    DISPLAY_STORAGE_KEY: 'gallery-display-size',
 
     init() {
         this.container = document.getElementById('gallery-grid');
         this.loadMoreBtn = document.getElementById('load-more-btn');
         this.status = document.getElementById('gallery-status');
         if (!this.container) return;
+        this.initDisplayControls();
         this.loadMoreBtn?.addEventListener('click', () => this.loadMore());
         if ('ResizeObserver' in window) {
             this.resizeObserver = new ResizeObserver(() => this.scheduleLayout());
@@ -23,6 +26,34 @@ const Gallery = {
         window.addEventListener('firebaseError', () => this.showError());
         this.showSkeleton();
         if (window.FirebaseApp?.getDb()) this.loadFromFirestore();
+    },
+
+    initDisplayControls() {
+        this.displayControls = document.getElementById('gallery-display-controls');
+        let storedSize;
+        try { storedSize = localStorage.getItem(this.DISPLAY_STORAGE_KEY); } catch {}
+        this.setDisplaySize(storedSize);
+        this.displayControls?.addEventListener('change', event => {
+            const input = event.target;
+            if (input.matches('input[name="gallery-display-size"]') && input.checked) {
+                this.setDisplaySize(input.value, { persist: true });
+            }
+        });
+    },
+
+    setDisplaySize(size, { persist = false } = {}) {
+        this.displaySize = size === 'compact' ? 'compact' : 'standard';
+        this.container.dataset.displaySize = this.displaySize;
+        if (this.displayControls) {
+            this.displayControls.dataset.displaySize = this.displaySize;
+            this.displayControls.querySelectorAll('input[name="gallery-display-size"]').forEach(input => {
+                input.checked = input.value === this.displaySize;
+            });
+        }
+        if (persist) {
+            try { localStorage.setItem(this.DISPLAY_STORAGE_KEY, this.displaySize); } catch {}
+        }
+        this.scheduleLayout();
     },
 
     t(key) {
@@ -172,11 +203,18 @@ const Gallery = {
         if (this.layoutFrame) return;
         this.layoutFrame = requestAnimationFrame(() => {
             this.layoutFrame = null;
-            const columns = window.matchMedia('(min-width: 768px)').matches ? 2 : 1;
+            const columns = parseInt(getComputedStyle(this.container).getPropertyValue('--gallery-columns'), 10) || 1;
+            const items = [...this.container.querySelectorAll('.gallery-item')];
+            // Remove positions from the previous mode before measuring the new column widths.
+            items.forEach(item => {
+                item.style.removeProperty('grid-column');
+                item.style.removeProperty('grid-row');
+            });
+            const spans = items.map(item => Math.ceil((item.firstElementChild.getBoundingClientRect().height + 32) / 8));
             const rows = Array(columns).fill(1);
-            this.container.querySelectorAll('.gallery-item').forEach(item => {
+            items.forEach((item, index) => {
                 const column = rows.indexOf(Math.min(...rows));
-                const span = Math.ceil((item.firstElementChild.getBoundingClientRect().height + 32) / 8);
+                const span = spans[index];
                 item.style.gridColumn = String(column + 1);
                 item.style.gridRow = `${rows[column]} / span ${span}`;
                 rows[column] += span;

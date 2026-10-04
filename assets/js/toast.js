@@ -5,6 +5,14 @@
 
 const Toast = (function() {
     let container = null;
+    const timers = new WeakMap();
+
+    function closeLabel() {
+        const translated = window.i18n?.t('modal.close');
+        if (translated && translated !== 'modal.close') return translated;
+        const lang = document.documentElement.lang;
+        return lang.startsWith('zh') ? '關閉' : lang.startsWith('ja') ? '閉じる' : 'Close';
+    }
 
     // SVG Icons
     const icons = {
@@ -37,9 +45,12 @@ const Toast = (function() {
 
         container = document.createElement('div');
         container.className = 'toast-container';
-        container.setAttribute('role', 'alert');
+        container.setAttribute('role', 'status');
         container.setAttribute('aria-live', 'polite');
         document.body.appendChild(container);
+        window.addEventListener('languageChanged', () => {
+            container.querySelectorAll('.toast-close').forEach(button => button.setAttribute('aria-label', closeLabel()));
+        });
     }
 
     /**
@@ -55,14 +66,15 @@ const Toast = (function() {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `
-            <span class="toast-icon">${icons[type] || icons.info}</span>
+            <span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span>
             <span class="toast-content">${escapeHtml(message)}</span>
-            <button class="toast-close" aria-label="Close">&times;</button>
+            <button class="toast-close" type="button">&times;</button>
             ${duration > 0 ? '<div class="toast-progress"></div>' : ''}
         `;
 
         // Close button handler
         const closeBtn = toast.querySelector('.toast-close');
+        closeBtn.setAttribute('aria-label', closeLabel());
         closeBtn.addEventListener('click', () => dismiss(toast));
 
         // Add to container
@@ -70,7 +82,7 @@ const Toast = (function() {
 
         // Trigger animation
         requestAnimationFrame(() => {
-            toast.classList.add('show');
+            if (!toast.classList.contains('hide')) toast.classList.add('show');
         });
 
         // Progress bar animation
@@ -85,7 +97,7 @@ const Toast = (function() {
             }
 
             // Auto dismiss
-            setTimeout(() => dismiss(toast), duration);
+            timers.set(toast, setTimeout(() => dismiss(toast), duration));
         }
 
         return toast;
@@ -96,7 +108,9 @@ const Toast = (function() {
      * @param {HTMLElement} toast - The toast element to dismiss
      */
     function dismiss(toast) {
-        if (!toast || !toast.parentNode) return;
+        if (!toast || !toast.parentNode || toast.classList.contains('hide')) return;
+        clearTimeout(timers.get(toast));
+        timers.delete(toast);
 
         toast.classList.remove('show');
         toast.classList.add('hide');

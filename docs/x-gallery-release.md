@@ -73,6 +73,22 @@ Emulator fixture 演練以 `--project demo-kanata-governance`、Auth/Firestore e
 
 修正版重新發布後，只恢復回滾清單中原先可見且未產生新治理決議的項目；原本因檢舉、管理隱藏或刪除的項目維持原決議。只有驗證到實際資料損壞時才考慮 managed export restore，依既有 production 手冊在維護中處理。
 
+## 純公開畫面增量發布
+
+公開 Toast 樣式與畫廊展示大小只更新前端，不需要維護鎖、資料匯入或後端／Rules 發布。先完成 Hosting build 測試、完整 E2E、真實 X 元件的雙欄／三欄切換驗收與 production Hosting build；參考作品可僅放入預覽瀏覽器記憶體，不寫入 staging 資料。
+
+將變更提交並建立符合既有格式的 annotated release tag。以 `requireProductionReleaseTag` 驗證乾淨 HEAD 與 tag，再以 ADC 唯讀取得目前 public Hosting live release／version，保存至忽略追蹤的 `.production-backups/` manifest，連同前一版與新版 tag／commit。發布前再次確認 live version 未變。
+
+```bash
+npm run build:hosting:production
+firebase deploy --only hosting:public --config firebase.production.json \
+  --project kanata-memorial --non-interactive
+```
+
+不要使用 `deploy:production --phase release` 執行這種純 UI 更新：該 phase 會額外寫入維護鎖狀態。發布後檢查真實畫廊、展示偏好、通知及兩份樣式的 `Cache-Control: no-cache`，將新 live release／version 寫回同一 manifest。
+
+若驗收失敗，使用 manifest 中發布前的確切版本回滾同一 public site：`firebase hosting:clone kanata-memorial@<previous-version-id> kanata-memorial:live --project kanata-memorial --non-interactive`。不依較早 baseline 猜測目前 live version，也不更動 admin、資料或維護鎖。
+
 ## Out-Of-Scope
 
 本次不重做 Hosting/DNS/Auth setup、寄件網域驗證、Owner bootstrap 或既有治理 migration；不擴大 admin CSP、不備份 X 原圖、不自動爬讚數、不導入付費 X API、不定期抓取熱門作品。

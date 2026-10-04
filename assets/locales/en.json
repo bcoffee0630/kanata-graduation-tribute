@@ -31,7 +31,11 @@
     "embed_loading": "Loading X post…",
     "embed_error": "This X post cannot be displayed right now. Open the original post or try again later.",
     "open_original": "Open original post",
-    "retry": "Try again"
+    "retry": "Try again",
+    "display_size": "Display size",
+    "display_standard": "Standard",
+    "display_compact": "Smaller",
+    "display_hint": "Smaller view shows three columns on wide screens and adapts to narrower screens for easy reading."
   },
   "danmaku": {
     "pause": "⏸",

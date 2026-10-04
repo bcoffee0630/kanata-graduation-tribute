@@ -75,6 +75,29 @@ async function checkConfirmations(page) {
     for (const checkbox of await page.locator('#fanart-modal .confirm-checkbox').all()) await checkbox.check();
 }
 
+const displayOption = (page, size) => page.locator(`input[name="gallery-display-size"][value="${size}"]`);
+
+async function selectDisplaySize(page, size) {
+    const option = displayOption(page, size);
+    await option.locator('..').click();
+    await expect(option).toBeChecked();
+}
+
+async function expectGalleryLayout(page, columns) {
+    await expect.poll(() => page.locator('#gallery-grid').evaluate((grid, expectedColumns) => {
+        const tracks = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/);
+        const outer = grid.getBoundingClientRect();
+        const cards = [...grid.querySelectorAll('.gallery-card')].map(card => card.getBoundingClientRect());
+        const overlaps = cards.some((card, index) => cards.slice(index + 1).some(other =>
+            Math.min(card.right, other.right) - Math.max(card.left, other.left) > 1 &&
+            Math.min(card.bottom, other.bottom) - Math.max(card.top, other.top) > 1));
+        const outside = cards.some(card => card.left < outer.left - 1 || card.right > outer.right + 1);
+        const centered = Math.abs(outer.left - (document.documentElement.clientWidth - outer.right)) < 1;
+        return tracks.length === expectedColumns && !overlaps && !outside && centered &&
+            document.documentElement.scrollWidth <= document.documentElement.clientWidth;
+    }, columns)).toBe(true);
+}
+
 test.beforeAll(async () => {
     process.env.GCLOUD_PROJECT = projectId;
     process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8180';
@@ -319,4 +342,140 @@ test('actual callable failures preserve inputs, then successful links refresh th
     await submit.click();
     await expect(page.locator('#fanart-submit-error')).toContainText('今日已達投稿上限');
     await expect(submit).toBeEnabled();
+});
+
+test('display size switches preserve posts, pagination, reports and existing responsive embeds', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/#gallery-section');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    await expect(displayOption(page, 'standard')).toBeChecked();
+    for (const embed of await page.locator('#gallery-grid .x-embed').all().then(embeds => embeds.slice(0, 3))) {
+        await embed.scrollIntoViewIfNeeded();
+        await expect(embed).toHaveAttribute('data-embed-state', 'ready');
+    }
+    await page.getByRole('button', { name: '載入更多', exact: true }).click();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(21);
+    await page.evaluate(() => {
+        const gallery = window.Gallery;
+        const query = gallery.query;
+        window.__displaySnapshot = {
+            data: gallery.data, cursor: gallery.lastDoc, version: gallery.requestVersion,
+            items: [...document.querySelectorAll('#gallery-grid .gallery-item')],
+            calls: window.__xWidgetCalls.filter(call => window.Gallery.data.slice(0, 3).some(item => item.postId === call.id))
+        };
+        window.__displayQueries = 0;
+        gallery.query = function() { window.__displayQueries++; return query.call(this); };
+    });
+    await expectGalleryLayout(page, 2);
+    for (const size of ['compact', 'standard', 'compact', 'standard']) {
+        await selectDisplaySize(page, size);
+        await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', size);
+        await expectGalleryLayout(page, size === 'compact' ? 3 : 2);
+        expect(await page.evaluate(() => {
+            const saved = window.__displaySnapshot;
+            const items = [...document.querySelectorAll('#gallery-grid .gallery-item')];
+            return window.Gallery.data === saved.data && window.Gallery.lastDoc === saved.cursor &&
+                window.Gallery.requestVersion === saved.version && window.__displayQueries === 0 &&
+                items.every((item, index) => item === saved.items[index]);
+        })).toBe(true);
+        await expect(page.locator('#gallery-grid .report-btn')).toHaveCount(21);
+        await expect(page.locator('#load-more-btn')).toBeHidden();
+    }
+    const calls = await page.evaluate(() => window.__xWidgetCalls.filter(call =>
+        window.Gallery.data.slice(0, 3).some(item => item.postId === call.id)));
+    expect(calls).toEqual(await page.evaluate(() => window.__displaySnapshot.calls));
+    expect(await page.locator('script#x-widgets-script').count()).toBe(1);
+});
+
+test('display modes use the agreed responsive boundaries without stale masonry columns', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'One pass covers desktop and mobile widths in the same browser.');
+    test.setTimeout(60_000);
+    await page.goto('/#gallery-section');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    for (const size of ['standard', 'compact', 'standard']) {
+        await selectDisplaySize(page, size);
+        for (const width of [1440, 1024, 1023, 768, 767, 390]) {
+            await page.setViewportSize({ width, height: 900 });
+            await expectGalleryLayout(page, width < 768 ? 1 : size === 'compact' && width >= 1024 ? 3 : 2);
+            const hint = page.locator('#gallery-size-hint');
+            if (size === 'compact' && width < 1024) await expect(hint).toBeVisible();
+            else await expect(hint).toBeHidden();
+            const embed = page.locator('#gallery-grid .x-embed').first();
+            await embed.scrollIntoViewIfNeeded();
+            await expect(embed).toHaveAttribute('data-embed-state', 'ready');
+            await expect.poll(() => embed.evaluate(element => {
+                const post = element.querySelector('.twitter-tweet').getBoundingClientRect();
+                const frame = element.getBoundingClientRect();
+                return Math.abs((post.left - frame.left) - (frame.right - post.right));
+            })).toBeLessThan(1);
+        }
+    }
+});
+
+test('display preference persists through reload, translations, keyboard input and pagination', async ({ page }) => {
+    await page.goto('/#gallery-section');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    const standard = displayOption(page, 'standard');
+    const compact = displayOption(page, 'compact');
+    await standard.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(compact).toBeChecked();
+    await expect(compact).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(standard).toBeChecked();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('gallery-display-size'))).toBe('compact');
+    await page.reload();
+    await expect(compact).toBeChecked();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    for (const [lang, group, standardLabel, compactLabel] of [
+        ['en', 'Display size', 'Standard', 'Smaller'],
+        ['ja', '表示サイズ', '標準', '小さめ'],
+        ['zh-TW', '顯示大小', '標準', '較小']
+    ]) {
+        await page.evaluate(lang => window.i18n.switchLanguage(lang), lang);
+        await expect(page.getByRole('group', { name: group, exact: true })).toBeVisible();
+        await expect(page.getByRole('radio', { name: standardLabel, exact: true })).not.toBeChecked();
+        await expect(page.getByRole('radio', { name: compactLabel, exact: true })).toBeChecked();
+        await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', 'compact');
+    }
+    await page.getByRole('button', { name: '載入更多', exact: true }).click();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(21);
+    await expect(compact).toBeChecked();
+    await expect(page.locator('#load-more-btn')).toBeHidden();
+});
+
+test('invalid display preferences fall back to the original size', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('gallery-display-size', 'enormous'));
+    await page.goto('/#gallery-section');
+    await expect(displayOption(page, 'standard')).toBeChecked();
+    await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', 'standard');
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+});
+
+test('unavailable preference storage still permits switching for the current visit', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(() => {
+        const getItem = Storage.prototype.getItem;
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.getItem = function(key) {
+            if (key === 'gallery-display-size') throw new DOMException('Storage blocked', 'SecurityError');
+            return getItem.call(this, key);
+        };
+        Storage.prototype.setItem = function(key, value) {
+            if (key === 'gallery-display-size') throw new DOMException('Storage blocked', 'SecurityError');
+            return setItem.call(this, key, value);
+        };
+    });
+    await page.goto('/#gallery-section');
+    await expect(displayOption(page, 'standard')).toBeChecked();
+    await expect(page.locator('#gallery-grid .gallery-item')).toHaveCount(20);
+    await selectDisplaySize(page, 'compact');
+    await expect(displayOption(page, 'compact')).toBeChecked();
+    await expect(page.locator('#gallery-grid')).toHaveAttribute('data-display-size', 'compact');
+    await page.reload();
+    await expect(displayOption(page, 'standard')).toBeChecked();
+    expect(errors).toEqual([]);
 });
