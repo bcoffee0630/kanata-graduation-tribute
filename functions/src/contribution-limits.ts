@@ -1,5 +1,6 @@
 import { FieldValue, type DocumentData, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { assertPublicEndpointRateLimit } from './request-limits.js';
 import {
   CALLABLE_OPTIONS,
   FANART_DAILY_LIMIT,
@@ -269,6 +270,7 @@ export const setUserContributionLimits = onCall(CALLABLE_OPTIONS, async (request
 
 export const getMyContributionLimits = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
+  await assertPublicEndpointRateLimit(requestAuth.uid, 'getMyContributionLimits');
   const snapshot = await readContributionLimitSnapshot(requestAuth.uid);
   const typeLimit = (type: ContentType) => {
     const limit = snapshot.effective[type].limit;

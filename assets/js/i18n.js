@@ -14,7 +14,7 @@ class I18n {
     }
 
     getStoredLanguage() {
-        return localStorage.getItem('preferred-language');
+        try { return localStorage.getItem('preferred-language'); } catch { return null; }
     }
 
     async init() {
@@ -24,13 +24,13 @@ class I18n {
 
     async loadLanguage(lang) {
         try {
-            const response = await fetch(`assets/locales/${lang}.json`);
+            const response = await fetch(`assets/locales/${lang}.json?v=6`);
             if (!response.ok) {
                 throw new Error(`Failed to load language: ${lang}`);
             }
             this.translations = await response.json();
             this.currentLang = lang;
-            localStorage.setItem('preferred-language', lang);
+            try { localStorage.setItem('preferred-language', lang); } catch { /* Language still works without storage. */ }
             this.updatePageContent();
             this.updateHtmlLang();
             this.updateLanguageButtons();

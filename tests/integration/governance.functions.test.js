@@ -165,6 +165,12 @@ beforeAll(async () => {
   clients.ownerGoogle = await createGoogleSessionForExistingUser(users.owner, clients.owner);
 }, 30_000);
 
+// Isolate rolling burst windows while each case retains real transactional enforcement.
+beforeEach(async () => {
+  const attempts = await db.collection('publicEndpointLimits').get();
+  await Promise.all(attempts.docs.map(document => document.ref.delete()));
+});
+
 afterAll(async () => {
   await Promise.all(clientApps.map((app) => deleteApp(app)));
   if (migrationAdminApp) await deleteAdminApp(migrationAdminApp);
@@ -307,6 +313,9 @@ describe.sequential('configurable contribution limits', () => {
     await expect(call(quotaClients.author, 'submitMessage', { content: 'Already above the lowered quota' }))
       .rejects.toMatchObject({ code: 'functions/resource-exhausted', details: { limit: 3, used: 4 } });
     await saveUser(limited(5), inherit);
+    // This case tests daily policy changes; burst behavior is covered separately.
+    const attempts = await db.collection('publicEndpointLimits').where('uid', '==', specs.author.uid).get();
+    await Promise.all(attempts.docs.map(document => document.ref.delete()));
     await call(quotaClients.author, 'submitMessage', { content: 'The increase adds one available message' });
     await saveUser(inherit, inherit);
     expect((await mine()).message).toEqual({ limit: 3, used: 5, remaining: 0 });
@@ -489,12 +498,38 @@ describe.sequential('governance callable APIs', () => {
     expect(message.submitter.uid).toBe(users.author.uid);
     expect(message.submitter.providerId).toBe('google.com');
     expect(message.hidden).toBe(false);
+    expect(first.data.item).toEqual({ id: first.data.id, author: message.author, content: message.content,
+      authorLink: message.authorLink, authorAvatar: message.authorAvatar });
+    expect(first.data.item).not.toHaveProperty('authorId');
+    expect(first.data.item).not.toHaveProperty('submitter');
+    expect((await db.doc('system/publicContentRevision').get()).data().messagesRevision).toBeGreaterThan(0);
 
     await call(clients.author, 'submitMessage', { content: 'Second quota message' });
     await call(clients.author, 'submitMessage', { content: 'Third quota message' });
     await expect(call(clients.author, 'submitMessage', { content: 'Fourth quota message' }))
       .rejects.toMatchObject({ code: 'functions/resource-exhausted' });
   });
+
+  it('counts failed authenticated attempts and limits endpoints before expensive work', async () => {
+    for (const [name, data] of [
+      ['submitMessage', { content: '' }],
+      ['submitFanartLink', { postUrl: 'https://attacker.example/status/1900000000000000099' }],
+      ['submitReport', {}]
+    ]) {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await expect(call(clients.reporter2, name, data)).rejects.toMatchObject({ code: 'functions/invalid-argument' });
+      }
+      await expect(call(clients.reporter2, name, data)).rejects.toMatchObject({
+        code: 'functions/resource-exhausted', details: { reason: 'burst_limit', retryAfterSeconds: expect.any(Number) }
+      });
+    }
+    // Quota reads have their own independent 20/minute window.
+    for (let attempt = 0; attempt < 20; attempt++) await call(clients.reporter2, 'getMyContributionLimits');
+    await expect(call(clients.reporter2, 'getMyContributionLimits')).rejects.toMatchObject({
+      code: 'functions/resource-exhausted', details: { reason: 'burst_limit', retryAfterSeconds: expect.any(Number) }
+    });
+    expect((await db.collection('fanart').doc('x_1900000000000000099').get()).exists).toBe(false);
+  }, 30_000);
 
   it('blocks every public mutation while the production maintenance lock is enabled', async () => {
     const maintenanceRef = db.collection('system').doc('maintenance');
@@ -504,10 +539,10 @@ describe.sequential('governance callable APIs', () => {
         .rejects.toMatchObject({ code: 'functions/unavailable' });
       await expect(call(clients.reporter1, 'beginFanartUpload', {
         contentType: 'image/png', size: 8
-      })).rejects.toMatchObject({ code: 'functions/unavailable' });
+      })).rejects.toMatchObject({ code: 'functions/failed-precondition', details: { reason: 'image_submission_disabled' } });
       await expect(call(clients.reporter1, 'finalizeFanartUpload', {
         ticketId: 'legacy-pending-ticket'
-      })).rejects.toMatchObject({ code: 'functions/unavailable' });
+      })).rejects.toMatchObject({ code: 'functions/failed-precondition', details: { reason: 'image_submission_disabled' } });
       await expect(call(clients.reporter1, 'submitFanartLink', {
         postUrl: 'https://x.com/example/status/1900000000000000001'
       })).rejects.toMatchObject({ code: 'functions/unavailable' });
@@ -518,9 +553,10 @@ describe.sequential('governance callable APIs', () => {
     } finally {
       await maintenanceRef.delete();
     }
-  });
+  }, 15_000);
 
   it('blocks self and duplicate reports and auto-hides at three unique reporters', async () => {
+    const beforeRevision = (await db.doc('system/publicContentRevision').get()).data().messagesRevision;
     const report = (client) => call(client, 'submitReport', {
       contentType: 'message',
       contentId: reportedMessageId,
@@ -544,7 +580,8 @@ describe.sequential('governance callable APIs', () => {
     expect(message.hidden).toBe(true);
     expect(reportCase.status).toBe('open');
     expect(reporters.size).toBe(3);
-  });
+    expect((await db.doc('system/publicContentRevision').get()).data().messagesRevision).toBe(beforeRevision + 1);
+  }, 15_000);
 
   it('prevents concurrent report-case decisions from overwriting each other', async () => {
     const caseId = 'message_integration-concurrent-report';
@@ -602,8 +639,14 @@ describe.sequential('governance callable APIs', () => {
     const media = await fetch(
       `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`
     );
-    expect(media.status).toBe(200);
-    expect((await media.arrayBuffer()).byteLength).toBe(bytes.byteLength);
+    expect(media.status).toBe(401);
+    const token = await clients.owner.auth.currentUser.getIdToken();
+    const authorizedMedia = await fetch(
+      `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    expect(authorizedMedia.status).toBe(200);
+    expect((await authorizedMedia.arrayBuffer()).byteLength).toBe(bytes.byteLength);
   });
 
   it('binds X submissions to the real contributor and rejects duplicates without charging quota', async () => {
@@ -619,6 +662,14 @@ describe.sequential('governance callable APIs', () => {
       artistId: users.author.uid, submitter: { uid: users.author.uid, providerId: 'google.com' },
       imagePath: '', imageUrl: '', hidden: false, deleted: false
     });
+    expect(first.data.item).toEqual({ id: first.data.id, postId: stored.postId,
+      postUrl: `https://x.com/i/web/status/${stored.postId}`, caption: stored.caption,
+      submitter: stored.submitter.displayName, createdAt: stored.createdAt.toDate().toISOString() });
+    expect(first.data.item).not.toHaveProperty('artistId');
+    expect(typeof first.data.item.submitter).toBe('string');
+    expect(stored.sampleKey).toBeGreaterThanOrEqual(0);
+    expect(stored.sampleKey).toBeLessThan(1);
+    expect((await db.doc('system/publicContentRevision').get()).data().fanartRevision).toBeGreaterThan(0);
     await expect(call(clients.author, 'submitFanartLink', { postUrl }))
       .rejects.toMatchObject({ code: 'functions/already-exists' });
     expect((await db.collection('userStats').doc(users.author.uid).get()).data().dailyFanartCount).toBe(1);
@@ -694,10 +745,13 @@ describe.sequential('governance callable APIs', () => {
       uid: users.restricted.uid,
       action: 'ban',
       reason: 'Repeated abuse',
-      hideExisting: false
+      hideExisting: true
     });
     expect((await adminAuth.getUser(users.restricted.uid)).disabled).toBe(true);
     expect((await restriction.get()).data().state).toBe('banned');
+    const restrictedMessages = await db.collection('messages').where('authorId', '==', users.restricted.uid).get();
+    expect(restrictedMessages.docs.every(document => document.data().hidden)).toBe(true);
+    expect((await db.doc('system/publicContentRevision').get()).data().messagesRevision).toBeGreaterThan(0);
 
     await call(clients.owner, 'setUserRestriction', {
       uid: users.restricted.uid,
@@ -787,7 +841,7 @@ describe.sequential('governance callable APIs', () => {
       contentType: 'fanart', contentId: uploadedFanartId, action: 'hide', reason: 'Image review'
     });
     const hiddenMediaUrl = `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`;
-    expect((await fetch(hiddenMediaUrl)).status).toBe(404);
+    expect((await fetch(hiddenMediaUrl)).status).toBe(401);
     const moderatorToken = await clients.moderator.auth.currentUser.getIdToken();
     expect((await fetch(hiddenMediaUrl, {
       headers: { Authorization: `Bearer ${moderatorToken}` }
@@ -802,7 +856,8 @@ describe.sequential('governance callable APIs', () => {
     const audits = await db.collection('adminAuditLogs').where('targetId', '==', targetId).get();
     const [imageExists] = await adminStorage.bucket().file(uploadedFanartPath).exists();
     const removedMedia = await fetch(
-      `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`
+      `http://127.0.0.1:5001/${projectId}/asia-east1/fanartMedia?fanartId=${uploadedFanartId}`,
+      { headers: { Authorization: `Bearer ${moderatorToken}` } }
     );
     expect(target).toMatchObject({ hidden: true, deleted: true, content: '' });
     expect(removedCase).toMatchObject({ targetPreview: '', targetImageUrl: '', targetRemoved: true });

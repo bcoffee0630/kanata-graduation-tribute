@@ -393,7 +393,8 @@ const Submit = {
             const functions = window.FirebaseApp.getFunctions();
             if (!functions) throw new Error(this.getTranslation('submit_error'));
             const submitMessage = functions.httpsCallable('submitMessage');
-            await submitMessage({ content });
+            const result = await submitMessage({ content });
+            try { window.Danmaku?.onSubmission?.(result.data?.item); } catch { /* The shared feed will retry rendering. */ }
 
             // Success
             Toast.success(this.getTranslation('message_submitted'));
@@ -404,7 +405,9 @@ const Submit = {
         } catch (error) {
             console.error('Message submission error:', error);
             const code = String(error.code || '');
-            const message = code.includes('unavailable')
+            const message = error.details?.reason === 'burst_limit'
+                ? this.getTranslation('burst_limit')
+                : code.includes('unavailable')
                 ? this.getTranslation('site_maintenance')
                 : code.includes('resource-exhausted')
                 ? this.getQuotaError(error, 'message')
@@ -444,7 +447,7 @@ const Submit = {
             this.updateCaptionCount();
             this.closeAllModals();
             this.refreshQuota();
-            window.Gallery?.loadFromFirestore();
+            try { window.Gallery?.onSubmission?.(result.data?.item); } catch { /* The accepted post remains in the shared feed. */ }
             window.dispatchEvent(new CustomEvent('fanartSubmitted', { detail: { id: result.data.id } }));
         } catch (error) {
             const code = String(error.code || '');
@@ -459,7 +462,9 @@ const Submit = {
                 code.includes('permission-denied') ? 'account_restricted' :
                 code.includes('unauthenticated') ? 'login_required' : 'submit_error'
             );
-            const message = code.includes('resource-exhausted')
+            const message = error.details?.reason === 'burst_limit'
+                ? this.getTranslation('burst_limit')
+                : code.includes('resource-exhausted')
                 ? this.getQuotaError(error, 'fanart') : this.getTranslation(key);
             const alert = document.getElementById('fanart-submit-error');
             alert.textContent = message;

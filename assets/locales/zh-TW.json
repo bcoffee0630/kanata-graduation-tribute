@@ -6,7 +6,7 @@
   "nav": {
     "home": "首頁",
     "messages": "留言",
-    "gallery": "畫廊",
+    "gallery": "回憶牆",
     "youtube": "YouTube",
     "twitter": "Twitter"
   },
@@ -14,17 +14,16 @@
     "intro_title": "最強最完美的PP天使",
     "intro_text": "這是一個為了分享天音彼方的回憶，並永遠銘記與她共度時光的嘿民紀念網站。彼方留給我們的歌聲、笑容，以及無數的回憶，將陪伴我們繼續前進。",
     "fan_messages": "嘿民的心意",
-    "gallery_title": "回憶畫廊",
+    "gallery_title": "回憶牆",
     "contribute_message": "想傳達您的心意嗎？請點擊下方按鈕。",
-    "contribute_art": "把喜歡的創作，留在回憶裡。複製原作者的 X 貼文連結，即可分享。",
+    "contribute_art": "也想分享回憶嗎？貼上 X 貼文連結即可投稿。",
     "contribute_button": "傳達心意",
     "submit_message_button": "投稿留言",
     "submit_art_button": "分享 X 貼文"
   },
   "gallery": {
     "no_content": "目前還沒有投稿",
-    "load_more": "載入更多",
-    "intro": "把喜歡的創作，留在這裡",
+    "intro": "分享與推し的回憶",
     "submitter": "投稿者",
     "anonymous": "匿名",
     "load_error": "畫廊暫時無法載入，請再試一次。",
@@ -32,10 +31,14 @@
     "embed_error": "這則 X 貼文目前無法顯示。您可以開啟原文，或稍後重試。",
     "open_original": "開啟原始貼文",
     "retry": "重新載入",
-    "display_size": "顯示大小",
-    "display_standard": "預設",
-    "display_compact": "較小",
-    "display_compact_notice": "已採用較小顯示；部分螢幕比例下可能沒有明顯變化。"
+    "refreshing": "正在讀取投稿…",
+    "cached_notice": "暫時使用已取得的投稿；稍後即可讀取更多。",
+    "unchanged_notice": "目前可顯示的投稿是這一組。",
+    "unavailable": "目前無法讀取新投稿，請稍後再試。",
+    "back_to_top": "返回頂部",
+    "submission_notice": "你的貼文已加入回憶牆最前面。",
+    "refresh": "刷新貼文",
+    "updated_hint": "有新的貼文，點擊刷新即可查看。"
   },
   "danmaku": {
     "pause": "⏸",
@@ -93,6 +96,7 @@
     "quota_fanart_closed": "目前不接受新投稿；今日已使用 {{used}} 件。",
     "rate_limit_message": "今日已達留言上限。",
     "rate_limit_message_details": "今日已達留言上限（每日 {{limit}} 則；已使用 {{used}} 則）。",
-    "rate_limit_fanart_details": "今日已達投稿上限（每日 {{limit}} 件；已使用 {{used}} 件）。"
+    "rate_limit_fanart_details": "今日已達投稿上限（每日 {{limit}} 件；已使用 {{used}} 件）。",
+    "burst_limit": "操作過於頻繁，請稍後再試。"
   }
 }

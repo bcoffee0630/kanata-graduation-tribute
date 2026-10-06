@@ -26,7 +26,11 @@
     "setup:production:hosting": "node scripts/setup-production-hosting.mjs",
     "verify:production:backend": "node scripts/verify-production-backend.mjs",
     "verify:production:domains": "node scripts/verify-production-domains.mjs",
-    "configure:production:auth": "node scripts/configure-production-auth.mjs"
+    "configure:production:auth": "node scripts/configure-production-auth.mjs",
+    "setup:public-snapshots": "npm run build && node scripts/setup-public-snapshot-resources.mjs",
+    "provision:public-delivery": "npm run build && node scripts/provision-public-delivery.mjs",
+    "backfill:gallery-sample-keys": "npm run build && node scripts/backfill-public-gallery-sample-keys.mjs",
+    "bootstrap:public-snapshots": "npm run build && node scripts/bootstrap-public-snapshots.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",

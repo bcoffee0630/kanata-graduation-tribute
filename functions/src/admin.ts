@@ -13,6 +13,7 @@ import {
   contentAuthorId,
   contentCollection,
   db,
+  markPublicContentChanged,
   optionalString,
   parseAdminRole,
   isPasswordSignIn,
@@ -61,8 +62,10 @@ async function hideExistingContent(uid: string, actor: AdminActor, reason: strin
 
   for (let start = 0; start < documents.length; start += 200) {
     const batch = db.batch();
+    const changed = new Set<string>();
     for (const document of documents.slice(start, start + 200)) {
       const type = document.ref.parent.id === 'messages' ? 'message' : 'fanart';
+      changed.add(type === 'message' ? 'messagesRevision' : 'fanartRevision');
       batch.update(document.ref, {
         hidden: true,
         moderation: {
@@ -81,6 +84,10 @@ async function hideExistingContent(uid: string, actor: AdminActor, reason: strin
         { restrictedUserUid: uid }
       ));
     }
+    batch.set(db.doc('system/publicContentRevision'), {
+      ...Object.fromEntries([...changed].map(field => [field, FieldValue.increment(1)])),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
     await batch.commit();
   }
   return documents.length;
@@ -257,6 +264,7 @@ export const moderateContent = onCall(CALLABLE_OPTIONS, async (request) => {
       ? await transaction.get(reportCaseRef)
       : null;
     transaction.update(targetRef, update);
+    markPublicContentChanged(transaction, type);
     if (latestReportCase?.exists) {
       transaction.update(reportCaseRef, {
         targetPreview: '',

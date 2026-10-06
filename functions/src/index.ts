@@ -28,3 +28,6 @@ export {
   setContributionDefaults,
   setUserContributionLimits
 } from './contribution-limits.js';
+
+export { publicGalleryFeed, publicMessagesFeed, publicFeedVersion } from './public-feed.js';
+export { publishPublicSnapshots, queuePublicSnapshotUpdate, maintainPublicSnapshots } from './public-snapshots.js';

@@ -27,7 +27,7 @@ beforeEach(async () => {
 afterAll(async () => environment.cleanup());
 
 describe('maintenance lock rules', () => {
-  it('preserves visible legacy reads without exposing hidden or removed content', async () => {
+  it('keeps every raw content read private throughout maintenance', async () => {
     await environment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'messages', 'existing'), { content: 'existing' });
       await setDoc(doc(context.firestore(), 'messages', 'hidden'), {
@@ -39,7 +39,8 @@ describe('maintenance lock rules', () => {
     });
     const publicDb = environment.unauthenticatedContext().firestore();
     const userDb = environment.authenticatedContext('user-1').firestore();
-    await assertSucceeds(getDoc(doc(publicDb, 'messages', 'existing')));
+    await assertFails(getDoc(doc(publicDb, 'messages', 'existing')));
+    await assertFails(getDoc(doc(userDb, 'messages', 'existing')));
     await assertFails(getDoc(doc(publicDb, 'messages', 'hidden')));
     await assertFails(getDoc(doc(publicDb, 'messages', 'removed')));
     await assertFails(setDoc(doc(userDb, 'messages', 'new'), { authorId: 'user-1', content: 'new' }));

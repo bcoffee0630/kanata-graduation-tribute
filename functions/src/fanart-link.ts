@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { HttpsError } from 'firebase-functions/v2/https';
 import type { SubmitterSnapshot } from './core.js';
 
@@ -102,6 +103,11 @@ export async function verifyXPost(
   }
 }
 
+/** A stable ordering key lets bounded cursor queries reach older posts too. */
+export function xFanartSampleKey(postId: string): number {
+  return createHash('sha256').update(postId).digest().readUIntBE(0, 6) / 2 ** 48;
+}
+
 export function buildXFanartData(input: {
   post: ParsedXPost;
   caption?: string;
@@ -115,6 +121,7 @@ export function buildXFanartData(input: {
     submissionSource: input.submissionSource || 'community',
     postId: post.postId,
     postUrl: post.postUrl,
+    sampleKey: xFanartSampleKey(post.postId),
     artist: submitter.displayName,
     artistId: submitter.uid,
     artistLink: submitter.profileLink,

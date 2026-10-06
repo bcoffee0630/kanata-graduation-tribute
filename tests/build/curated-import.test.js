@@ -70,14 +70,16 @@ describe('curated X importer safety and idempotence', () => {
     const call = () => writeCuratedEntry({ db: state.db, entry: entries[0], data, actor,
       audit: { action: 'fanart.import_curated' }, production: true });
     expect(await call()).toBe('added');
-    expect(state.writes).toHaveLength(3);
+    expect(state.writes).toHaveLength(4);
     const stats = state.documents.get('userStats/fixture-owner');
     expect(stats.dailyFanartCount).toBe(2);
     expect(stats.pendingFanartCount).toBe(1);
     expect(stats.dailyKey).toBe('2026-10-04');
     expect(stats.fanartCount.isEqual(FieldValue.increment(1))).toBe(true);
+    expect(state.documents.get('system/publicContentRevision').fanartRevision
+      .isEqual(FieldValue.increment(1))).toBe(true);
     expect(await call()).toBe('skipped');
-    expect(state.writes).toHaveLength(3);
+    expect(state.writes).toHaveLength(4);
   });
 
   it('never restores or overwrites a previously moderated duplicate', async () => {

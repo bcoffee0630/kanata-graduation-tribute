@@ -12,6 +12,27 @@
           "functionId": "fanartMedia",
           "region": "asia-east1"
         }
+      },
+      {
+        "source": "/api/gallery/batches/**",
+        "function": {
+          "functionId": "publicGalleryFeed",
+          "region": "asia-east1"
+        }
+      },
+      {
+        "source": "/api/messages",
+        "function": {
+          "functionId": "publicMessagesFeed",
+          "region": "asia-east1"
+        }
+      },
+      {
+        "source": "/api/feed/version",
+        "function": {
+          "functionId": "publicFeedVersion",
+          "region": "asia-east1"
+        }
       }
     ],
     "headers": [

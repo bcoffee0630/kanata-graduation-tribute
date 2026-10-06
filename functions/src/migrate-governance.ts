@@ -64,6 +64,7 @@ interface Stats {
 const stats = new Map<string, Stats>();
 let batch: WriteBatch = db.batch();
 let batchSize = 0;
+const batchContentRevisions = new Set<string>();
 let contentUpdates = 0;
 let legacyReports = 0;
 let sanitizedStorageObjects = 0;
@@ -126,9 +127,14 @@ function validatedFanartStoragePath(fanartId: string, artistId: string, value: u
 
 async function commitIfNeeded(force = false) {
   if (!apply || batchSize === 0 || (!force && batchSize < 400)) return;
+  if (batchContentRevisions.size) batch.set(db.doc('system/publicContentRevision'), {
+    ...Object.fromEntries([...batchContentRevisions].map(field => [field, FieldValue.increment(1)])),
+    updatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
   await batch.commit();
   batch = db.batch();
   batchSize = 0;
+  batchContentRevisions.clear();
 }
 
 async function migrateCollection(collection: 'messages' | 'fanart') {
@@ -225,6 +231,10 @@ async function migrateCollection(collection: 'messages' | 'fanart') {
             deleted: latestData.deleted === true,
             reportCount: migratedReportCount
           }, { merge: true });
+          transaction.set(db.doc('system/publicContentRevision'), {
+            [type === 'message' ? 'messagesRevision' : 'fanartRevision']: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
 
           const targetRemoved = latestCaseData.targetRemoved === true;
           const caseUpdate: Record<string, unknown> = {
@@ -272,6 +282,7 @@ async function migrateCollection(collection: 'messages' | 'fanart') {
     } else if (apply) {
       batch.set(document.ref, update, { merge: true });
       batchSize += 1;
+      batchContentRevisions.add(type === 'message' ? 'messagesRevision' : 'fanartRevision');
       await commitIfNeeded();
     }
     contentUpdates += 1;

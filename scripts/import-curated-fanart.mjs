@@ -176,6 +176,9 @@ export async function writeCuratedEntry({ db, entry, data, actor, audit, product
     }
     if (checkExisting(entry, existing) === 'skip') return 'skipped';
     transaction.create(fanartRef, data);
+    transaction.set(db.collection('system').doc('publicContentRevision'), {
+      fanartRevision: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
     transaction.set(db.collection('userStats').doc(actor.uid), {
       uid: actor.uid, fanartCount: FieldValue.increment(1),
       lastFanartAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()

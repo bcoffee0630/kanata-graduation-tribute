@@ -329,6 +329,14 @@ export async function assertSiteWritable(): Promise<void> {
   }
 }
 
+/** Update the public projection's revision in the same content transaction. */
+export function markPublicContentChanged(transaction: Transaction, type: ContentType): void {
+  transaction.set(db.collection('system').doc('publicContentRevision'), {
+    [type === 'message' ? 'messagesRevision' : 'fanartRevision']: FieldValue.increment(1),
+    updatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+}
+
 export function auditData(
   actor: AdminActor,
   action: string,

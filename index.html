@@ -14,9 +14,9 @@
     <title>天音かなた 卒業メモリアル</title>
 
     <link rel="icon" type="image/png" href="shooting-star.png">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/gallery.css?v=4">
-    <link rel="stylesheet" href="assets/css/danmaku.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=6">
+    <link rel="stylesheet" href="assets/css/gallery.css?v=6">
+    <link rel="stylesheet" href="assets/css/danmaku.css?v=6">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="assets/css/toast.css?v=3">
 
@@ -38,7 +38,7 @@
             <ul class="nav-links">
                 <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
                 <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
-                <li><a href="#gallery-section" data-i18n="nav.gallery">ギャラリー</a></li>
+                <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
                 <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
                 <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
             </ul>
@@ -94,7 +94,7 @@
         <ul class="nav-links">
             <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
             <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
-            <li><a href="#gallery-section" data-i18n="nav.gallery">ギャラリー</a></li>
+            <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
             <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
             <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
         </ul>
@@ -149,33 +149,23 @@
             </div>
         </section>
 
-        <!-- 粉絲畫廊區 -->
+        <!-- 回憶牆 -->
         <section id="gallery-section" class="gallery-section reveal-on-scroll">
             <div class="container">
-                <h2 data-i18n="sections.gallery_title">ファンアートギャラリー</h2>
-                <p class="gallery-intro" data-i18n="gallery.intro">好きな創作を、思い出とともに。</p>
-                <fieldset id="gallery-display-controls" class="gallery-display-controls" data-display-size="standard">
-                    <legend data-i18n="gallery.display_size">表示サイズ</legend>
-                    <div class="gallery-size-options">
-                        <label class="gallery-size-option">
-                            <input type="radio" name="gallery-display-size" value="compact" aria-controls="gallery-grid">
-                            <span data-i18n="gallery.display_compact">小さめ</span>
-                        </label>
-                        <label class="gallery-size-option">
-                            <input type="radio" name="gallery-display-size" value="standard" checked aria-controls="gallery-grid">
-                            <span data-i18n="gallery.display_standard">デフォルト</span>
-                        </label>
-                    </div>
-                </fieldset>
-                <div id="gallery-grid" data-display-size="standard" aria-busy="true"></div>
-                <p id="gallery-status" class="gallery-status" role="status"></p>
-                <button id="load-more-btn" class="load-more-btn" style="display: none;" data-i18n="gallery.load_more">もっと見る</button>
+                <h2 data-i18n="sections.gallery_title">思い出ウォール</h2>
+                <p class="gallery-intro" data-i18n="gallery.intro">推しとの思い出を共有しよう。</p>
+                <div id="gallery-grid" data-display-size="compact" aria-busy="true"></div>
+                <p id="gallery-status" class="gallery-status" role="status" aria-live="polite"></p>
                 <div class="gallery-contribute">
-                    <p data-i18n="sections.contribute_art">好きな創作を思い出に。作者のX投稿のリンクをコピーして共有できます。</p>
+                    <p data-i18n="sections.contribute_art">思い出を共有しませんか？Xの投稿リンクで参加できます。</p>
+                    <div class="gallery-actions">
                     <button id="submit-fanart-btn" class="submit-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                         <span data-i18n="sections.submit_art_button">Xの投稿を共有</span>
                     </button>
+                    <button id="gallery-refresh" type="button" class="secondary-btn gallery-refresh" data-i18n="gallery.refresh">投稿を更新</button>
+                    </div>
+                    <p id="gallery-refresh-hint" class="gallery-status gallery-refresh-hint" role="status" aria-live="polite" hidden></p>
                     <div class="login-prompt">
                         <p data-i18n="auth.login_to_submit">投稿するにはログインしてください</p>
                     </div>
@@ -354,12 +344,13 @@
         </div>
     </footer>
 
-    <!-- Back to Top Button -->
-    <button id="back-to-top" class="back-to-top" aria-label="Back to top">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-        </svg>
-    </button>
+    <!-- Back to top -->
+    <div id="floating-controls" class="floating-controls">
+        <button id="back-to-top" type="button" class="floating-control back-to-top" aria-label="Back to top" aria-describedby="back-to-top-tooltip" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            <span id="back-to-top-tooltip" class="floating-tooltip" role="tooltip">Back to top</span>
+        </button>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -377,15 +368,16 @@
     <script src="assets/js/firebase-init.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/x-embed.js"></script>
-    <script src="assets/js/submit.js"></script>
-    <script src="assets/js/report.js"></script>
+    <script src="assets/js/submit.js?v=6"></script>
+    <script src="assets/js/report.js?v=6"></script>
 
     <!-- Features -->
-    <script src="assets/js/gallery.js"></script>
-    <script src="assets/js/danmaku.js"></script>
+    <script src="assets/js/public-feed.js?v=6"></script>
+    <script src="assets/js/gallery.js?v=6"></script>
+    <script src="assets/js/danmaku.js?v=6"></script>
     <script src="assets/js/effects.js"></script>
     <script src="assets/js/animations.js"></script>
-    <script src="assets/js/scroll-top.js"></script>
+    <script src="assets/js/scroll-top.js?v=6"></script>
 
     <!-- Mobile Navigation & Language Dropdown -->
     <script>

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applicationDefault } from 'firebase-admin/app';
+import { PUBLIC_FEED_NAMES, verifyPublicSnapshotInfrastructure } from './verify-public-snapshot-infrastructure.mjs';
 
 const PROJECT = 'kanata-memorial';
 const REGION = 'asia-east1';
@@ -26,9 +27,12 @@ const callableNames = [
   'submitReport',
   'updateAdminAccount'
 ];
-const publicHttpNames = [...callableNames, 'fanartMedia'];
-const scheduledNames = ['cleanupExpiredUploads', 'expireMutedRestrictions'];
-const expectedNames = [...publicHttpNames, ...scheduledNames];
+const feedNames = PUBLIC_FEED_NAMES;
+const publicHttpNames = [...callableNames, 'fanartMedia', ...feedNames];
+const scheduledNames = ['cleanupExpiredUploads', 'expireMutedRestrictions', 'maintainPublicSnapshots'];
+const eventNames = ['queuePublicSnapshotUpdate'];
+const taskNames = ['publishPublicSnapshots'];
+const expectedNames = [...publicHttpNames, ...scheduledNames, ...eventNames, ...taskNames];
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -72,6 +76,7 @@ async function api(url, options = {}) {
 const functionsPayload = await api(
   `https://cloudfunctions.googleapis.com/v2/projects/${PROJECT}/locations/${REGION}/functions?pageSize=100`
 );
+if (functionsPayload.nextPageToken) throw new Error('Production Functions inventory is truncated; no release was performed.');
 const functions = functionsPayload.functions || [];
 const functionsByName = new Map(functions.map((fn) => [fn.name.split('/').at(-1).toLowerCase(), fn]));
 const missingFunctions = expectedNames.filter((name) => !functionsByName.has(name.toLowerCase()));
@@ -170,9 +175,11 @@ for (const functionName of callableNames) {
 
 const fanartUri = functionsByName.get('fanartmedia')?.serviceConfig?.uri;
 const mediaResponse = await fetch(`${fanartUri}?fanartId=backend-verification-missing`);
-if (mediaResponse.status !== 404) {
+if (mediaResponse.status !== 401) {
   throw new Error(`Anonymous fanart media verification failed (${mediaResponse.status}).`);
 }
+
+const publicDelivery = await verifyPublicSnapshotInfrastructure({ project: PROJECT, inventory: functions, api });
 
 const indexConfig = JSON.parse(readFileSync('firestore.indexes.json', 'utf8'));
 const expectedIndexes = indexConfig.indexes || [];
@@ -225,6 +232,7 @@ const manifest = {
     repaired: iamResults.filter((result) => result.repaired).map((result) => result.functionName)
   },
   anonymousCallables: { expected: callableNames.length, unauthenticated: callableNames.length },
+  publicDelivery,
   indexes: { expected: expectedIndexes.length, ready: expectedIndexes.length }
 };
 if (!existsSync(MANIFEST_DIRECTORY)) mkdirSync(MANIFEST_DIRECTORY, { recursive: true });

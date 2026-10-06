@@ -1,6 +1,6 @@
 /**
  * Danmaku (bullet comments) system for fan messages
- * Supports both Firestore and local JSON fallback
+ * Reads the bounded public snapshot; visitors never subscribe to Firestore.
  */
 
 const Danmaku = {
@@ -13,110 +13,209 @@ const Danmaku = {
     currentIndex: 0,
     animationInterval: null,
     baseSpeed: 15000, // Base duration in ms for message to cross screen
-    useFirestore: false,
-    unsubscribe: null, // Firestore listener
+    usePublicSnapshot: false,
+    validUntil: 0,
+    isLoading: false,
     selectedMessage: null, // Currently selected message for reporting
 
     async init() {
         this.container = document.getElementById('danmaku-container');
         if (!this.container) return;
-
         this.setupTracks();
         this.setupControls();
+        this.priorityQueue = [];
+        this.pendingOwn = new Map();
+        this.seenIds = new Set();
+        this.status = document.createElement('p');
+        this.status.className = 'danmaku-status';
+        this.status.setAttribute('role', 'status');
+        this.status.hidden = true;
+        document.getElementById('danmaku-controls')?.after(this.status);
+        this.visibilityHandler = () => {
+            this.updateAnimationPause();
+            if (!document.hidden) this.tryPriority();
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+        this.unsubscribe = window.PublicFeedWatcher?.subscribe('messages', state => this.onFeedVersion(state));
+        await this.loadSnapshot();
+    },
 
-        // Check if Firebase is already initialized
-        if (window.FirebaseApp && window.FirebaseApp.getDb()) {
-            this.loadFromFirestore();
+    onFeedVersion(state) {
+        if (this.expectedVersion && Number(state.version) < Number(this.expectedVersion)) return;
+        this.expectedVersion = state.version;
+        if (state.version === this.version) {
+            this.validUntil = state.validUntil;
+            this.scheduleExpiry();
+            this.renderStatus();
         } else {
-            // Listen for Firebase ready event
-            window.addEventListener('firebaseReady', () => {
-                this.loadFromFirestore();
+            // A known newer revision invalidates public replay immediately, including moderation removals.
+            this.validUntil = 0;
+            this.messageQueue = [];
+            this.priorityQueue = (this.priorityQueue || []).filter(item => this.pendingOwn.has(item.id));
+            if (window.PublicFeedWatcher?.isVisible('messages')) this.loadSnapshot(state.version);
+        }
+    },
+
+    validItem(item) {
+        return item && typeof item.id === 'string' && item.id.length <= 150 &&
+            typeof item.author === 'string' && typeof item.content === 'string' &&
+            item.content.length > 0 && item.content.length <= 500;
+    },
+
+    async loadSnapshot(version) {
+        if (this.isLoading || this.destroyed || Date.now() < (this.nextRetryAt || 0)) return;
+        this.isLoading = true;
+        this.abortController = new AbortController();
+        const timeout = setTimeout(() => this.abortController?.abort(), 10_000);
+        try {
+            const query = version ? `?version=${encodeURIComponent(version)}` : '';
+            const response = await fetch(`/api/messages${query}`, {
+                credentials: 'omit', signal: this.abortController.signal
             });
-        }
-
-        // Also try loading from JSON as fallback
-        setTimeout(() => {
-            if (!this.useFirestore && !this.data) {
-                this.loadFromJSON();
+            const body = await response.text();
+            if (body.length > 512 * 1024) throw new Error('Message snapshot exceeds its limit');
+            const snapshot = JSON.parse(body);
+            if (!response.ok || typeof snapshot.version !== 'string' || !/^\d{1,30}$/.test(snapshot.version) ||
+                !Number.isFinite(snapshot.generatedAt) || snapshot.generatedAt > Date.now() + 60_000 ||
+                !Number.isFinite(snapshot.validUntil) || snapshot.validUntil <= Date.now() ||
+                snapshot.validUntil > Date.now() + 5 * 60_000 ||
+                !Array.isArray(snapshot.items) || snapshot.items.length > 100) {
+                throw new Error('Message snapshot unavailable');
             }
-        }, 2000);
-    },
-
-    async loadFromJSON() {
-        try {
-            const response = await fetch('memories/messages/messages.json');
-            const jsonData = await response.json();
-
-            // Convert JSON format to unified format
-            this.data = {
-                messages: jsonData.messages.map(msg => ({
-                    id: msg.id,
-                    author: msg.author,
-                    content: msg.content, // Already has language keys
-                    authorLink: msg.authorLink
-                }))
-            };
-
+            if (this.expectedVersion && Number(snapshot.version) < Number(this.expectedVersion)) {
+                this.pendingVersionLoad = true;
+                return;
+            }
+            const ids = new Set();
+            const messages = snapshot.items.filter(item => {
+                if (!this.validItem(item) || ids.has(item.id)) return false;
+                ids.add(item.id); return true;
+            });
+            if (this.destroyed) return;
+            this.validUntil = snapshot.validUntil;
+            this.applyMessages(messages, snapshot);
+            this.version = snapshot.version;
+            this.expectedVersion = snapshot.version;
+            this.usePublicSnapshot = true;
+            this.failed = false;
+            this.failures = 0;
+            this.nextRetryAt = 0;
+            this.createReportControl(document.getElementById('danmaku-controls'));
             this.start();
-        } catch (error) {
-            console.error('Failed to load messages from JSON:', error);
+            this.scheduleExpiry();
+            this.renderStatus();
+        } catch {
+            this.failed = true;
+            this.failures = (this.failures || 0) + 1;
+            this.nextRetryAt = Date.now() + Math.min(60_000, 2000 * 2 ** Math.min(this.failures, 5));
+            this.renderStatus();
+        } finally {
+            clearTimeout(timeout);
+            this.isLoading = false;
+            clearTimeout(this.retryTimer);
+            if (this.pendingVersionLoad && !this.destroyed) {
+                this.pendingVersionLoad = false;
+                this.retryTimer = setTimeout(() => {
+                    if (window.PublicFeedWatcher?.isVisible('messages')) this.loadSnapshot(this.expectedVersion);
+                }, Math.max(0, (this.nextRetryAt || 0) - Date.now()));
+            } else if (this.failed && !this.destroyed) {
+                this.retryTimer = setTimeout(() => {
+                    if (window.PublicFeedWatcher?.isVisible('messages')) {
+                        this.loadSnapshot(window.PublicFeedWatcher.getState('messages')?.version);
+                    }
+                }, Math.max(0, this.nextRetryAt - Date.now()));
+            }
         }
     },
 
-    async loadFromFirestore() {
-        try {
-            const db = window.FirebaseApp.getDb();
-            if (!db) return;
-
-            this.useFirestore = true;
-
-            // Create report control now that Firestore is ready
-            const controls = document.getElementById('danmaku-controls');
-            if (controls && window.Report) {
-                this.createReportControl(controls);
+    applyMessages(messages, metadata) {
+        const first = !this.data;
+        const publicIds = new Set(messages.map(item => item.id));
+        this.sourceIds = publicIds;
+        for (const [id, own] of this.pendingOwn) {
+            if (publicIds.has(id) || own.expiresAt <= Date.now() ||
+                (metadata?.generatedAt >= own.acceptedAt && metadata?.version !== own.baseVersion)) {
+                this.pendingOwn.delete(id);
             }
-
-            // Set up real-time listener
-            this.unsubscribe = db.collection('messages')
-                .where('hidden', '==', false)
-                .where('deleted', '==', false)
-                .orderBy('createdAt', 'desc')
-                .limit(100)
-                .onSnapshot((snapshot) => {
-                    const messages = [];
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        // Skip hidden content
-                        if (data.hidden) return;
-
-                        messages.push({
-                            id: doc.id,
-                            author: data.author,
-                            content: data.content,
-                            authorLink: data.authorLink,
-                            authorAvatar: data.authorAvatar
-                        });
-                    });
-
-                    this.data = { messages };
-
-                    // Restart if already running
-                    if (this.animationInterval) {
-                        this.stop();
-                    }
-                    this.start();
-                }, (error) => {
-                    console.error('Firestore listener error:', error);
-                    // Fall back to JSON
-                    this.useFirestore = false;
-                    this.loadFromJSON();
-                });
-
-        } catch (error) {
-            console.error('Failed to set up Firestore:', error);
-            this.loadFromJSON();
         }
+        const merged = [...this.pendingOwn.values()].map(own => own.item)
+            .concat(messages).slice(0, 100);
+        const byId = new Map(merged.map(item => [item.id, item]));
+        const added = merged.filter(item => !this.seenIds.has(item.id));
+        this.data = { messages: merged };
+        if (first) this.messageQueue = this.shuffleArray([...merged]);
+        else {
+            // Keep the unfinished cycle and active DOM animations when a snapshot changes.
+            this.messageQueue = this.messageQueue.filter(item => byId.has(item.id)).map(item => byId.get(item.id));
+            this.priorityQueue = this.priorityQueue.filter(item => byId.has(item.id)).map(item => byId.get(item.id));
+            const queued = new Set(this.priorityQueue.map(item => item.id));
+            added.forEach(item => { if (!queued.has(item.id)) this.priorityQueue.push(item); });
+        }
+        merged.forEach(item => this.seenIds.add(item.id));
+        if (this.seenIds.size > 300) this.seenIds = new Set([...this.seenIds].slice(-200));
+        this.tryPriority();
+    },
+
+    onSubmission(item) {
+        if (!this.validItem(item) || this.destroyed) return;
+        this.pendingOwn.set(item.id, { item, acceptedAt: Date.now(), baseVersion: this.expectedVersion || this.version,
+            expiresAt: Date.now() + 5 * 60_000 });
+        this.data = { messages: [item, ...(this.data?.messages || []).filter(existing => existing.id !== item.id)].slice(0, 100) };
+        if (!this.seenIds.has(item.id)) this.priorityQueue.unshift(item);
+        this.seenIds.add(item.id);
+        this.usePublicSnapshot = true;
+        this.createReportControl(document.getElementById('danmaku-controls'));
+        this.start();
+        this.tryPriority();
+    },
+
+    scheduleExpiry() {
+        clearTimeout(this.expiryTimer);
+        this.expiryTimer = setTimeout(() => this.renderStatus(), Math.max(0, this.validUntil - Date.now()));
+    },
+
+    tryPriority() {
+        if (!this.isPaused && !document.hidden && this.priorityQueue?.length) this.spawnMessage();
+    },
+
+    expireOwnItems() {
+        const removed = new Set();
+        for (const [id, own] of this.pendingOwn) {
+            if (own.expiresAt <= Date.now()) {
+                this.pendingOwn.delete(id);
+                if (!this.sourceIds?.has(id)) removed.add(id);
+            }
+        }
+        if (!removed.size) return;
+        if (this.data) this.data.messages = this.data.messages.filter(item => !removed.has(item.id));
+        this.messageQueue = this.messageQueue.filter(item => !removed.has(item.id));
+        this.priorityQueue = this.priorityQueue.filter(item => !removed.has(item.id));
+    },
+
+    updateAnimationPause() {
+        const paused = this.isPaused || document.hidden;
+        if (paused && !this.pausedAt) this.pausedAt = Date.now();
+        if (!paused && this.pausedAt) {
+            const elapsed = Date.now() - this.pausedAt;
+            this.tracks = this.tracks.map(time => time + elapsed);
+            this.pausedAt = 0;
+        }
+        this.container?.querySelectorAll('.danmaku-message').forEach(el => {
+            el.style.animationPlayState = paused || this.selectedMessage?.element === el ? 'paused' : 'running';
+        });
+    },
+
+    renderStatus() {
+        if (!this.status) return;
+        const show = this.failed ||
+            (this.validUntil > 0 && this.validUntil <= Date.now());
+        const labels = {
+            'zh-TW': '留言更新暫時停止，已開啟的內容仍可閱讀。',
+            ja: 'メッセージの更新は一時停止中です。開いている内容は引き続き読めます。',
+            en: 'Message updates are temporarily paused. Content already opened remains readable.'
+        };
+        this.status.hidden = !show;
+        this.status.textContent = show ? labels[window.i18n?.currentLang] || labels.en : '';
     },
 
     setupTracks() {
@@ -139,7 +238,7 @@ const Danmaku = {
         }
 
         // Create report button (hidden by default)
-        if (this.useFirestore && window.Report) {
+        if (this.usePublicSnapshot && window.Report) {
             this.createReportControl(controls);
         }
 
@@ -154,6 +253,7 @@ const Danmaku = {
     },
 
     createReportControl(controls) {
+        if (!controls || !window.Report) return;
         // Check if already exists
         if (controls.querySelector('.danmaku-report-btn')) return;
 
@@ -198,7 +298,7 @@ const Danmaku = {
     deselectMessage() {
         if (this.selectedMessage) {
             this.selectedMessage.element.classList.remove('selected');
-            if (!this.isPaused) {
+            if (!this.isPaused && !document.hidden) {
                 this.selectedMessage.element.style.animationPlayState = 'running';
             }
             this.selectedMessage = null;
@@ -219,91 +319,47 @@ const Danmaku = {
     },
 
     start() {
-        if (!this.data || !this.data.messages || this.data.messages.length === 0) {
-            return;
-        }
-
-        // Shuffle messages for variety
-        this.messageQueue = this.shuffleArray([...this.data.messages]);
-        this.currentIndex = 0;
-
-        // Dynamic interval based on message count to reduce repetition
-        const messageCount = this.messageQueue.length;
-        let interval;
-        if (messageCount <= 3) {
-            interval = 8000;  // Very few messages: 8 seconds
-        } else if (messageCount <= 10) {
-            interval = 5000;  // Few messages: 5 seconds
-        } else if (messageCount <= 30) {
-            interval = 3500;  // Medium: 3.5 seconds
-        } else {
-            interval = 2500;  // Many messages: 2.5 seconds
-        }
-
-        // Start spawning messages
+        if (this.animationInterval || this.destroyed) return;
+        this.nextRegularAt = Date.now();
+        this.animationInterval = setInterval(() => this.spawnMessage(), 250);
         this.spawnMessage();
-        this.animationInterval = setInterval(() => {
-            if (!this.isPaused) {
-                this.spawnMessage();
-            }
-        }, interval);
     },
 
     stop() {
-        if (this.animationInterval) {
-            clearInterval(this.animationInterval);
-            this.animationInterval = null;
-        }
+        clearInterval(this.animationInterval);
+        this.animationInterval = null;
     },
 
     togglePause() {
         this.isPaused = !this.isPaused;
-
         const btn = document.querySelector('.danmaku-play-pause');
-        const danmakuElements = this.container.querySelectorAll('.danmaku-message');
-
-        if (this.isPaused) {
-            btn.textContent = '▶';
-            btn.setAttribute('data-i18n', 'danmaku.play');
-            danmakuElements.forEach(el => {
-                el.style.animationPlayState = 'paused';
-            });
-        } else {
-            btn.textContent = '⏸';
-            btn.setAttribute('data-i18n', 'danmaku.pause');
-            danmakuElements.forEach(el => {
-                el.style.animationPlayState = 'running';
-            });
-        }
+        btn.textContent = this.isPaused ? '▶' : '⏸';
+        btn.setAttribute('data-i18n', this.isPaused ? 'danmaku.play' : 'danmaku.pause');
+        btn.setAttribute('aria-pressed', String(this.isPaused));
+        this.updateAnimationPause();
+        this.tryPriority();
     },
 
     spawnMessage() {
-        if (this.messageQueue.length === 0) return;
-
-        const message = this.messageQueue[this.currentIndex];
-        this.currentIndex++;
-
-        // Re-shuffle when we've shown all messages (adds variety on each loop)
-        if (this.currentIndex >= this.messageQueue.length) {
-            this.currentIndex = 0;
-            this.messageQueue = this.shuffleArray([...this.data.messages]);
-        }
-
-        // Find available track
+        if (this.destroyed || this.isPaused || document.hidden) return;
+        this.expireOwnItems();
         const now = Date.now();
-        let trackIndex = -1;
-
-        for (let i = 0; i < this.trackCount; i++) {
-            if (this.tracks[i] <= now) {
-                trackIndex = i;
-                break;
-            }
+        const trackIndex = this.tracks.findIndex(time => time <= now);
+        if (trackIndex < 0) return;
+        this.priorityQueue = this.priorityQueue.filter(item => this.validUntil > now ||
+            (this.pendingOwn.get(item.id)?.expiresAt || 0) > now);
+        let message;
+        if (this.priorityQueue.length) {
+            message = this.priorityQueue.shift();
+            this.messageQueue = this.messageQueue.filter(item => item.id !== message.id);
+        } else {
+            if (this.validUntil <= now || this.nextRegularAt > now) return;
+            if (!this.messageQueue.length) this.messageQueue = this.shuffleArray([...(this.data?.messages || [])]);
+            message = this.messageQueue.shift();
         }
-
-        // If no track available, use the one that becomes free soonest
-        if (trackIndex === -1) {
-            trackIndex = this.tracks.indexOf(Math.min(...this.tracks));
-        }
+        if (!message) return;
+        const count = this.data?.messages?.length || 0;
+        this.nextRegularAt = now + (count <= 3 ? 8000 : count <= 10 ? 5000 : count <= 30 ? 3500 : 2500);
 
         // Create message element - show all messages regardless of language
         const content = message.content;
@@ -325,8 +381,7 @@ const Danmaku = {
             <span class="danmaku-text">${this.escapeHtml(content)}</span>
         `;
 
-        // Click to select for reporting (only if using Firestore)
-        if (this.useFirestore && message.id) {
+        if (this.usePublicSnapshot && message.id) {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.selectMessage(message.id, el);
@@ -367,15 +422,9 @@ const Danmaku = {
 
     // Update messages when language changes
     onLanguageChange() {
+        this.renderStatus();
         const reportButton = document.querySelector('.danmaku-report-btn');
         if (reportButton) reportButton.title = this.getReportLabel();
-        // Clear existing messages
-        const trackContainer = this.container?.querySelector('.danmaku-tracks');
-        if (trackContainer) {
-            trackContainer.innerHTML = '';
-        }
-        // Reset tracks
-        this.tracks = Array(this.trackCount).fill(0);
     },
 
     // Escape HTML to prevent XSS
@@ -387,11 +436,14 @@ const Danmaku = {
 
     // Cleanup when leaving page
     destroy() {
+        this.destroyed = true;
         this.stop();
-        if (this.unsubscribe) {
-            this.unsubscribe();
-            this.unsubscribe = null;
-        }
+        this.abortController?.abort();
+        clearTimeout(this.retryTimer);
+        clearTimeout(this.expiryTimer);
+        this.unsubscribe?.();
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+
     }
 };
 
@@ -404,3 +456,5 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('languageChanged', () => {
     Danmaku.onLanguageChange();
 });
+
+window.Danmaku = Danmaku;

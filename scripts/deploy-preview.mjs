@@ -4,8 +4,10 @@ const STAGING_PROJECT = 'kanata-memorial-admin';
 const PRODUCTION_PROJECT = 'kanata-memorial';
 const projectIndex = process.argv.indexOf('--project');
 const requestedProject = projectIndex >= 0 ? process.argv[projectIndex + 1] : STAGING_PROJECT;
+const phaseIndex = process.argv.indexOf('--phase');
+const phase = phaseIndex >= 0 ? process.argv[phaseIndex + 1] : 'backend';
 
-if (!requestedProject || requestedProject === PRODUCTION_PROJECT || requestedProject !== STAGING_PROJECT) {
+if (!requestedProject || requestedProject === PRODUCTION_PROJECT || requestedProject !== STAGING_PROJECT || !['backend', 'release'].includes(phase)) {
   console.error(`Refusing preview deployment to ${requestedProject || 'an unspecified project'}.`);
   process.exit(1);
 }
@@ -18,17 +20,21 @@ function run(command, args) {
 run('npm', ['--prefix', 'functions', 'run', 'build']);
 run('npm', ['run', 'build:hosting']);
 
+if (phase === 'release') {
+  run('node', ['scripts/verify-preview-public-delivery.mjs']);
+}
+
 run('firebase', [
   'deploy',
   '--only',
-  'functions,firestore:rules,firestore:indexes,storage',
+  phase === 'backend' ? 'functions,firestore:indexes' : 'firestore:rules,storage',
   '--project',
   STAGING_PROJECT,
   '--force',
   '--non-interactive'
 ]);
 
-run('firebase', [
+if (phase === 'release') run('firebase', [
   'hosting:channel:deploy',
   'admin-governance',
   '--project',

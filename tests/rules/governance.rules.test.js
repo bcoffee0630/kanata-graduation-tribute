@@ -59,6 +59,9 @@ async function seed() {
     await setDoc(doc(firestore, 'messages', 'removed-message'), {
       authorId: 'author-1', content: '', hidden: false, deleted: true, createdAt: Timestamp.now()
     });
+    await setDoc(doc(firestore, 'fanart', 'visible-fanart'), {
+      sourceType: 'x', hidden: false, deleted: false, createdAt: Timestamp.now()
+    });
     await setDoc(doc(firestore, 'reportCases', 'message_hidden-message'), {
       status: 'open', targetId: 'hidden-message', latestAt: Timestamp.now()
     });
@@ -72,15 +75,19 @@ async function seed() {
 }
 
 describe('Firestore governance rules', () => {
-  it('allows public visible reads but blocks hidden content', async () => {
+  it('denies raw content reads for anonymous visitors and contributors', async () => {
     await seed();
-    const publicDb = environment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(publicDb, 'messages', 'visible-message')));
-    await assertFails(getDoc(doc(publicDb, 'messages', 'hidden-message')));
-    await assertFails(getDoc(doc(publicDb, 'messages', 'removed-message')));
+    for (const context of [environment.unauthenticatedContext(),
+      environment.authenticatedContext('author-1', contributorClaims())]) {
+      const publicDb = context.firestore();
+      for (const id of ['visible-message', 'hidden-message', 'removed-message']) {
+        await assertFails(getDoc(doc(publicDb, 'messages', id)));
+      }
+      await assertFails(getDoc(doc(publicDb, 'fanart', 'visible-fanart')));
+    }
   });
 
-  it('requires a visibility-constrained public query', async () => {
+  it('denies public queries even with all visibility constraints', async () => {
     await seed();
     const publicDb = environment.unauthenticatedContext().firestore();
     await assertFails(getDocs(collection(publicDb, 'messages')));
@@ -93,8 +100,9 @@ describe('Firestore governance rules', () => {
       where('hidden', '==', false),
       where('deleted', '==', false)
     );
-    const result = await assertSucceeds(getDocs(visibleQuery));
-    expect(result.size).toBe(1);
+    await assertFails(getDocs(visibleQuery));
+    await assertFails(getDocs(query(collection(publicDb, 'fanart'),
+      where('hidden', '==', false), where('deleted', '==', false))));
   });
 
   it('denies direct content writes from regular users', async () => {
@@ -116,6 +124,8 @@ describe('Firestore governance rules', () => {
       'moderator-1', adminClaims('moderator')
     ).firestore();
     await assertSucceeds(getDoc(doc(adminDb, 'messages', 'hidden-message')));
+    await assertSucceeds(getDoc(doc(adminDb, 'messages', 'visible-message')));
+    await assertSucceeds(getDoc(doc(adminDb, 'fanart', 'visible-fanart')));
     await assertSucceeds(getDoc(doc(adminDb, 'reportCases', 'message_hidden-message')));
   });
 
@@ -178,6 +188,19 @@ describe('Firestore governance rules', () => {
 });
 
 describe('legacy Storage media', () => {
+  it('keeps snapshot objects inaccessible to every client SDK', async () => {
+    await seed();
+    const path = 'public-snapshots/control.json';
+    await environment.withSecurityRulesDisabled(async context => {
+      await uploadBytes(ref(context.storage(), path), new TextEncoder().encode('{}'));
+    });
+    for (const context of [environment.unauthenticatedContext(),
+      environment.authenticatedContext('author-1', contributorClaims()),
+      environment.authenticatedContext('owner-1', adminClaims('owner'))]) {
+      await assertFails(getBytes(ref(context.storage(), path)));
+      await assertFails(uploadBytes(ref(context.storage(), path), new Uint8Array([1])));
+    }
+  });
   it('rejects image uploads even with an unexpired matching ticket', async () => {
     const bytes = new Uint8Array([137, 80, 78, 71]);
     await environment.withSecurityRulesDisabled(async (context) => {

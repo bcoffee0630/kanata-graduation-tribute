@@ -19,7 +19,7 @@ const Report = {
             autoHidden: '報告を受け付け、コンテンツを審査のため一時非表示にしました。',
             duplicate: 'このコンテンツはすでに報告済みです。', own: '自分の投稿は報告できません。',
             restricted: 'このアカウントは現在報告できません。', error: '報告を送信できませんでした。',
-            maintenance: 'メンテナンス中のため、現在は報告できません。',
+            maintenance: 'メンテナンス中のため、現在は報告できません。', burst: '操作が多すぎます。少し待ってからお試しください。',
             message: 'メッセージ', fanart: 'ファンアート'
         },
         'zh-TW': {
@@ -30,7 +30,7 @@ const Report = {
             submit: '送出檢舉', submitting: '送出中...', success: '已收到您的檢舉。',
             autoHidden: '已收到檢舉，內容已暫時隱藏並送交管理員審查。',
             duplicate: '您已檢舉過此內容。', own: '無法檢舉自己的投稿。',
-            restricted: '此帳號目前無法送出檢舉。', maintenance: '網站維護中，目前無法送出檢舉。',
+            restricted: '此帳號目前無法送出檢舉。', maintenance: '網站維護中，目前無法送出檢舉。', burst: '操作過於頻繁，請稍後再試。',
             error: '無法送出檢舉。', message: '留言', fanart: '創作'
         },
         'en': {
@@ -42,7 +42,7 @@ const Report = {
             autoHidden: 'Your report was submitted and the content was temporarily hidden for review.',
             duplicate: 'You already reported this content.', own: 'You cannot report your own content.',
             restricted: 'This account cannot submit reports right now.',
-            maintenance: 'The site is under maintenance and is temporarily read-only.',
+            maintenance: 'The site is under maintenance and is temporarily read-only.', burst: 'Too many attempts. Please wait a moment and try again.',
             error: 'The report could not be submitted.',
             message: 'Message', fanart: 'Fan art'
         }
@@ -168,6 +168,7 @@ const Report = {
             if (code.includes('failed-precondition') && String(error.message).includes('own')) message = labels.own;
             if (code.includes('permission-denied')) message = labels.restricted;
             if (code.includes('unavailable')) message = labels.maintenance;
+            if (error.details?.reason === 'burst_limit') message = labels.burst;
             if (typeof Toast !== 'undefined') Toast.error(message); else alert(message);
             console.error('Report submission failed:', error);
         } finally {

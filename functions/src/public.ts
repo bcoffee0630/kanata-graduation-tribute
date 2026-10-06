@@ -16,6 +16,7 @@ import {
   contentAuthorId,
   contentCollection,
   db,
+  markPublicContentChanged,
   optionalString,
   parseContentType,
   requiredString,
@@ -32,6 +33,8 @@ import {
   buildContributionLimitSnapshot,
   currentContributionUsage
 } from './contribution-limits.js';
+import { assertPublicEndpointRateLimit } from './request-limits.js';
+import { publicGalleryItem, publicMessageItem } from './public-snapshot-core.js';
 
 const IMAGE_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -57,6 +60,7 @@ async function assertTransactionWritable(transaction: Transaction): Promise<void
 
 export const submitMessage = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
+  await assertPublicEndpointRateLimit(requestAuth.uid, 'submitMessage');
   await assertSiteWritable();
   await assertCanContribute(requestAuth.uid);
 
@@ -68,6 +72,13 @@ export const submitMessage = onCall(CALLABLE_OPTIONS, async (request) => {
   );
   const messageRef = db.collection('messages').doc();
   const statsRef = db.collection('userStats').doc(requestAuth.uid);
+  const messageData = {
+    author: publicSnapshot.displayName, authorId: publicSnapshot.uid,
+    authorLink: publicSnapshot.profileLink, authorAvatar: publicSnapshot.avatarUrl,
+    authorProvider: publicSnapshot.providerId, submitter: publicSnapshot, content,
+    createdAt: Timestamp.now(), hidden: false, deleted: false, reportCount: 0,
+    moderation: { status: 'visible', updatedAt: null, updatedBy: '', reason: '' }
+  };
   await db.runTransaction(async (transaction) => {
     const [statsSnapshot, defaultSnapshot, overrideSnapshot] = await Promise.all([
       transaction.get(statsRef),
@@ -83,25 +94,8 @@ export const submitMessage = onCall(CALLABLE_OPTIONS, async (request) => {
       defaultSnapshot.data(), overrideSnapshot.data(), statsData, key
     ), 'message');
 
-    transaction.create(messageRef, {
-      author: publicSnapshot.displayName,
-      authorId: publicSnapshot.uid,
-      authorLink: publicSnapshot.profileLink,
-      authorAvatar: publicSnapshot.avatarUrl,
-      authorProvider: publicSnapshot.providerId,
-      submitter: publicSnapshot,
-      content,
-      createdAt: FieldValue.serverTimestamp(),
-      hidden: false,
-      deleted: false,
-      reportCount: 0,
-      moderation: {
-        status: 'visible',
-        updatedAt: null,
-        updatedBy: '',
-        reason: ''
-      }
-    });
+    transaction.create(messageRef, messageData);
+    markPublicContentChanged(transaction, 'message');
 
     transaction.set(statsRef, {
       uid: requestAuth.uid,
@@ -116,22 +110,18 @@ export const submitMessage = onCall(CALLABLE_OPTIONS, async (request) => {
   });
 
   await syncUserDirectory(user).catch((error) => console.error('User directory sync failed', error));
-  return { id: messageRef.id };
+  return { id: messageRef.id, item: publicMessageItem({ id: messageRef.id, data: messageData }) };
 });
 
 export const beginFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => {
-  const requestAuth = requireContributorAuth(request);
-  await assertSiteWritable();
-  await assertCanContribute(requestAuth.uid);
+  requireContributorAuth(request);
   throw new HttpsError('failed-precondition', 'Image submissions are disabled. Submit an X post URL instead.', {
     reason: 'image_submission_disabled'
   });
 });
 
 export const finalizeFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => {
-  const requestAuth = requireContributorAuth(request);
-  await assertSiteWritable();
-  await assertCanContribute(requestAuth.uid);
+  requireContributorAuth(request);
   throw new HttpsError('failed-precondition', 'Image submissions are disabled. Submit an X post URL instead.', {
     reason: 'image_submission_disabled'
   });
@@ -139,6 +129,7 @@ export const finalizeFanartUpload = onCall(CALLABLE_OPTIONS, async (request) => 
 
 export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
+  await assertPublicEndpointRateLimit(requestAuth.uid, 'submitFanartLink');
   await assertSiteWritable();
   await assertCanContribute(requestAuth.uid);
 
@@ -157,6 +148,7 @@ export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
     requestAuth.token.firebase?.sign_in_provider
   );
   const statsRef = db.collection('userStats').doc(requestAuth.uid);
+  const fanartData = buildXFanartData({ post, caption, submitter: publicSnapshot, createdAt: Timestamp.now() });
   await db.runTransaction(async (transaction) => {
     const [existingFanart, statsSnapshot, defaultSnapshot, overrideSnapshot] = await Promise.all([
       transaction.get(fanartRef),
@@ -174,12 +166,8 @@ export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
       defaultSnapshot.data(), overrideSnapshot.data(), statsData, key
     ), 'fanart');
 
-    transaction.create(fanartRef, buildXFanartData({
-      post,
-      caption,
-      submitter: publicSnapshot,
-      createdAt: FieldValue.serverTimestamp()
-    }));
+    transaction.create(fanartRef, fanartData);
+    markPublicContentChanged(transaction, 'fanart');
     transaction.set(statsRef, {
       uid: requestAuth.uid,
       dailyKey: key,
@@ -193,11 +181,12 @@ export const submitFanartLink = onCall(CALLABLE_OPTIONS, async (request) => {
   });
 
   await syncUserDirectory(user).catch((error) => console.error('User directory sync failed', error));
-  return { id: fanartRef.id };
+  return { id: fanartRef.id, item: publicGalleryItem({ id: fanartRef.id, data: fanartData }) };
 });
 
 export const submitReport = onCall(CALLABLE_OPTIONS, async (request) => {
   const requestAuth = requireContributorAuth(request);
+  await assertPublicEndpointRateLimit(requestAuth.uid, 'submitReport');
   await assertSiteWritable();
   await assertCanContribute(requestAuth.uid);
 
@@ -283,6 +272,7 @@ export const submitReport = onCall(CALLABLE_OPTIONS, async (request) => {
       };
     }
     transaction.update(targetRef, targetUpdate);
+    if (autoHidden && target.hidden !== true) markPublicContentChanged(transaction, type);
   });
 
   await syncUserDirectory(user).catch((error) => console.error('User directory sync failed', error));
@@ -308,25 +298,24 @@ export const fanartMedia = onRequest({
     return;
   }
 
+  // Reject anonymous requests before any content or Storage lookup.
+  const authorization = request.get('authorization') || '';
+  if (!authorization.startsWith('Bearer ')) {
+    response.status(401).end();
+    return;
+  }
+  try {
+    const decoded = await auth.verifyIdToken(authorization.slice(7), true);
+    await validateAdminIdentity(decoded.uid, decoded);
+  } catch {
+    response.status(403).end();
+    return;
+  }
   const snapshot = await db.collection('fanart').doc(fanartId).get();
   const fanart = snapshot.data() || {};
-  let allowed = snapshot.exists && fanart.hidden === false && fanart.deleted !== true;
-
-  if (!allowed) {
-    const authorization = request.get('authorization') || '';
-    if (authorization.startsWith('Bearer ')) {
-      try {
-        const decoded = await auth.verifyIdToken(authorization.slice(7), true);
-        await validateAdminIdentity(decoded.uid, decoded);
-        allowed = snapshot.exists;
-      } catch {
-        allowed = false;
-      }
-    }
-  }
 
   const imagePath = validatedFanartStoragePath(fanartId, fanart.artistId, fanart.imagePath);
-  if (!allowed || !imagePath) {
+  if (!snapshot.exists || !imagePath) {
     response.status(404).end();
     return;
   }

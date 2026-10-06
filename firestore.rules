@@ -25,18 +25,13 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/adminAccounts/$(request.auth.uid)).data.sessionVersion == request.auth.token.adminSessionVersion;
     }
 
-    function isPublicContent() {
-      return resource.data.hidden == false
-        && resource.data.deleted == false;
-    }
-
     match /messages/{messageId} {
-      allow read: if isAdmin() || isPublicContent();
+      allow read: if isAdmin();
       allow write: if false;
     }
 
     match /fanart/{fanartId} {
-      allow read: if isAdmin() || isPublicContent();
+      allow read: if isAdmin();
       allow write: if false;
     }
 

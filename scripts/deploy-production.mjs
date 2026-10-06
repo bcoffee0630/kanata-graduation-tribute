@@ -114,6 +114,12 @@ run('npm', ['run', 'build:hosting:production']);
 
 const common = ['--project', PRODUCTION_PROJECT, '--non-interactive'];
 
+// Verify private delivery before changing public access or releasing the gallery.
+if (phase === 'governance' || phase === 'release') {
+  run('node', ['scripts/verify-production-backend.mjs', '--project', PRODUCTION_PROJECT,
+    '--confirm-production', PRODUCTION_PROJECT, '--verify', '--expect-bootstrap', 'disabled']);
+}
+
 if (phase === 'backend') {
   run('firebase', [
     'deploy', '--only', 'functions,firestore:indexes', '--config', 'firebase.production.json',

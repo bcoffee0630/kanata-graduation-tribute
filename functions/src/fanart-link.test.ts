@@ -4,6 +4,7 @@ import {
   parseXPostUrl,
   resolveXPostOembedEndpoint,
   verifyXPost,
+  xFanartSampleKey,
   xFanartDocumentId
 } from './fanart-link.js';
 
@@ -17,6 +18,13 @@ const publicEmbed = () => new Response(JSON.stringify({
 afterEach(() => vi.unstubAllEnvs());
 
 describe('X fan art links', () => {
+  it('assigns stable bounded sample keys to historical and new post IDs', () => {
+    const keys = [postId, '1', '1990000000000000001', '1990000000000000002'].map(xFanartSampleKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.every(key => key >= 0 && key < 1)).toBe(true);
+    expect(xFanartSampleKey(postId)).toBe(xFanartSampleKey(postId));
+    expect(buildXFanartData({ post, submitter: { uid: 'author', displayName: 'Author', avatarUrl: '', providerId: 'google.com', profileLink: '' }, createdAt: null }).sampleKey).toBe(keys[0]);
+  });
   it('keeps post IDs as strings and strips share parameters and media suffixes', () => {
     expect(parseXPostUrl(` https://mobile.twitter.com/originalArtist/status/${postId}/photo/1?s=20#share `)).toEqual(post);
     expect(parseXPostUrl(`https://www.x.com/originalArtist/status/${postId}/video/4/`)).toEqual(post);

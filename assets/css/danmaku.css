@@ -236,3 +236,12 @@
     opacity: 0.5;
     pointer-events: none;
 }
+/* Keep the public snapshot pause status separate from the moving messages. */
+.danmaku-status {
+    text-align: center;
+    margin: 12px 0 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-light, #666);
+}
+.danmaku-status[hidden] { display: none; }

@@ -6,7 +6,7 @@
   "nav": {
     "home": "Home",
     "messages": "Messages",
-    "gallery": "Gallery",
+    "gallery": "Memory Wall",
     "youtube": "YouTube",
     "twitter": "Twitter"
   },
@@ -14,17 +14,16 @@
     "intro_title": "The Strongest and Most Perfect PP Angel",
     "intro_text": "This is a Heimin memorial dedicated to sharing memories of Amane Kanata and preserving the time we spent with her forever. Her voice, her smile, and countless memories she left us will continue walking alongside us.",
     "fan_messages": "Messages From Heimin",
-    "gallery_title": "Memory Gallery",
+    "gallery_title": "Memory Wall",
     "contribute_message": "Want to share your thoughts? Click the button below.",
-    "contribute_art": "Keep a favorite creation among our memories. Copy the original artist’s X post link to share it.",
+    "contribute_art": "Want to share a memory? Submit an X post link.",
     "contribute_button": "Share Your Thoughts",
     "submit_message_button": "Submit Message",
     "submit_art_button": "Share an X post"
   },
   "gallery": {
     "no_content": "No submissions yet",
-    "load_more": "Load More",
-    "intro": "Favorite creations, treasured memories.",
+    "intro": "Share memories of your oshi.",
     "submitter": "Submitted by",
     "anonymous": "Anonymous",
     "load_error": "The gallery could not load. Please try again.",
@@ -32,10 +31,14 @@
     "embed_error": "This X post cannot be displayed right now. Open the original post or try again later.",
     "open_original": "Open original post",
     "retry": "Try again",
-    "display_size": "Display size",
-    "display_standard": "Default",
-    "display_compact": "Smaller",
-    "display_compact_notice": "Smaller view is enabled; some screen proportions may show little visible difference."
+    "refreshing": "Loading posts…",
+    "cached_notice": "Showing posts already loaded. More will be available shortly.",
+    "unchanged_notice": "These are the posts currently available.",
+    "unavailable": "New posts are unavailable right now. Please try again shortly.",
+    "back_to_top": "Back to top",
+    "submission_notice": "Your post was added at the front of the wall.",
+    "refresh": "Refresh posts",
+    "updated_hint": "New posts are available. Refresh to see them."
   },
   "danmaku": {
     "pause": "⏸",
@@ -93,6 +96,7 @@
     "quota_fanart_closed": "New posts are currently disabled; {{used}} used today.",
     "rate_limit_message": "Today’s message limit has been reached.",
     "rate_limit_message_details": "Today’s message limit has been reached ({{limit}} per day; {{used}} used).",
-    "rate_limit_fanart_details": "Today’s post limit has been reached ({{limit}} per day; {{used}} used)."
+    "rate_limit_fanart_details": "Today’s post limit has been reached ({{limit}} per day; {{used}} used).",
+    "burst_limit": "Too many attempts. Please wait a moment and try again."
   }
 }

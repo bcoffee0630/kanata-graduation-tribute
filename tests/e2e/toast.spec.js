@@ -14,6 +14,14 @@ test.beforeEach(async ({ page }) => {
         contentType: 'application/javascript',
         body: 'window.twttr={widgets:{createTweet:async()=>undefined}};'
     }));
+    await page.route('**/api/messages', route => {
+        const generatedAt = Date.now();
+        return route.fulfill({ json: { version: 'ui-fixture', generatedAt, validUntil: generatedAt + 300000, mode: 'normal', items: [] } });
+    });
+    await page.route('**/api/gallery/batches/*', route => {
+        const generatedAt = Date.now();
+        return route.fulfill({ json: { version: 'ui-fixture', generatedAt, validUntil: generatedAt + 300000, mode: 'normal', items: [] } });
+    });
     await page.goto('/');
     await expect(page).toHaveTitle(/^天音彼方 畢業紀念(?: - Day \d+)?$/);
     await expect(page.locator('.site-nav')).toBeVisible();

@@ -54,6 +54,14 @@ test.beforeEach(async ({ page, browserName }, testInfo) => {
             target.append(card); return card;
         } } };
     ` }));
+    await page.route('**/api/messages', route => {
+        const generatedAt = Date.now();
+        return route.fulfill({ json: { version: 'ui-fixture', generatedAt, validUntil: generatedAt + 300000, mode: 'normal', items: [] } });
+    });
+    await page.route('**/api/gallery/batches/*', route => {
+        const generatedAt = Date.now();
+        return route.fulfill({ json: { version: 'ui-fixture', generatedAt, validUntil: generatedAt + 300000, mode: 'normal', items: [] } });
+    });
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
     await signIn(page, `quota-${testInfo.project.name}-${Date.now()}`);
