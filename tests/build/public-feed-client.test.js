@@ -163,6 +163,41 @@ describe('one shared public feed watcher', () => {
     watcher.destroy();
   });
 
+  it('carries validated source revisions independently of rotating content versions', async () => {
+    const manifest = (value, revision) => {
+      const body = version(value);
+      body.messages.revision = revision; body.gallery.revision = revision;
+      return body;
+    };
+    const fetch = vi.fn().mockResolvedValueOnce(response(manifest('1', 0)))
+      .mockResolvedValueOnce(response(manifest('2', 0))).mockResolvedValueOnce(response(manifest('3', 1)));
+    const { window } = runtime('assets/js/public-feed.js', fetch);
+    const watcher = window.PublicFeedWatcher; watcher.visible.add('gallery');
+    const callback = vi.fn(); watcher.subscribe('gallery', callback);
+    await watcher.check(); expect(watcher.getState('gallery').revision).toBe(0);
+    await watcher.check(); expect(watcher.getState('gallery').version).toBe('2'); expect(watcher.getState('gallery').revision).toBe(0);
+    await watcher.check(); expect(watcher.getState('gallery').revision).toBe(1);
+    expect(callback).toHaveBeenCalledTimes(3); expect(fetch).toHaveBeenCalledTimes(3);
+    watcher.destroy();
+  });
+
+  it('rejects malformed revisions atomically while keeping older manifests without revisions compatible', async () => {
+    for (const revision of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1, '0', null]) {
+      const body = version(); body.gallery.revision = revision;
+      const fetch = vi.fn().mockResolvedValue(response(body));
+      const { window } = runtime('assets/js/public-feed.js', fetch);
+      const watcher = window.PublicFeedWatcher; watcher.visible.add('gallery');
+      await watcher.check();
+      expect(watcher.getState('gallery')).toBeNull(); expect(watcher.getState('messages')).toBeNull();
+      expect(watcher.failures).toBe(1); watcher.destroy();
+    }
+    const fetch = vi.fn().mockResolvedValue(response(version()));
+    const { window } = runtime('assets/js/public-feed.js', fetch);
+    const watcher = window.PublicFeedWatcher; watcher.visible.add('gallery');
+    await watcher.check(); expect(watcher.getState('gallery').revision).toBeUndefined(); expect(watcher.failures).toBe(0);
+    watcher.destroy();
+  });
+
   it('does not poll hidden or offscreen feeds and backs off failed requests', async () => {
     const fetch = vi.fn().mockRejectedValue(new Error('offline'));
     const { window, document } = runtime('assets/js/public-feed.js', fetch);

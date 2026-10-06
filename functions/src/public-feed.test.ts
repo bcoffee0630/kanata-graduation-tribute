@@ -18,6 +18,40 @@ function fixture(now: () => number = () => start + 2000) {
   return { objects, read, service: createPublicFeedService(read, now) };
 }
 describe('bounded storage-only public delivery', () => {
+  it('reports each validated pointer revision in version descriptors and content envelopes', async () => {
+    const { service, objects, read } = fixture(); const current = pointer();
+    current.gallery.revision = 0; current.messages.revision = 3; objects.set(PUBLIC_POINTER_OBJECT, current);
+    expect(await service.version()).toMatchObject({ status: 200, body: {
+      gallery: { version: String(start), revision: 0 }, messages: { version: String(start), revision: 3 }
+    } });
+    expect(await service.read('gallery', 0, String(start))).toMatchObject({ status: 200, body: { revision: 0 } });
+    expect(await service.read('messages', 0, String(start))).toMatchObject({ status: 200, body: { revision: 3 } });
+    expect(read.mock.calls.map(([path]) => path)).toEqual([PUBLIC_POINTER_OBJECT,
+      publicSnapshotObject(String(start), 'gallery', 0), publicSnapshotObject(String(start), 'messages')]);
+  });
+  it('keeps source revisions unchanged when empty gallery samples rotate to a new version', async () => {
+    let time = start + 2000; const { service, objects, read } = fixture(() => time);
+    const current = pointer(); current.gallery.revision = 0; objects.set(PUBLIC_POINTER_OBJECT, current);
+    objects.set(publicSnapshotObject(String(start), 'gallery', 0), { version: String(start), generatedAt: start, latestIds: [], items: [] });
+    expect(await service.read('gallery', 0)).toMatchObject({ status: 200, body: { version: String(start), revision: 0, items: [] } });
+    time = start + PUBLIC_SNAPSHOT_TTL_MS; const rotated = pointer(time);
+    rotated.gallery = { version: String(time), generatedAt: time, revision: 0, rotation: publicSnapshotCycle(time) };
+    objects.set(PUBLIC_POINTER_OBJECT, rotated);
+    objects.set(publicSnapshotObject(String(time), 'gallery', 0), { version: String(time), generatedAt: time, latestIds: [], items: [] });
+    expect(await service.version()).toMatchObject({ status: 200, body: { gallery: { version: String(time), revision: 0 } } });
+    expect(await service.read('gallery', 0, String(time))).toMatchObject({ status: 200, body: { version: String(time), revision: 0, items: [] } });
+    expect(read.mock.calls.map(([path]) => path)).toEqual([PUBLIC_POINTER_OBJECT,
+      publicSnapshotObject(String(start), 'gallery', 0), PUBLIC_POINTER_OBJECT, publicSnapshotObject(String(time), 'gallery', 0)]);
+  });
+  it.each([-1, 0.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, '1', undefined])('fails closed for invalid pointer revision %s before reading artifacts', async invalidRevision => {
+    for (const kind of ['gallery', 'messages'] as const) {
+      const { service, objects, read } = fixture(); const current = pointer();
+      objects.set(PUBLIC_POINTER_OBJECT, { ...current, [kind]: { ...current[kind], revision: invalidRevision } });
+      expect(await service.version()).toMatchObject({ status: 503, body: { reason: 'snapshot_unavailable' } });
+      expect(await service.read(kind)).toMatchObject({ status: 503, body: { reason: 'snapshot_unavailable' } });
+      expect(read.mock.calls.map(([path]) => path)).toEqual([PUBLIC_POINTER_OBJECT]);
+    }
+  });
   it('coalesces simultaneous version checks and cards into fixed origin object reads', async () => {
     const { service, read } = fixture();
     const versions = await Promise.all(Array.from({ length: 100 }, () => service.version())); expect(versions.every(result => result.status === 200)).toBe(true);
@@ -34,9 +68,9 @@ describe('bounded storage-only public delivery', () => {
   });
   it('renews the current content lease without downloading immutable content again', async () => {
     let time = start + 2000; const { service, objects, read } = fixture(() => time);
-    expect(await service.read('messages')).toMatchObject({ status: 200, body: { generatedAt: start, confirmedAt: start } });
+    expect(await service.read('messages')).toMatchObject({ status: 200, body: { generatedAt: start, revision: 1, confirmedAt: start } });
     time = start + 600000; const renewed = pointer(time); objects.set(PUBLIC_POINTER_OBJECT, renewed);
-    expect(await service.read('messages', 0, String(start))).toMatchObject({ status: 200, body: { version: String(start), generatedAt: start, confirmedAt: time, validUntil: time + PUBLIC_SNAPSHOT_TTL_MS } });
+    expect(await service.read('messages', 0, String(start))).toMatchObject({ status: 200, body: { version: String(start), generatedAt: start, revision: 1, confirmedAt: time, validUntil: time + PUBLIC_SNAPSHOT_TTL_MS } });
     expect(read.mock.calls.filter(([path]) => path.includes('/generations/'))).toHaveLength(1);
   });
   it('uses one-second CDN/origin caches and refuses the exact lease boundary', async () => {

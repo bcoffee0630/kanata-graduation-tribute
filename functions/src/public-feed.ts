@@ -10,12 +10,13 @@ import { publicSnapshotBucket, readPrivateSnapshotJson } from './public-snapshot
 
 export const PUBLIC_FEED_SERVICE_ACCOUNT = defineString('PUBLIC_FEED_SERVICE_ACCOUNT');
 export const PUBLIC_FEED_CACHE_MS = 1000;
+export type PublicVersionDescriptor = { version: string; generatedAt: number; revision: number; confirmedAt: number; validUntil: number };
 export type PublicVersionEnvelope = {
-  messages: { version: string; generatedAt: number; confirmedAt: number; validUntil: number };
-  gallery: { version: string; generatedAt: number; confirmedAt: number; validUntil: number };
+  messages: PublicVersionDescriptor;
+  gallery: PublicVersionDescriptor;
 };
 export type PublicFeedResult = {
-  status: 200; cacheControl: string; body: PublicFeedEnvelope<PublicGalleryItem | PublicMessageItem> | PublicVersionEnvelope;
+  status: 200; cacheControl: string; body: (PublicFeedEnvelope<PublicGalleryItem | PublicMessageItem> & { revision: number }) | PublicVersionEnvelope;
 } | {
   status: 400 | 409 | 429 | 503; cacheControl: 'no-store'; body: { reason: string; items: [] };
 };
@@ -70,7 +71,7 @@ export function createPublicFeedService(readObject: (path: string) => Promise<un
     async version() {
       const current = await pointer(); if (!current) return failure(503, 'snapshot_unavailable');
       const control = cacheControl(current); if (!control) return failure(503, 'snapshot_expired');
-      const meta = (kind: 'messages' | 'gallery') => ({ version: current[kind].version, generatedAt: current[kind].generatedAt,
+      const meta = (kind: 'messages' | 'gallery') => ({ version: current[kind].version, generatedAt: current[kind].generatedAt, revision: current[kind].revision,
         confirmedAt: current.confirmedAt, validUntil: current.validUntil });
       return { status: 200, cacheControl: control, body: { messages: meta('messages'), gallery: meta('gallery') } };
     },
@@ -89,7 +90,7 @@ export function createPublicFeedService(readObject: (path: string) => Promise<un
       if (!artifact) return failure(503, 'snapshot_unavailable');
       const confirmed = highestPointer ?? current; const control = cacheControl(confirmed);
       if (!control) return failure(503, 'snapshot_expired');
-      return { status: 200, cacheControl: control, body: makePublicFeedEnvelope(confirmed, kind, artifact) };
+      return { status: 200, cacheControl: control, body: { ...makePublicFeedEnvelope(confirmed, kind, artifact), revision: confirmed[kind].revision } };
     }
   };
 }

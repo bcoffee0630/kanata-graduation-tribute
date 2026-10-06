@@ -66,6 +66,7 @@ const PublicFeedWatcher = {
                 const state = body[kind];
                 if (!state || typeof state.version !== 'string' || !/^(0|[1-9]\d{0,15})$/.test(state.version) ||
                     !Number.isSafeInteger(Number(state.version)) ||
+                    (state.revision !== undefined && (!Number.isSafeInteger(state.revision) || state.revision < 0)) ||
                     !Number.isFinite(state.generatedAt) || state.generatedAt > now + 60_000 ||
                     !Number.isFinite(state.confirmedAt) || state.confirmedAt > now + 60_000 ||
                     state.generatedAt > state.confirmedAt || !Number.isFinite(state.validUntil) ||

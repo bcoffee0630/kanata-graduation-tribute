@@ -8,7 +8,7 @@ const item = id => ({
 });
 const items = (...ids) => ids.map(item);
 const envelope = (values, extra = {}) => ({
-  version: '1', generatedAt: Date.now() - 600_000, confirmedAt: Date.now(),
+  version: '1', revision: 0, generatedAt: Date.now() - 600_000, confirmedAt: Date.now(),
   validUntil: Date.now() + 240_000, latestIds: values.slice(0, 2).map(value => value.postId),
   items: values, ...extra,
 });
@@ -56,14 +56,14 @@ describe('gallery public response and refresh contract', () => {
     gallery.cards.set('1', retained);
     fetch.mockResolvedValue({ ok: false, status: 409, text: async () => '{}' });
     await gallery.refresh({ initial: true });
-    expect(gallery.status.textContent).toBe('新しい投稿があります。更新すると表示できます。');
+    expect(gallery.status.textContent).toBe('思い出ウォールが更新されました。更新してご覧ください。');
     const requestVersion = gallery.requestVersion;
-    window.i18n = { currentLang: 'en', t: key => ({ 'gallery.updated_hint': 'New posts are available.' }[key] || key) };
+    window.i18n = { currentLang: 'en', t: key => ({ 'gallery.updated_hint': 'The Memory Wall has been updated.' }[key] || key) };
     dispatch('languageChanged');
-    expect(gallery.status.textContent).toBe('New posts are available.');
-    window.i18n = { currentLang: 'zh-TW', t: key => ({ 'gallery.updated_hint': '有新的投稿。' }[key] || key) };
+    expect(gallery.status.textContent).toBe('The Memory Wall has been updated.');
+    window.i18n = { currentLang: 'zh-TW', t: key => ({ 'gallery.updated_hint': '回憶牆已更新。' }[key] || key) };
     dispatch('languageChanged');
-    expect(gallery.status.textContent).toBe('有新的投稿。');
+    expect(gallery.status.textContent).toBe('回憶牆已更新。');
     expect(gallery.data).toBe(before);
     expect(gallery.cards.get('1')).toBe(retained);
     expect(gallery.requestVersion).toBe(requestVersion);
@@ -84,10 +84,25 @@ describe('gallery public response and refresh contract', () => {
     expect(gallery.status.textContent).toBe('現在表示できる投稿はこの組み合わせです。');
   });
 
+  it('preserves scroll position after a successful manual empty refresh without measuring a nonexistent post', async () => {
+    const { gallery, fetch, window } = runtime();
+    gallery.data = [];
+    window.scrollTo = vi.fn();
+    fetch.mockResolvedValue(response(envelope([])));
+    // Keep the actual scrollToFirst method; this state harness has no layout measurements.
+    await gallery.refresh({ manual: true });
+    expect(gallery.data).toEqual([]);
+    expect(gallery.loadFailed).toBe(false);
+    expect(gallery.isLoading).toBe(false);
+    expect(window.scrollTo).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('accepts six posts with a server-confirmed lease for an older unchanged generation', () => {
     const { gallery } = runtime();
     const parsed = gallery.parseBatch(envelope(items(1, 2, 3, 4, 5, 6)));
     expect(parsed.items).toHaveLength(6);
+    expect(parsed.revision).toBe(0);
     expect(parsed.latestIds).toEqual(['1', '2']);
     expect(parsed.items[0].createdAt.toISOString()).toBe('2026-10-05T00:00:00.000Z');
   });
@@ -113,6 +128,90 @@ describe('gallery public response and refresh contract', () => {
   it('rejects alias document IDs that would display the same X post twice', () => {
     const { gallery } = runtime();
     expect(() => gallery.parseBatch(envelope([item(1), { ...item(1), id: 'legacy-alias' }]))).toThrow();
+  });
+
+  it('rejects malformed source revisions but accepts older envelopes without one', () => {
+    const { gallery } = runtime();
+    for (const revision of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1, '0', null]) {
+      expect(() => gallery.parseBatch(envelope([], { revision }))).toThrow();
+    }
+    expect(gallery.parseBatch(envelope([], { revision: undefined })).revision).toBeUndefined();
+  });
+
+  it('invalidates rotated samples at revision zero without a hint or changing the reading surface', async () => {
+    const { gallery, fetch } = runtime();
+    gallery.refreshHint = { hidden: false, textContent: '' };
+    fetch.mockResolvedValue(response(envelope(items(1, 2, 3, 4, 5, 6))));
+    await gallery.refresh({ initial: true });
+    expect(gallery.poolRevision).toBe(0);
+    gallery.onSubmission(item(99));
+    const before = gallery.data;
+    const retained = { article: {}, embed: {} };
+    gallery.cards.set('1', retained);
+    gallery.render.mockClear();
+    gallery.onFeedState({ version: '2', revision: 0, generatedAt: Date.now(), confirmedAt: Date.now(), validUntil: Date.now() + 240_000 });
+    expect(gallery.pool.size).toBe(0);
+    expect(gallery.ownItems.size).toBe(0);
+    expect(gallery.validUntil).toBe(0);
+    expect(gallery.latestPostIds).toEqual([]);
+    expect(gallery.data).toBe(before);
+    expect(gallery.cards.get('1')).toBe(retained);
+    expect(gallery.render).not.toHaveBeenCalled();
+    expect(gallery.hasNewPosts).toBe(false);
+    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(gallery.refreshHint.textContent).toBe('');
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('keeps empty revision-zero rotation quiet but hints when the source revision increases', async () => {
+    const { gallery, fetch } = runtime();
+    gallery.data = [];
+    gallery.refreshHint = { hidden: false, textContent: '' };
+    fetch.mockResolvedValue(response(envelope([])));
+    await gallery.refresh({ initial: true });
+    const state = { version: '2', revision: 0, generatedAt: Date.now(), confirmedAt: Date.now(), validUntil: Date.now() + 240_000 };
+    gallery.onFeedState(state);
+    expect(gallery.refreshHint.hidden).toBe(true);
+    gallery.onFeedState({ ...state, version: '3', revision: 1 });
+    expect(gallery.refreshHint.hidden).toBe(false);
+    expect(gallery.hasNewPosts).toBe(true);
+    expect(gallery.data).toEqual([]);
+    expect(fetch).toHaveBeenCalledOnce();
+    fetch.mockResolvedValue(response(envelope([], { version: '3', revision: 1 })));
+    gallery.scrollToFirst = vi.fn();
+    await gallery.refresh({ manual: true });
+    expect(gallery.poolRevision).toBe(1);
+    expect(gallery.refreshHint.hidden).toBe(true);
+    gallery.onFeedState({ ...state, version: '4', revision: 1 });
+    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(gallery.hasNewPosts).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains version-based hints if either the loaded batch or old manifest has no revision', () => {
+    const { gallery } = runtime();
+    gallery.onFeedState({ version: '2', revision: 0 });
+    expect(gallery.hasNewPosts).toBe(true);
+    gallery.poolRevision = 0;
+    gallery.onFeedState({ version: '2' });
+    expect(gallery.hasNewPosts).toBe(true);
+  });
+
+  it('discards an older in-flight sample after rotation without manufacturing a content update notice', async () => {
+    const { gallery, fetch } = runtime();
+    gallery.poolRevision = 0;
+    gallery.status = { textContent: '' };
+    let release;
+    fetch.mockImplementation(() => new Promise(resolve => { release = resolve; }));
+    const before = gallery.data;
+    const pending = gallery.refresh({ initial: true });
+    gallery.onFeedState({ version: '2', revision: 0, generatedAt: Date.now(), confirmedAt: Date.now(), validUntil: Date.now() + 240_000 });
+    release(response(envelope(items(11, 12, 13, 14, 15, 16))));
+    await pending;
+    expect(gallery.data).toBe(before);
+    expect(gallery.pool.size).toBe(0);
+    expect(gallery.status.textContent).toBe('');
+    expect(gallery.hasNewPosts).toBe(false);
   });
 
   it('prepends an accepted post, removes the tail and performs no content request', () => {

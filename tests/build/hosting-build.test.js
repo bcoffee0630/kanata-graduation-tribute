@@ -30,9 +30,17 @@ function runReleaseGuard(directory, releaseTag) {
 }
 
 describe('production Hosting allowlists', () => {
-  it('refreshes changed public gallery and toast styles without altering Admin caching', () => {
+  it('refreshes public entry pages and changed styles without altering Admin caching', () => {
     const config = JSON.parse(readFileSync('firebase.production.json', 'utf8'));
     const publicHeaders = config.hosting.find(hosting => hosting.target === 'public').headers;
+    const previewHeaders = JSON.parse(readFileSync('firebase.json', 'utf8')).hosting.headers;
+    for (const headers of [publicHeaders, previewHeaders]) {
+      // Hosting matches the original URL: an HTML glob alone leaves `/` cached.
+      for (const source of ['/', '**/*.html', '**/*.js', '**/*.json']) {
+        expect(headers.find(header => header.source === source)
+          ?.headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-cache');
+      }
+    }
     for (const stylesheet of ['gallery', 'toast']) {
       expect(publicHeaders.find(header => header.source === `/assets/css/${stylesheet}.css`)
         ?.headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-cache');
@@ -40,6 +48,8 @@ describe('production Hosting allowlists', () => {
     }
     expect(config.hosting.find(hosting => hosting.target === 'admin').headers[0]
       .headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-store');
+    expect(previewHeaders.at(-1).source).toBe('/admin/**');
+    expect(previewHeaders.at(-1).headers.find(header => header.key === 'Cache-Control')?.value).toBe('no-store');
   });
 
   it('builds isolated public, admin, and maintenance outputs', () => {

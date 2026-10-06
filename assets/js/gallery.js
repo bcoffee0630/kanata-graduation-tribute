@@ -52,7 +52,7 @@ const Gallery = {
             no_content: 'まだ投稿がありません', load_error: '投稿を読み込めませんでした。',
             submitter: '投稿者', anonymous: '匿名', retry: '再読み込み',
             refresh: 'ほかの投稿を見る', refreshing: '投稿を読み込み中…',
-            updated_hint: '新しい投稿があります。更新すると表示できます。',
+            updated_hint: '思い出ウォールが更新されました。更新してご覧ください。',
             submission_notice: '共有しました。あなたの投稿を先頭に表示しています。',
             cached_notice: '読み込みを少し休んで、取得済みの投稿を表示しています。',
             unchanged_notice: '現在表示できる投稿はこの組み合わせです。',
@@ -71,7 +71,7 @@ const Gallery = {
     },
 
     updateRefreshHint() {
-        this.hasNewPosts = this.refreshConflict || this.isNewerVersion(this.feedState?.version, this.poolVersion);
+        this.hasNewPosts = this.refreshConflict || this.hasContentUpdate(this.feedState, this.poolRevision, this.poolVersion);
         if (this.refreshHint) {
             this.refreshHint.hidden = !this.hasNewPosts;
             this.refreshHint.textContent = this.hasNewPosts ? this.t('updated_hint') : '';
@@ -81,6 +81,14 @@ const Gallery = {
     isNewerVersion(candidate, version) {
         return typeof candidate === 'string' && /^\d{1,30}$/.test(candidate) &&
             typeof version === 'string' && /^\d{1,30}$/.test(version) && BigInt(candidate) > BigInt(version);
+    },
+
+    hasContentUpdate(state, revision, version) {
+        if (Number.isSafeInteger(state?.revision) && state.revision >= 0 && Number.isSafeInteger(revision) && revision >= 0) {
+            return state.revision > revision;
+        }
+        // Older servers have no source revision; keep their version-based update behavior.
+        return this.isNewerVersion(state?.version, version);
     },
 
     onFeedState(state) {
@@ -199,6 +207,7 @@ const Gallery = {
 
     parseBatch(body) {
         if (!body || typeof body.version !== 'string' || !/^\d{1,30}$/.test(body.version) ||
+            (body.revision !== undefined && (!Number.isSafeInteger(body.revision) || body.revision < 0)) ||
             !Number.isFinite(body.generatedAt) || body.generatedAt > Date.now() + 60000 || !Number.isFinite(body.validUntil) ||
             body.validUntil <= Date.now() || body.validUntil > Date.now() + 300000 || body.validUntil <= body.generatedAt ||
             (body.confirmedAt !== undefined && (!Number.isFinite(body.confirmedAt) ||
@@ -291,12 +300,13 @@ const Gallery = {
             const batch = this.parseBatch(body);
             if (this.isNewerVersion(this.feedState?.version, batch.version)) {
                 if (!this.data.length) this.showError();
-                this.setStatus('updated_hint');
+                this.setStatus(this.hasContentUpdate(this.feedState, batch.revision, batch.version) ? 'updated_hint' : '');
                 return;
             }
             this.refreshConflict = false;
             this.invalidatedVersion = null;
             this.generatedAt = batch.generatedAt;
+            this.poolRevision = batch.revision;
             this.latestPostIds = batch.latestIds;
             if (batch.version !== this.poolVersion) {
                 this.pool.clear();
@@ -367,7 +377,7 @@ const Gallery = {
     },
 
     scrollToFirst(epoch) {
-        if (epoch !== this.navigationEpoch || document.querySelector('.modal.active')) return;
+        if (!this.data.length || epoch !== this.navigationEpoch || document.querySelector('.modal.active')) return;
         const section = (this.section || this.container).getBoundingClientRect();
         if (section.bottom <= 0 || section.top >= window.innerHeight) return;
         const bounds = this.container.getBoundingClientRect();
