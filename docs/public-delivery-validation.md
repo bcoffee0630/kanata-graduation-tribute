@@ -1,6 +1,6 @@
 # 六篇回憶牆與近即時留言驗證紀錄
 
-驗證日期：2026-10-07（Asia/Taipei）。本次結果取代先前四篇版紀錄。程式與本機驗證已完成；尚未部署 staging／production，尚未量測真實 Cloud Tasks、CDN、X 嵌入與費用。
+驗證日期：2026-10-07（Asia/Taipei）。本次結果取代先前四篇版紀錄。程式與本機驗證已完成；staging 私人資源準備進行中，尚未部署新版 backend／Rules／Hosting，production 未變更。尚未量測真實 Cloud Tasks、CDN、X 嵌入與費用。
 
 ## 已完成
 
@@ -22,12 +22,14 @@
 | TypeScript build | 通過 |
 | Preview／public／admin／maintenance Hosting build | 通過 |
 | Functions unit tests | 92 通過；最後 revision 回退修正另跑相關 23 tests 通過 |
-| 前端 VM、建置／發布工具 tests | 74 通過 |
+| 前端 VM、建置／發布工具 tests | 99 通過（含新增 25 則 provision 前置檢查／重試測試） |
 | 正常／維護 Firestore 與 Storage Rules | 14 通過 |
 | Firebase emulator integration tests | 28 通過 |
 | Gitleaks 工作目錄／全部 Git 歷史、diff whitespace | 通過 |
 
 前端 VM 測試不開啟瀏覽器，涵蓋延遲回應、版本淘汰／續期、自己投稿競態、限流／跨分頁、儲存失效、快取到期、留言增量／暫停／背景、過期自己的內容與退避。後端涵蓋事件重送、窗口尾端、發布失敗、CAS 競態、watchdog、來源 revision 回退、訪客讀取不增加來源抽樣，以及安全 callable item／連點限制。TTL release verifier 要求遠端兩個 expiresAt 政策為 ACTIVE。
+
+Provision 新測試涵蓋實際角色不存在回應、已知角色限定、八次／180 秒上限、etag 衝突與其他錯誤停止，以及 API 啟用失敗禁止 IAM 寫入。Owner audit 必須先於 API 啟用及 IAM；mock HTTP 測試確認 dry-run 不寫入、已存在 reader／roles 重用。所有測試不存取遠端或登入。
 
 更新的 Playwright E2E 檔案保留作為測試規格，**本次不執行**；不以舊四篇版或外部瀏覽器結果代表本次通過。
 
@@ -49,9 +51,11 @@ Console 曾出現 iframe MutationObserver 訊息；在不含任何產品 JavaScr
 
 ## 發布前條件
 
-Staging 唯讀 inventory 尚無 dedicated UBLA／PAP snapshot bucket、Cloud Tasks API 啟用及新版 worker。已準備 private resource／IAM／回填／bootstrap 工具，apply 沿用既有 Owner Password-session 與 audit，不能用 ADC 或 Owner UID 代替登入。短效 token 只在記憶體／child stdin，不貼聊天或存檔。
+Staging 已經由實際 Owner Password session 完成 setup，獨立 snapshot bucket 的 UBLA／PAP 與 Cloud Tasks API 啟用已回讀確認。Provision 的 Owner 授權也已成功，reader 服務帳號與四個固定 custom roles 已建立；首次 bucket IAM 寫入回覆該專案角色尚不存在，bucket bindings 及 queue 尚未建立。已回讀確認角色名稱、專案層級、bucket project number 一致；判斷為新角色傳播延遲，信心度約 95%。另查得後續驗證所需 Policy Troubleshooter API 尚未啟用。
 
-完成 staging resource provision、backend、索引 READY、TTL ACTIVE、排序鍵回填及 fresh 快照後，再切換 Rules／preview Hosting，量測真實延遲、回應大小、CDN 與計費運算時間。正式發布另需乾淨提交、annotated release tag、live baseline、maintenance 及成功 final backup。操作順序見 [發布手冊](public-delivery-release.md)。第一次 staging Owner 登入尚未取得有效 session，未執行 setup；已提供預填帳戶與安全錯誤代碼的重試頁。目前沒有遠端部署或資料異動。
+Provision 已補上 IAM 寫入前的驗證 API 前置檢查，以及只對已知角色不存在錯誤的有限重試；維持 Owner audit、etag、私人 prefix 與立即停止其他錯誤。工具 apply 沿用既有 Owner Password-session，不能用 ADC 或 Owner UID 代替登入。短效 token 只在記憶體／child stdin，不貼聊天或存檔。
+
+完成 staging resource provision、backend、索引 READY、TTL ACTIVE、排序鍵回填及 fresh 快照後，再切換 Rules／preview Hosting，量測真實延遲、回應大小、CDN 與計費運算時間。正式發布另需乾淨提交、annotated release tag、live baseline、maintenance 及成功 final backup。操作順序見 [發布手冊](public-delivery-release.md)。目前遠端變更僅限 staging 的上述私人資源、API 與 Owner audit；新版部署及原始投稿資料異動尚未執行。
 
 ## Out-of-Scope
 

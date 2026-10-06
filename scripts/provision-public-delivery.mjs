@@ -2,6 +2,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { assertTransactionOwner, DeliveryOperatorError, initializeOperator, ownerSession,
   parseOperatorOptions, PRODUCTION, STAGING, reportOperatorError, requireFunctions } from './public-delivery-operator.mjs';
+import { waitForServiceEnable } from './setup-public-snapshot-resources.mjs';
 
 const PREFIX = 'public-snapshots/';
 const REGION = 'asia-east1';
@@ -12,6 +13,9 @@ const WRITER_ROLE_ID = 'publicFeedSnapshotWriter';
 const METADATA_ROLE_ID = 'publicFeedSnapshotMetadataReader';
 const FUNCTION_ROLE_ID = 'publicFeedWorkerMetadataReader';
 const WRITER_PERMISSIONS = ['storage.objects.get', 'storage.objects.create', 'storage.objects.delete', 'storage.objects.update'];
+export const IAM_VERIFICATION_API = 'policytroubleshooter.googleapis.com';
+export const IAM_PROPAGATION_DELAYS_MS = Object.freeze([5000, 10000, 20000, 30000, 30000, 30000, 30000]);
+export const IAM_PROPAGATION_TIMEOUT_MS = 180_000;
 const HELP = `Provision private snapshots and a bounded private task queue. Default: read-only inventory/plan.
   --project <kanata-memorial|kanata-memorial-admin>
   --bucket <existing-dedicated-private-UBLA-PAP-project-bucket>
@@ -21,8 +25,77 @@ Production: --confirm-production kanata-memorial --release-tag <annotated-HEAD-t
 Creates/reuses a GCS-get-only reader, private prefix IAM, bounded task queue and
 prefix-only generation lifecycle. Rerun after backend deployment to grant the
 private worker invoker. Existing media bucket settings remain unchanged.
+Enables/reuses only the IAM Policy Troubleshooter verification API before IAM writes.
 No billing, budget, notification, Hosting or database Rules resources are changed.
 `;
+
+export function iamVerificationApiPlan(service) {
+  if (!['ENABLED', 'DISABLED'].includes(service?.state)) {
+    throw new DeliveryOperatorError('IAM verification API state cannot be verified; no infrastructure changes were made.');
+  }
+  return { name: IAM_VERIFICATION_API, action: service.state === 'ENABLED' ? 'reuse-enabled' : 'enable', maxEnablePolls: 30 };
+}
+
+export async function ensureIamVerificationApi(projectNumber, request, waitOptions = {}) {
+  if (!/^\d{1,30}$/.test(String(projectNumber))) throw new DeliveryOperatorError('A verified project number is required for IAM verification API setup.');
+  const serviceUrl = `https://serviceusage.googleapis.com/v1/projects/${projectNumber}/services/${IAM_VERIFICATION_API}`;
+  const service = await request(serviceUrl);
+  if (iamVerificationApiPlan(service).action === 'reuse-enabled') return;
+  const operation = await request(`${serviceUrl}:enable`, 'POST', {});
+  try {
+    await waitForServiceEnable(operation, name => request(`https://serviceusage.googleapis.com/v1/${name}`), waitOptions);
+  } catch {
+    throw new DeliveryOperatorError('IAM verification API enable did not complete within its bounded checks; no IAM writes were performed. Inspect API state and rerun the dry-run.');
+  }
+  if ((await request(serviceUrl)).state !== 'ENABLED') {
+    throw new DeliveryOperatorError('IAM verification API is not enabled; no IAM writes were performed. Inspect API state and rerun the dry-run.');
+  }
+}
+
+export function isCustomRolePropagationFailure(status, body, knownRoles) {
+  if (status !== 400 || !Array.isArray(knownRoles) || !knownRoles.length) return false;
+  const error = body?.error;
+  if (!error || typeof error !== 'object') return false;
+  const messages = [error.message, ...(Array.isArray(error.errors) ? error.errors.map(entry => entry?.message) : [])];
+  for (const role of knownRoles) {
+    if (typeof role !== 'string' || !/^projects\/[a-z0-9-]+\/roles\/[A-Za-z0-9_.]+$/.test(role)) continue;
+    const escaped = role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const qualified = `(?:\\(${escaped}\\)|${escaped}|['"\x60]${escaped}['"\x60])`;
+    const missing = new RegExp(`^Role\\s+${qualified}\\s+(?:does not exist(?: in the resource['’]s hierarchy)?|(?:was |is )?not found)\\.?$`);
+    if (messages.some(message => typeof message === 'string' && missing.test(message.trim()))) return true;
+  }
+  return Array.isArray(error.details) && error.details.some(detail =>
+    detail?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' &&
+    ['ROLE_NOT_FOUND', 'IAM_ROLE_NOT_FOUND'].includes(detail.reason) &&
+    knownRoles.includes(detail.metadata?.role || detail.metadata?.roleName || detail.metadata?.resource));
+}
+
+export function infrastructureFailure(method, status, body, knownRoles = []) {
+  const error = new DeliveryOperatorError(`Infrastructure ${method} failed (${status}); verify API availability and operator permissions locally.`);
+  error.httpStatus = status;
+  error.customRolePropagation = isCustomRolePropagationFailure(status, body, knownRoles);
+  return error;
+}
+
+export async function putBucketIamWithPropagationRetry(write, { now = () => performance.now(),
+  pause = delay => new Promise(resolve => setTimeout(resolve, delay)) } = {}) {
+  const started = now();
+  let paused = 0;
+  for (let attempt = 0; attempt <= IAM_PROPAGATION_DELAYS_MS.length; attempt++) {
+    const remaining = IAM_PROPAGATION_TIMEOUT_MS - Math.max(0, now() - started, paused);
+    if (remaining <= 0) break;
+    try { return await write(Math.min(30_000, remaining)); }
+    catch (error) {
+      if (!(error instanceof DeliveryOperatorError) || error.httpStatus !== 400 || error.customRolePropagation !== true) throw error;
+      const delay = IAM_PROPAGATION_DELAYS_MS[attempt];
+      const left = IAM_PROPAGATION_TIMEOUT_MS - Math.max(0, now() - started, paused);
+      if (delay === undefined || delay >= left) break;
+      await pause(delay);
+      paused += delay;
+    }
+  }
+  throw new DeliveryOperatorError('Custom snapshot roles are still propagating after bounded IAM retries; no further IAM writes were attempted. Inspect state and rerun the dry-run.');
+}
 
 export function desiredSnapshotQueue(name) {
   return { name, rateLimits: { maxDispatchesPerSecond: 0.5, maxConcurrentDispatches: 1 },
@@ -72,11 +145,17 @@ export async function main(args = process.argv.slice(2)) {
   const { deleteApp } = requireFunctions('firebase-admin/app');
   const access = await operator.credential.getAccessToken();
   const headers = { Authorization: `Bearer ${access.access_token}`, 'X-Goog-User-Project': options.project };
-  const request = async (url, method = 'GET', body, missing = false) => {
+  const request = async (url, method = 'GET', body, missing = false, knownRoles = [], timeoutMs = 30_000) => {
     const response = await fetch(url, { method, headers: { ...headers, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(30_000) });
+      ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(timeoutMs) });
     if (missing && response.status === 404) return null;
-    if (!response.ok) throw new DeliveryOperatorError(`Infrastructure ${method} failed (${response.status}); verify API availability and operator permissions locally.`);
+    if (!response.ok) {
+      let errorBody;
+      if (response.status === 400 && knownRoles.length) {
+        try { errorBody = await response.json(); } catch {}
+      }
+      throw infrastructureFailure(method, response.status, errorBody, knownRoles);
+    }
     return response.status === 204 ? {} : response.json();
   };
   const projectUrl = `https://cloudresourcemanager.googleapis.com/v1/projects/${options.project}`;
@@ -101,11 +180,12 @@ export async function main(args = process.argv.slice(2)) {
       request(`${projectUrl}:getIamPolicy`, 'POST', { options: { requestedPolicyVersion: 3 } }),
       request(saUrl, 'GET', undefined, true), request(writerUrl),
       request(queueUrl, 'GET', undefined, true), request(workerUrl, 'GET', undefined, true),
+      request(`https://serviceusage.googleapis.com/v1/projects/${options.project}/services/${IAM_VERIFICATION_API}`),
       ...definitions.map(([id]) => request(`${iamProject}/roles/${id}`, 'GET', undefined, true))
     ]);
     const failed = results.find((result) => result.status === 'rejected');
     if (failed) throw failed.reason;
-    const [project, bucket, bucketPolicy, projectPolicy, serviceAccount, writerAccount, queue, worker, ...existingRoles] = results.map((result) => result.value);
+    const [project, bucket, bucketPolicy, projectPolicy, serviceAccount, writerAccount, queue, worker, verificationService, ...existingRoles] = results.map((result) => result.value);
     assertPrivateSnapshotBucket(bucket, project, options.bucket);
     if (hasPublicMember(projectPolicy) || hasPublicMember(bucketPolicy)
       || bucket.defaultObjectAcl?.some((entry) => ['allUsers', 'allAuthenticatedUsers'].includes(entry.entity))) {
@@ -146,6 +226,8 @@ export async function main(args = process.argv.slice(2)) {
     const plan = { projectId: options.project, bucket: options.bucket, readerServiceAccount: saEmail,
       readerRole: 'storage.objects.get on public-snapshots/ only; no Firestore/project grants',
       writerServiceAccount: options.writerServiceAccount,
+      iamVerificationApi: iamVerificationApiPlan(verificationService),
+      bucketIamPropagationRetry: { maxAttempts: IAM_PROPAGATION_DELAYS_MS.length + 1, maxElapsedSeconds: IAM_PROPAGATION_TIMEOUT_MS / 1000 },
       writerRole: 'Snapshot prefix object get/create/delete/update and bucket metadata get.',
       serviceAccount: serviceAccount ? 'reuse' : 'create', customRoles: definitions.map(([id], index) => ({ id, action: existingRoles[index] ? 'reuse' : 'create' })),
       queue: { action: queue ? 'update-existing' : 'create', ...desiredSnapshotQueue(queueName) },
@@ -159,8 +241,10 @@ export async function main(args = process.argv.slice(2)) {
         assertTransactionOwner(await transaction.get(operator.db.collection('adminAccounts').doc(actor.uid)), actor);
         transaction.create(operator.db.collection('adminAuditLogs').doc(), auditData(actor,
           'public_delivery.infrastructure_provision_requested', 'system', 'publicSnapshots', options.reason,
-          { bucket: options.bucket, readerServiceAccount: saEmail, writerServiceAccount: options.writerServiceAccount, releaseTag: options.releaseTag || '' }));
+          { bucket: options.bucket, readerServiceAccount: saEmail, writerServiceAccount: options.writerServiceAccount,
+            enableIamVerificationApi: verificationService.state !== 'ENABLED', releaseTag: options.releaseTag || '' }));
       });
+      await ensureIamVerificationApi(project.projectNumber, request);
       if (!serviceAccount) await request(`${iamProject}/serviceAccounts`, 'POST', {
         accountId: SA_ID, serviceAccount: { displayName: 'Private public snapshot reader; no Firestore access' }
       });
@@ -174,7 +258,7 @@ export async function main(args = process.argv.slice(2)) {
       addPrivateIamBinding(policy, roles[ROLE_ID], readerMember, prefixCondition);
       addPrivateIamBinding(policy, roles[WRITER_ROLE_ID], writerMember, prefixCondition);
       addPrivateIamBinding(policy, roles[METADATA_ROLE_ID], writerMember);
-      await request(`${bucketUrl}/iam`, 'PUT', policy);
+      await putBucketIamWithPropagationRetry(timeoutMs => request(`${bucketUrl}/iam`, 'PUT', policy, false, Object.values(roles), timeoutMs));
       const desiredQueue = desiredSnapshotQueue(queueName);
       if (!queue) await request(`https://cloudtasks.googleapis.com/v2/projects/${options.project}/locations/${REGION}/queues`, 'POST', { queue: desiredQueue });
       else await request(`${queueUrl}?updateMask=rateLimits,retryConfig`, 'PATCH', desiredQueue);
