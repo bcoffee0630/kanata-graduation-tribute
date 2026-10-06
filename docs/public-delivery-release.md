@@ -8,6 +8,8 @@
 
 `system/publicContentRevision` 的內容 revision 與投稿／治理寫入同一交易。私有事件觸發 Cloud Tasks，約兩秒合併窗口、單一並行及有限三次嘗試；發布途中有新 revision 必須接續處理。每分鐘 watchdog 補失敗工作，並判斷每五分鐘的八組樣本輪替。所有 immutable 快照上傳完成後才能 CAS 切換 pointer；舊工作不能覆蓋新版。
 
+內容異動的 `revision` 與抽樣／artifact `version` 分開。五分鐘輪替可產生新 version，但來源內容未變時 revision 保持不變。Manifest 與內容回應的 revision 從同一已讀 pointer 取得，不增加 Firestore 或 Storage 查詢；畫廊以 revision 增加判斷更新提示，同 revision 輪替只淘汰舊候選／lease 並保留目前卡片。舊 server 缺少 revision 時保留 version 相容行為；409 使用中性的回憶牆已更新文案。
+
 留言最多 100 則，revision 未變時重用；長期沒有新留言時，每十二小時只在 Storage 複製目前內容，避免一天的 artifact 清理期限刪除仍使用中的版本，不重新讀取留言來源。回憶牆最新兩篇使用索引，其餘候選使用固定 sampleKey、隨機起點、limit(6) 及有限回繞，排除最新兩篇後選四篇。禁止全表洗牌、offset 與公開要求生成。版本相同且伺服器重新核實來源 revision 才能續發 lease；本地換組不能延長期限。
 
 公開 reader 使用獨立服務帳號，只能讀私人 bucket 的 `public-snapshots/` prefix，不能讀 Firestore 或舊媒體。快取故障只回暫時不可用，不回查來源。
@@ -16,13 +18,15 @@
 
 | 介面 | 行為 |
 |---|---|
-| `/api/feed/version` | 留言與回憶牆的 version、generatedAt、confirmedAt、validUntil；origin/CDN 各一秒快取 |
-| `/api/messages` | 最多 100 則安全公開留言 |
-| `/api/gallery/batches/{0..7}` | 最多六篇、latestIds、版本及 lease |
+| `/api/feed/version` | 留言與回憶牆的 version、revision、generatedAt、confirmedAt、validUntil；origin/CDN 各一秒快取 |
+| `/api/messages` | 最多 100 則安全公開留言、revision、版本及 lease |
+| `/api/gallery/batches/{0..7}` | 最多六篇、latestIds、revision、版本及 lease |
 
 內容介面僅允許選填 `?version=<current-numeric-version>`；未知版本回 409，非法參數或 batch 不讀任意 Storage key。每服務 maxInstances=1，固定 key 快取與 single-flight，實例來源 token bucket 為持續 100 requests/s、burst 200。這限制來源放大，並非帳單硬封頂。
 
-前端只在相關區段可見且分頁前景時，用一個 watcher 每兩秒檢查版本；失敗指數退避至最多 60 秒。同版本不重新下載內容。手動刷新每滾動 60 秒五次網路請求，失敗也計次、跨分頁共享；有效本地候選最多 48 篇。新版通知立即淘汰舊候選，但不替換正在閱讀的卡片。到期不得重新抽樣或循環舊留言，已開啟內容仍可閱讀。
+前端只在相關區段可見且分頁前景時，用一個 watcher 每兩秒檢查版本；失敗指數退避至最多 60 秒。Watcher 不因同版本重新下載內容。手動刷新每滾動 60 秒五次網路請求，失敗也計次、跨分頁共享；有效本地候選最多 48 篇。新版通知立即淘汰舊候選，但不替換正在閱讀的卡片。到期不得重新抽樣或循環舊留言，已開啟內容仍可閱讀。成功刷新只有非空清單才定位第一篇；空清單維持捲動位置。
+
+公開根頁 `/` HTML 採 no-cache，使重新開啟網站能取得最新前端；這項調整不改公開 API 的 origin／CDN 一秒快取，也不改 admin 設定。
 
 投稿／檢舉在昂貴 X 驗證之前限制每帳戶每端點五次／分鐘，額度查詢二十次／分鐘；不影響管理員治理或既有每日配額。callable 保留 `{id}` 並提供安全 `item`，自己的投稿／留言立即顯示，不新增客戶端原始資料讀取。
 
@@ -31,9 +35,9 @@
 所有瀏覽器互動驗證只使用 Codex 內的 [@Browser](plugin://browser@openai-bundled)。桌面／手機 viewport 為響應式模擬，不宣稱完成 iPhone／WebKit 真機驗收，也不執行獨立 headless 或外部瀏覽器。單元、規則與 emulator integration 測試可用 CLI。
 
 1. Node.js 22 下執行 `npm run build`、`npm run test:functions`、`npm run test:build`、`npm run test:rules`、`npm run test:integration`、兩種 Hosting build。Browser 驗證六篇上限、捲動／重排、刷新成敗、重疊 iframe、自己投稿競態、限流、三語、鍵盤／彈窗與留言增量更新。不要以本次舊四篇版 E2E 結果代表新版已驗收。
-2. Staging 先用 `npm run setup:public-snapshots -- --project kanata-memorial-admin --bucket kanata-memorial-admin-public-snapshots` dry-run；Owner 授權 apply 只準備獨立 `asia-east1` UBLA／PAP bucket 與 Cloud Tasks API，再執行 provision 建立 dedicated reader、writer IAM 與 queue；不修改舊媒體 bucket。Provision 在任何 IAM 寫入前核實／啟用 Policy Troubleshooter API，供後續權限驗證。新角色傳播尚未完成時，只對已知 snapshot 角色的不存在錯誤有限重試 bucket IAM：最多八次、總時間最多 180 秒，保留相同 policy 與 etag；其他錯誤及 etag 衝突立即停止。設定 Functions 私人環境參數後，才使用 `npm run deploy:preview -- --project kanata-memorial-admin --phase backend` 部署新版 Functions／indexes。等待索引 READY 與 `publicSnapshotCycles.expiresAt`／`publicEndpointLimits.expiresAt` TTL 為 ACTIVE，再重跑 provision 核實實際 worker identity 並補齊 private invoker。
+2. Staging 先用 `npm run setup:public-snapshots -- --project kanata-memorial-admin --bucket kanata-memorial-admin-public-snapshots` dry-run；Owner 授權 apply 只準備獨立 `asia-east1` UBLA／PAP bucket 與 Cloud Tasks API，再執行 provision 建立 dedicated reader、writer IAM 與 queue；不修改舊媒體 bucket。Provision 在任何 IAM 寫入前核實／啟用 Policy Troubleshooter API，供後續權限驗證。新角色傳播尚未完成時，只對已知 snapshot 角色的不存在錯誤有限重試 bucket IAM：最多八次、總時間最多 180 秒，保留相同 policy 與 etag；其他錯誤及 etag 衝突立即停止。設定 Functions 私人環境參數後，才使用 `npm run deploy:preview -- --project kanata-memorial-admin --phase backend` 部署新版 Functions／indexes。等待索引 READY 與 `publicSnapshotCycles.expiresAt`／`publicEndpointLimits.expiresAt` TTL 為 ACTIVE，先以唯讀 verifier 核實 actual worker identity、queue、private invoker 與 reader 隔離；只有確有缺少的已授權設定才再次 provision apply，不因通用 dry-run 計劃文字重複登入。
 3. Provision、回填及 bootstrap 先 dry-run。Apply 必須使用該專案既有 Owner 的 Password session，短效 token 只透過 hidden TTY／stdin 保留於記憶體，不能貼到聊天、命令參數、環境變數、檔案或 history。沿用 [Owner 授權交接](x-gallery-release.md#owner-匯入操作)。ADC 或 Owner UID 不能替代實際 Owner session。
-4. `backfill-public-gallery-sample-keys.mjs` bounded 回填舊公開 X 投稿排序鍵，不刪除既有投稿／媒體；`bootstrap-public-snapshots.mjs --writer-service-account <actual-runtime-SA>` 私人生成第一份快照。ADC 為人類帳號時需要此 identity 供 Cloud Tasks OIDC 使用；先比對 deployed worker，不推測或改用 reader。驗證原始資料 client deny、reader inherited Firestore get/list deny、prefix 外與舊媒體 deny、私人 bucket 無公開下載 token、API 可讀及 lease 新鮮。
+4. `backfill-public-gallery-sample-keys.mjs` bounded 回填舊公開 X 投稿排序鍵，不刪除既有投稿／媒體；零篇來源不需要空回填 apply。需要生成第一份快照時，使用 `bootstrap-public-snapshots.mjs --writer-service-account <actual-runtime-SA>`。ADC 為人類帳號時需要此 identity 供 Cloud Tasks OIDC 使用；先比對 deployed worker，不推測或改用 reader。若既有 private invoker 已實證有效、worker／watchdog 已產生 fresh 快照，且完整 verifier 與三個真正 reader fresh 200 均通過，不需為冗餘 bootstrap 再要求 Owner 登入。這不免除任何實際寫入所需的 Owner／revocation／audit／maintenance guards。驗證原始資料 client deny、reader inherited Firestore get/list deny、prefix 外與舊媒體 deny、私人 bucket 無公開下載 token、API 可讀及 lease 新鮮。
 5. Staging 使用 `--phase release` 切換 Rules／preview Hosting，透過 @Browser 驗證真實嵌入與近即時更新。量測回應大小、CDN cache headers／命中率、publisher 原始查詢量及 Functions 計費時間；冷啟動／重試延遲另記錄。Staging 不具社群 OAuth 時，以 emulator 驗證登入投稿，不擅改 production OAuth。
 6. 正式發布沿用 [增量發布](x-gallery-release.md#production-最小發布順序)：乾淨 HEAD、annotated `governance-production-YYYYMMDDTHHMMSSZ` tag、Gitleaks、目前 live baseline、維護鎖及成功 final backup。先完成私人資源、索引、排序鍵與 fresh 快照，再切換公開讀取 Rules 與前端；backend verifier 必須確認 reader identity／IAM／新 API，不得跳過保障。
 7. 發布後驗證正常投稿、檢舉、管理員入口、六篇版面、版本更新及 Hosting no-cache 標頭。所有流程不要求費用初始化／人工恢復，也不因當月成本超過 NT$500 而中止。
@@ -46,6 +50,14 @@ PUBLIC_SNAPSHOT_BUCKET=<independent-private-bucket>
 ```
 
 worker queue 的名稱、invoker 與 runtime identity 必須以實際部署回讀核實。不能只根據命名推斷帳號，也不能為了部署成功放寬成 public invoker。
+
+## 本次 staging 狀態（2026-10-07）
+
+實際 Owner setup／provision 已完成，backend 驗證確認 28 個 Functions ACTIVE、13 個 indexes READY、兩個 TTL ACTIVE；私人 queue 為 RUNNING，0.5 dispatch/s、單一並行、最多三次嘗試。完整 reader Firestore／Storage IAM 證明與三個 fresh API 200 通過。既有 private invoker 有效且 watchdog 已產生新鮮快照，因此未執行冗餘 Owner bootstrap。Queue create 的 POST 400 schema 問題已修正並通過實際 provision；首次 Eventarc managed agent 傳播問題經目標部署重試解決，未新增權限。
+
+Rules 與 [preview Hosting](https://kanata-memorial-admin--admin-governance-bxf8cd81.web.app/) 已發布。Functions 101 tests、build／前端 142 tests、TypeScript build 與 Gitleaks dir 通過；本次原始投稿來源為零篇。Commit `4610994` 的三個 reader 與 Hosting 更新成功，最新 Browser 驗證手機／桌面空清單刷新不捲動、三語文字、視窗高度變化與無水平溢出；實際五分鐘輪替 version 改變、revision 維持 0，沒有錯誤更新提示且位置不變。Console 無 warn／error。
+
+不能以零篇來源或本機 fixture 宣稱真實 X、新事件 3–8 秒延遲、CDN 命中率或計費運算時間已通過。實測回應大小與快取標頭見 [驗證紀錄](public-delivery-validation.md)，空資料不能代表六篇傳輸量。Production 未變更。
 
 ## 成本評估與回滾
 
