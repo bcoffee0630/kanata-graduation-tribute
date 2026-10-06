@@ -1,4 +1,5 @@
 // Read-only checks shared by staging and production release preflights.
+import { verifyReaderFirestoreIsolation, verifyReaderSnapshotStorageIsolation } from './public-delivery-iam-verification.mjs';
 export const PUBLIC_FEED_NAMES = ['publicGalleryFeed', 'publicMessagesFeed', 'publicFeedVersion'];
 const REGION = 'asia-east1';
 const WORKER = 'publishPublicSnapshots';
@@ -39,14 +40,8 @@ export async function verifyPublicSnapshotInfrastructure({ project, inventory, a
     });
     if (result.access !== expected) throw new Error(`Snapshot IAM ${permissionName} is not proven ${expected}, including inherited policies.`);
   };
-  for (const permissionName of ['datastore.entities.get', 'datastore.entities.list']) {
-    await permission(reader, `//firestore.googleapis.com/projects/${project}/databases/(default)`, permissionName, 'NOT_GRANTED');
-  }
-  const bucketResource = `//storage.googleapis.com/projects/_/buckets/${bucketName}`;
-  await permission(reader, `${bucketResource}/objects/public-snapshots/current.json`, 'storage.objects.get', 'GRANTED');
-  await permission(reader, `${bucketResource}/objects/outside-public-snapshots.json`, 'storage.objects.get', 'NOT_GRANTED');
-  await permission(reader, bucketResource, 'storage.objects.list', 'NOT_GRANTED');
-  await permission(reader, `${bucketResource}/objects/public-snapshots/current.json`, 'storage.objects.create', 'NOT_GRANTED');
+  await verifyReaderFirestoreIsolation({ project, reader, api });
+  const storageIsolation = await verifyReaderSnapshotStorageIsolation({ project, reader, bucketName, bucketPolicy, api });
   const worker = getFunction(WORKER);
   const writer = worker.serviceConfig?.serviceAccountEmail;
   if (!writer || writer === reader || !worker.serviceConfig?.service || worker.serviceConfig?.environmentVariables?.PUBLIC_SNAPSHOT_BUCKET !== bucketName) {
@@ -101,5 +96,6 @@ export async function verifyPublicSnapshotInfrastructure({ project, inventory, a
     if (!valid) throw new Error(`Fresh bounded snapshot is unavailable for ${functionName}; do not switch public Rules/frontend.`);
   }
   return { snapshotBucket: bucketName, dedicatedReaderFirestoreAccess: 'NOT_GRANTED', feeds: PUBLIC_FEED_NAMES.length,
+    dedicatedReaderStorageIsolation: { ...storageIsolation, insidePrefixRead: 'VERIFIED_BY_THREE_ACTUAL_READER_FEED_200' },
     privateTaskWorker: true, activeTtlPolicies: ttlCollections.length, taskQueueBounds: '0.5/s, one concurrent dispatch, three attempts' };
 }

@@ -22,7 +22,7 @@
 | TypeScript build | 通過 |
 | Preview／public／admin／maintenance Hosting build | 通過 |
 | Functions unit tests | 92 通過；最後 revision 回退修正另跑相關 23 tests 通過 |
-| 前端 VM、建置／發布工具 tests | 99 通過（含新增 25 則 provision 前置檢查／重試測試） |
+| 前端 VM、建置／發布工具 tests | 131 通過（含 28 則 provision 與 29 則 IAM 證明測試） |
 | 正常／維護 Firestore 與 Storage Rules | 14 通過 |
 | Firebase emulator integration tests | 28 通過 |
 | Gitleaks 工作目錄／全部 Git 歷史、diff whitespace | 通過 |
@@ -30,6 +30,10 @@
 前端 VM 測試不開啟瀏覽器，涵蓋延遲回應、版本淘汰／續期、自己投稿競態、限流／跨分頁、儲存失效、快取到期、留言增量／暫停／背景、過期自己的內容與退避。後端涵蓋事件重送、窗口尾端、發布失敗、CAS 競態、watchdog、來源 revision 回退、訪客讀取不增加來源抽樣，以及安全 callable item／連點限制。TTL release verifier 要求遠端兩個 expiresAt 政策為 ACTIVE。
 
 Provision 新測試涵蓋實際角色不存在回應、已知角色限定、八次／180 秒上限、etag 衝突與其他錯誤停止，以及 API 啟用失敗禁止 IAM 寫入。Owner audit 必須先於 API 啟用及 IAM；mock HTTP 測試確認 dry-run 不寫入、已存在 reader／roles 重用。所有測試不存取遠端或登入。
+
+REST 契約測試依官方定義拒絕 queue wrapper 及服務帳號 IAM 查詢的錯誤 body，驗證建立／更新 URL、updateMask、空 POST body、policy version 3、etag 與既有條件保留。
+
+IAM 證明測試涵蓋完整 policy／explanation 一對一匹配、父層與條件授權、未知權限／membership、矩陣遺漏或衝突、額外讀取／寫入角色及 deny／錯誤拒絕。不將 UNKNOWN_CONDITIONAL 當成實際可讀，也不因整體 NOT_GRANTED 忽略可能生效的資料庫條件授權。
 
 更新的 Playwright E2E 檔案保留作為測試規格，**本次不執行**；不以舊四篇版或外部瀏覽器結果代表本次通過。
 
@@ -51,7 +55,13 @@ Console 曾出現 iframe MutationObserver 訊息；在不含任何產品 JavaScr
 
 ## 發布前條件
 
-Staging 已經由實際 Owner Password session 完成 setup，獨立 snapshot bucket 的 UBLA／PAP 與 Cloud Tasks API 啟用已回讀確認。Provision 的 Owner 授權也已成功，reader 服務帳號與四個固定 custom roles 已建立；首次 bucket IAM 寫入回覆該專案角色尚不存在，bucket bindings 及 queue 尚未建立。已回讀確認角色名稱、專案層級、bucket project number 一致；判斷為新角色傳播延遲，信心度約 95%。另查得後續驗證所需 Policy Troubleshooter API 尚未啟用。
+Staging 已經由實際 Owner Password session 完成 setup，獨立 snapshot bucket 的 UBLA／PAP 與 Cloud Tasks API 啟用已回讀確認。Provision 的 Owner 授權也已成功，reader 服務帳號、四個固定 custom roles、bucket 的三個 snapshot bindings 與 Policy Troubleshooter API 均已完成；bucket 無公開 IAM。Queue 尚未建立，最新失敗為 POST 400。Bucket 寫入後的第一個 POST 是 queue create，失敗版本的 body 多包了 `queue` 一層，與官方 REST 要求直接 Queue 本體不符；判斷為本次失敗原因，信心度約 99%。最近 Audit 查詢尚無相應失敗事件，此判斷交叉依據為官方 schema、執行順序及遠端狀態。首次新角色傳播失敗已不再阻礙 bucket 寫入。
+
+已更正 queue create 的 REST body，並核對後續服務帳號 IAM 讀取：`options.requestedPolicyVersion=3` 使用 query、POST body 留空；後者同樣依官方 schema 修正，尚未在此次失敗操作執行到。Staging 排序鍵 dry-run 掃描零篇、候選零篇，不需要空回填 apply。
+
+共享 IAM 驗證器已在 staging 唯讀實測通過：Firestore v1 使用受支援的 project policy target，逐一檢查完整父層矩陣，get／list 都沒有任何潛在授權；不使用被 API 拒絕的 database target。Storage 使用 v3 bucket target、完整 allow 矩陣、etagged bucket IAM 與實際 get-only custom role，核實唯一可能授權是固定 snapshot prefix；不使用被拒絕的 object target，也不忽略 v1 的 deny explanation 錯誤。此時只證明 prefix 外無 allow grant；prefix 內有效讀取仍需部署後三個真正 reader API 回傳 200。沒有授予 TokenCreator 或新增驗證用權限。
+
+已在忽略追蹤的 staging 環境檔準備 `PUBLIC_SNAPSHOT_BUCKET`／`PUBLIC_FEED_SERVICE_ACCOUNT`，保留其餘治理設定；尚未部署。Owner 授權 apply 仍待完成 queue 及後續 IAM。
 
 Provision 已補上 IAM 寫入前的驗證 API 前置檢查，以及只對已知角色不存在錯誤的有限重試；維持 Owner audit、etag、私人 prefix 與立即停止其他錯誤。工具 apply 沿用既有 Owner Password-session，不能用 ADC 或 Owner UID 代替登入。短效 token 只在記憶體／child stdin，不貼聊天或存檔。
 

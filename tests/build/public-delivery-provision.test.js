@@ -207,7 +207,7 @@ describe('IAM verification API prerequisite', () => {
 });
 
 function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableError = false,
-  unauthorizedOwner = false, bucketPutStatus = 200 } = {}) {
+  unauthorizedOwner = false, bucketPutStatus = 200, queueExists = false, selfConditionalPolicy = false } = {}) {
   const bucketName = `${projectId}-public-snapshots`;
   const writer = `publisher@${projectId}.iam.gserviceaccount.com`;
   const projectUrl = `https://cloudresourcemanager.googleapis.com/v1/projects/${projectId}`;
@@ -215,8 +215,11 @@ function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableEr
   const bucketUrl = `https://storage.googleapis.com/storage/v1/b/${bucketName}`;
   const queueName = `projects/${projectId}/locations/asia-east1/queues/publishPublicSnapshots`;
   const queueUrl = `https://cloudtasks.googleapis.com/v2/${queueName}`;
+  const queuesUrl = `https://cloudtasks.googleapis.com/v2/projects/${projectId}/locations/asia-east1/queues`;
   const writerUrl = `https://iam.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(writer)}`;
   const readerUrl = `${iamUrl}/serviceAccounts/public-feed-reader@${projectId}.iam.gserviceaccount.com`;
+  const selfBinding = { role: 'roles/iam.serviceAccountTokenCreator', members: ['user:maintainer@example.test'],
+    condition: { title: 'Existing time condition', expression: "request.time < timestamp('2027-01-01T00:00:00Z')" } };
   const bucket = { projectNumber, metageneration: '1', iamConfiguration: {
     uniformBucketLevelAccess: { enabled: true }, publicAccessPrevention: 'enforced' }, lifecycle: { rule: [] } };
   const events = [];
@@ -232,6 +235,19 @@ function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableEr
     publicFeedSnapshotMetadataReader: ['storage.buckets.get'],
     publicFeedWorkerMetadataReader: ['cloudfunctions.functions.get']
   };
+  // REST create/patch transcode the Queue itself, unlike the client library's request wrapper.
+  const queueResponse = raw => {
+    const body = JSON.parse(raw || '{}');
+    const valid = !Object.hasOwn(body, 'queue') && body.name === queueName
+      && Object.keys(body).every(key => ['name', 'rateLimits', 'retryConfig'].includes(key))
+      && typeof body.rateLimits?.maxDispatchesPerSecond === 'number'
+      && Number.isInteger(body.rateLimits?.maxConcurrentDispatches)
+      && Number.isInteger(body.retryConfig?.maxAttempts)
+      && Number.isInteger(body.retryConfig?.maxDoublings)
+      && /^\d+(?:\.\d+)?s$/.test(body.retryConfig?.minBackoff)
+      && /^\d+(?:\.\d+)?s$/.test(body.retryConfig?.maxBackoff);
+    return valid ? response({ ...body, state: 'RUNNING' }) : response({ error: { message: 'Invalid Queue JSON body' } }, 400);
+  };
   const fetch = vi.fn(async (url, init) => {
     const method = init.method;
     requests.push({ url, method, ...(init.body ? { body: JSON.parse(init.body) } : {}) });
@@ -241,7 +257,8 @@ function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableEr
     if (url === `${projectUrl}:getIamPolicy` && method === 'POST') return response({ etag: 'project-etag', bindings: [] });
     if (url === readerUrl && method === 'GET') return response({ disabled: false });
     if (url === writerUrl && method === 'GET') return response({ disabled: false, projectId, email: writer });
-    if ((url === queueUrl || url.startsWith('https://cloudfunctions.googleapis.com/')) && method === 'GET') return response({}, 404);
+    if (url === queueUrl && method === 'GET') return queueExists ? response({ name: queueName, state: 'RUNNING' }) : response({}, 404);
+    if (url.startsWith('https://cloudfunctions.googleapis.com/') && method === 'GET') return response({}, 404);
     if (url === serviceUrl || url === serviceUrl.replace(projectNumber, projectId)) {
       if (enabled && url === serviceUrl) events.push('verification-api-ready');
       return response({ state: enabled ? 'ENABLED' : 'DISABLED' });
@@ -264,12 +281,24 @@ function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableEr
     }
     if (url === 'https://policytroubleshooter.googleapis.com/v1/iam:troubleshoot') {
       events.push('reader-denial-verification');
-      return response({ access: 'NOT_GRANTED' });
+      const tuple = JSON.parse(init.body).accessTuple;
+      if (tuple.fullResourceName !== `//cloudresourcemanager.googleapis.com/projects/${projectId}`) {
+        return response({ error: { status: 'INVALID_ARGUMENT' } }, 400);
+      }
+      return response({ access: 'NOT_GRANTED', explainedPolicies: [{ access: 'NOT_GRANTED',
+        fullResourceName: tuple.fullResourceName, policy: { etag: 'visible-empty-policy', bindings: [] }, bindingExplanations: [] }] });
+    }
+    if (url.startsWith(`${writerUrl}:getIamPolicy`)) {
+      if (method !== 'POST' || init.body !== undefined || url !== `${writerUrl}:getIamPolicy?options.requestedPolicyVersion=3`) {
+        return response({ error: { message: 'Service account policy options must be query parameters with an empty body' } }, 400);
+      }
+      return response({ etag: 'self-etag', version: 3, bindings: selfConditionalPolicy ? [selfBinding] : [] });
     }
     if (url.endsWith(':getIamPolicy')) return response({ etag: 'fixture-etag', bindings: [] });
     if (url.endsWith(':setIamPolicy')) return response({});
     if (url === `${bucketUrl}?ifMetagenerationMatch=1` && method === 'PATCH') return response({});
-    if (url === `https://cloudtasks.googleapis.com/v2/projects/${projectId}/locations/asia-east1/queues` && method === 'POST') return response({});
+    if (url === queuesUrl && method === 'POST') return queueResponse(init.body);
+    if (url === `${queueUrl}?updateMask=rateLimits,retryConfig` && method === 'PATCH') return queueResponse(init.body);
     throw new Error('Unexpected fixture request');
   });
   vi.stubGlobal('fetch', fetch);
@@ -297,7 +326,8 @@ function fakeInfrastructure({ apply = false, serviceState = 'DISABLED', enableEr
     return { deleteApp };
   });
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-  return { events, requests, fetch, db, deleteApp, log, bucketUrl, writer, bucketName, firstBucketWrite };
+  return { events, requests, fetch, db, deleteApp, log, bucketUrl, writer, writerUrl, bucketName,
+    firstBucketWrite, queueName, queueUrl, queuesUrl, selfBinding };
 }
 
 describe('provision CLI prerequisite and CAS integration', () => {
@@ -333,8 +363,8 @@ describe('provision CLI prerequisite and CAS integration', () => {
     expect(bucketWrite.body.bindings[0]).toMatchObject({ role, members: [`serviceAccount:public-feed-reader@${projectId}.iam.gserviceaccount.com`],
       condition: { expression: `resource.name.startsWith('projects/_/buckets/${fixture.bucketName}/objects/public-snapshots/')` } });
     const queueWrite = requests.find(request => request.url.endsWith('/queues') && request.method === 'POST');
-    expect(queueWrite.body.queue.rateLimits).toEqual({ maxDispatchesPerSecond: 0.5, maxConcurrentDispatches: 1 });
-    expect(queueWrite.body.queue.retryConfig.maxAttempts).toBe(3);
+    expect(queueWrite.body.rateLimits).toEqual({ maxDispatchesPerSecond: 0.5, maxConcurrentDispatches: 1 });
+    expect(queueWrite.body.retryConfig.maxAttempts).toBe(3);
     expect(requests.filter(request => request.url.endsWith('iam:troubleshoot')).map(request => request.body.accessTuple.permission))
       .toEqual(['datastore.entities.get', 'datastore.entities.list']);
     expect(requests.some(request => /billing|\.appspot\.com|\.firebasestorage\.app/.test(request.url))).toBe(false);
@@ -364,6 +394,41 @@ describe('provision CLI prerequisite and CAS integration', () => {
     const fixture = fakeInfrastructure({ apply: true, unauthorizedOwner: true });
     await expect(main([])).rejects.toThrow(/Owner authorization changed/);
     expect(fixture.requests.some(request => request.url.endsWith(':enable') || request.method === 'PUT' || request.url.endsWith(':setIamPolicy'))).toBe(false);
+  });
+
+  it.each([false, true])('sends a flat Queue REST body for queueExists=%s with the exact create/update URL and mask', async queueExists => {
+    const fixture = fakeInfrastructure({ apply: true, queueExists });
+    await main([]);
+    const queueWrites = fixture.requests.filter(request => request.url.startsWith(fixture.queuesUrl)
+      && ((request.method === 'POST' && request.url === fixture.queuesUrl) || request.method === 'PATCH'));
+    expect(queueWrites).toEqual([{
+      url: queueExists ? `${fixture.queueUrl}?updateMask=rateLimits,retryConfig` : fixture.queuesUrl,
+      method: queueExists ? 'PATCH' : 'POST',
+      body: { name: fixture.queueName,
+        rateLimits: { maxDispatchesPerSecond: 0.5, maxConcurrentDispatches: 1 },
+        retryConfig: { maxAttempts: 3, minBackoff: '1s', maxBackoff: '10s', maxDoublings: 3 } }
+    }]);
+    expect(queueWrites[0].body).not.toHaveProperty('queue');
+    const rejectedWrapper = await fixture.fetch(queueExists ? `${fixture.queueUrl}?updateMask=rateLimits,retryConfig` : fixture.queuesUrl,
+      { method: queueExists ? 'PATCH' : 'POST', body: JSON.stringify({ queue: queueWrites[0].body }) });
+    expect(rejectedWrapper.status).toBe(400);
+    expect(rejectedWrapper.ok).toBe(false);
+  });
+
+  it('reads service account policy version 3 through query with empty POST body and preserves its etag/conditions on write', async () => {
+    const fixture = fakeInfrastructure({ apply: true, selfConditionalPolicy: true });
+    await main([]);
+    const get = fixture.requests.find(request => request.url.startsWith(`${fixture.writerUrl}:getIamPolicy`));
+    expect(get).toEqual({ url: `${fixture.writerUrl}:getIamPolicy?options.requestedPolicyVersion=3`, method: 'POST' });
+    const set = fixture.requests.find(request => request.url === `${fixture.writerUrl}:setIamPolicy`);
+    expect(set).toEqual({ url: `${fixture.writerUrl}:setIamPolicy`, method: 'POST', body: { policy: {
+      etag: 'self-etag', version: 3, bindings: [fixture.selfBinding,
+        { role: 'roles/iam.serviceAccountUser', members: [`serviceAccount:${fixture.writer}`] }]
+    } } });
+    const rejectedBody = await fixture.fetch(`${fixture.writerUrl}:getIamPolicy`, {
+      method: 'POST', body: JSON.stringify({ options: { requestedPolicyVersion: 3 } })
+    });
+    expect(rejectedBody.status).toBe(400);
   });
 
   it('retries the actual role/hierarchy HTTP 400 with identical etag policy before creating the queue', async () => {

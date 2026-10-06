@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { assertTransactionOwner, DeliveryOperatorError, initializeOperator, ownerSession,
   parseOperatorOptions, PRODUCTION, STAGING, reportOperatorError, requireFunctions } from './public-delivery-operator.mjs';
 import { waitForServiceEnable } from './setup-public-snapshot-resources.mjs';
+import { verifyReaderFirestoreIsolation, PublicDeliveryIamVerificationError } from './public-delivery-iam-verification.mjs';
 
 const PREFIX = 'public-snapshots/';
 const REGION = 'asia-east1';
@@ -260,13 +261,13 @@ export async function main(args = process.argv.slice(2)) {
       addPrivateIamBinding(policy, roles[METADATA_ROLE_ID], writerMember);
       await putBucketIamWithPropagationRetry(timeoutMs => request(`${bucketUrl}/iam`, 'PUT', policy, false, Object.values(roles), timeoutMs));
       const desiredQueue = desiredSnapshotQueue(queueName);
-      if (!queue) await request(`https://cloudtasks.googleapis.com/v2/projects/${options.project}/locations/${REGION}/queues`, 'POST', { queue: desiredQueue });
+      if (!queue) await request(`https://cloudtasks.googleapis.com/v2/projects/${options.project}/locations/${REGION}/queues`, 'POST', desiredQueue);
       else await request(`${queueUrl}?updateMask=rateLimits,retryConfig`, 'PATCH', desiredQueue);
       const queuePolicy = await request(`${queueUrl}:getIamPolicy`, 'POST', { options: { requestedPolicyVersion: 3 } });
       if (hasPublicMember(queuePolicy)) throw new DeliveryOperatorError('Queue IAM changed to public during provisioning.');
       addPrivateIamBinding(queuePolicy, 'roles/cloudtasks.enqueuer', writerMember);
       await request(`${queueUrl}:setIamPolicy`, 'POST', { policy: queuePolicy });
-      const selfPolicy = await request(`${writerUrl}:getIamPolicy`, 'POST', { options: { requestedPolicyVersion: 3 } });
+      const selfPolicy = await request(`${writerUrl}:getIamPolicy?options.requestedPolicyVersion=3`, 'POST');
       addPrivateIamBinding(selfPolicy, 'roles/iam.serviceAccountUser', writerMember);
       await request(`${writerUrl}:setIamPolicy`, 'POST', { policy: selfPolicy });
       const metadataPolicy = await request(`${projectUrl}:getIamPolicy`, 'POST', { options: { requestedPolicyVersion: 3 } });
@@ -283,12 +284,12 @@ export async function main(args = process.argv.slice(2)) {
       await request(`${bucketUrl}?ifMetagenerationMatch=${currentBucket.metageneration}`, 'PATCH', {
         lifecycle: { rule: snapshotLifecycle(currentBucket.lifecycle?.rule || []) }
       });
-      // Includes inherited policy: a project-policy inventory alone does not prove isolation.
-      for (const permission of ['datastore.entities.get', 'datastore.entities.list']) {
-        const result = await request('https://policytroubleshooter.googleapis.com/v1/iam:troubleshoot', 'POST', {
-          accessTuple: { principal: saEmail, fullResourceName: `//firestore.googleapis.com/projects/${options.project}/databases/(default)`, permission }
-        });
-        if (result.access !== 'NOT_GRANTED') throw new DeliveryOperatorError('Reader Firestore denial could not be proven, including inherited policies; do not release the public reader.');
+      try {
+        await verifyReaderFirestoreIsolation({ project: options.project, reader: saEmail,
+          api: (url, init) => request(url, init.method, JSON.parse(init.body)) });
+      } catch (error) {
+        if (error instanceof PublicDeliveryIamVerificationError) throw new DeliveryOperatorError(error.message);
+        throw error;
       }
       await operator.db.collection('adminAuditLogs').add(auditData(actor,
         'public_delivery.infrastructure_provisioned', 'system', 'publicSnapshots', options.reason,

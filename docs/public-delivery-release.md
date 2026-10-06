@@ -12,6 +12,8 @@
 
 公開 reader 使用獨立服務帳號，只能讀私人 bucket 的 `public-snapshots/` prefix，不能讀 Firestore 或舊媒體。快取故障只回暫時不可用，不回查來源。
 
+發布前的 IAM 證明使用服務支援的 policy target。Firestore 在 project／父層核對完整 binding 與 permission／membership，拒絕所有潛在讀取授權，包含資料庫條件授權；不只採整體拒絕 enum。Storage 在 bucket 上核對完整 v3 allow 矩陣、etagged bucket policy 與實際 get-only 角色，僅允許唯一完全一致的固定 prefix 條件；未知資訊、額外授權及不完整矩陣一律停止。Prefix 內有效讀取另外要求三個真正 reader API 成功回傳 fresh 快照。不能把條件未知結果改稱可讀，也不能忽略失敗的驗證 API 或擴大驗證帳號權限。[Firestore 資料庫 IAM](https://firebase.google.com/docs/firestore/manage-databases#configure-per-database-access-permissions)、[Policy Troubleshooter v3](https://docs.cloud.google.com/policy-intelligence/docs/reference/policytroubleshooter/rest/v3/iam/troubleshoot)
+
 | 介面 | 行為 |
 |---|---|
 | `/api/feed/version` | 留言與回憶牆的 version、generatedAt、confirmedAt、validUntil；origin/CDN 各一秒快取 |
