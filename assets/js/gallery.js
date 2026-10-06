@@ -236,7 +236,7 @@ const Gallery = {
         while (this.ownItems.size > this.MAX_ITEMS) this.ownItems.delete(this.ownItems.keys().next().value);
         this.data = [item, ...this.data.filter(old => old.postId !== item.postId)].slice(0, this.MAX_ITEMS);
         this.render({ prepend: item.postId });
-        this.setStatus(this.t('submission_notice'));
+        this.setStatus('submission_notice');
         this.updateLabels();
         return true;
     },
@@ -284,14 +284,14 @@ const Gallery = {
             if (response.status === 409) {
                 this.refreshConflict = true;
                 if (!this.data.length) this.showError();
-                this.setStatus(this.t('updated_hint'));
+                this.setStatus('updated_hint');
                 return;
             }
             if (!response.ok) throw new Error('Public gallery unavailable');
             const batch = this.parseBatch(body);
             if (this.isNewerVersion(this.feedState?.version, batch.version)) {
                 if (!this.data.length) this.showError();
-                this.setStatus(this.t('updated_hint'));
+                this.setStatus('updated_hint');
                 return;
             }
             this.refreshConflict = false;
@@ -324,13 +324,13 @@ const Gallery = {
             this.data = items;
             this.loadFailed = false;
             this.render();
-            this.setStatus(unchanged ? this.t('unchanged_notice') : '');
+            this.setStatus(unchanged && !initial ? 'unchanged_notice' : '');
             if (manual) this.scrollToFirst(navigationEpoch);
         } catch (error) {
             if (version !== this.requestVersion) return;
             this.loadFailed = true;
             if (!this.data.length) this.showError();
-            else this.setStatus(this.t('load_error'));
+            else this.setStatus('load_error');
         } finally {
             if (version === this.requestVersion) {
                 this.isLoading = false;
@@ -347,7 +347,7 @@ const Gallery = {
     shuffleCached({ clearOwn = false } = {}) {
         if (Date.now() >= (this.validUntil || 0)) {
             this.pool.clear();
-            this.setStatus(this.t('unavailable'));
+            this.setStatus('unavailable');
             return false;
         }
         const current = new Set(this.data.map(item => item.postId));
@@ -355,14 +355,14 @@ const Gallery = {
         const latestIds = new Set(latest.map(item => item.postId));
         const others = [...this.pool.values()].filter(item => !latestIds.has(item.postId));
         const fresh = this.shuffled(others.filter(item => !current.has(item.postId)));
-        if (!fresh.length) { this.setStatus(this.t('unchanged_notice')); return false; }
+        if (!fresh.length) { this.setStatus('unchanged_notice'); return false; }
         const old = this.shuffled(others.filter(item => current.has(item.postId)));
         const candidates = [...latest, ...fresh, ...old].slice(0, this.MAX_ITEMS);
         const items = clearOwn ? candidates : this.withOwnItems(candidates);
-        if (this.sameItems(items)) { this.setStatus(this.t('unchanged_notice')); return false; }
+        if (this.sameItems(items)) { this.setStatus('unchanged_notice'); return false; }
         if (clearOwn) this.ownItems.clear();
         if (items.length) { this.data = items; this.render(); }
-        this.setStatus(this.t('cached_notice'));
+        this.setStatus('cached_notice');
         return items.length > 0;
     },
 
@@ -501,7 +501,11 @@ const Gallery = {
         });
     },
 
-    setStatus(message) { if (this.status) this.status.textContent = message; },
+    setStatus(key) {
+        // A feed response can arrive before the asynchronous locale has loaded.
+        this.statusKey = key;
+        if (this.status) this.status.textContent = key ? this.t(key) : '';
+    },
 
     showError() {
         this.container.setAttribute('aria-busy', 'false');
@@ -522,6 +526,7 @@ const Gallery = {
     onLanguageChange() {
         if (!this.container) return;
         this.updateLabels();
+        this.setStatus(this.statusKey || '');
         if (this.data.length) this.render();
         else if (this.loadFailed) this.showError();
         else if (!this.isLoading) this.render();

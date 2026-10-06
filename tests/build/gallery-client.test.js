@@ -16,8 +16,9 @@ const response = body => ({ ok: true, status: 200, text: async () => JSON.string
 
 function runtime(storage = new Map()) {
   const fetch = vi.fn();
+  const listeners = new Map();
   const window = {
-    addEventListener() {},
+    addEventListener(type, callback) { listeners.set(type, callback); },
     XPost: { parseUrl(value) {
       const match = typeof value === 'string' && value.match(/^https:\/\/x\.com\/(?:artist|i\/web)\/status\/([1-9]\d*)$/);
       return match ? { postId: match[1], postUrl: value } : null;
@@ -39,13 +40,50 @@ function runtime(storage = new Map()) {
   gallery.confirmedAt = Date.now() - 1000;
   gallery.validUntil = Date.now() + 240_000;
   gallery.latestPostIds = ['1', '2'];
-  return { gallery, fetch, storage };
+  return { gallery, fetch, storage, window, dispatch: type => listeners.get(type)?.() };
 }
 
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000); });
 afterEach(() => vi.useRealTimers());
 
 describe('gallery public response and refresh contract', () => {
+  it('retranslates a status received before locale loading without fetching or replacing retained cards', async () => {
+    const { gallery, fetch, window, dispatch } = runtime();
+    gallery.status = { textContent: '' };
+    gallery.scrollToFirst = vi.fn();
+    const before = gallery.data;
+    const retained = { article: {}, embed: {} };
+    gallery.cards.set('1', retained);
+    fetch.mockResolvedValue({ ok: false, status: 409, text: async () => '{}' });
+    await gallery.refresh({ initial: true });
+    expect(gallery.status.textContent).toBe('新しい投稿があります。更新すると表示できます。');
+    const requestVersion = gallery.requestVersion;
+    window.i18n = { currentLang: 'en', t: key => ({ 'gallery.updated_hint': 'New posts are available.' }[key] || key) };
+    dispatch('languageChanged');
+    expect(gallery.status.textContent).toBe('New posts are available.');
+    window.i18n = { currentLang: 'zh-TW', t: key => ({ 'gallery.updated_hint': '有新的投稿。' }[key] || key) };
+    dispatch('languageChanged');
+    expect(gallery.status.textContent).toBe('有新的投稿。');
+    expect(gallery.data).toBe(before);
+    expect(gallery.cards.get('1')).toBe(retained);
+    expect(gallery.requestVersion).toBe(requestVersion);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(gallery.scrollToFirst).not.toHaveBeenCalled();
+  });
+
+  it.each([{ values: [] }, { values: items(1, 2, 3, 4, 5, 6) }])('keeps an initial unchanged batch quiet and reports repetition only after manual refresh ($values.length posts)', async ({ values }) => {
+    const { gallery, fetch } = runtime();
+    gallery.status = { textContent: '' };
+    gallery.data = values.map(value => gallery.parseItem(value));
+    gallery.scrollToFirst = vi.fn();
+    fetch.mockResolvedValue(response(envelope(values)));
+    await gallery.refresh({ initial: true });
+    expect(gallery.data).toHaveLength(values.length);
+    expect(gallery.status.textContent).toBe('');
+    await gallery.refresh({ manual: true });
+    expect(gallery.status.textContent).toBe('現在表示できる投稿はこの組み合わせです。');
+  });
+
   it('accepts six posts with a server-confirmed lease for an older unchanged generation', () => {
     const { gallery } = runtime();
     const parsed = gallery.parseBatch(envelope(items(1, 2, 3, 4, 5, 6)));
