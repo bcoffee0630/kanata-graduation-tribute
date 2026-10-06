@@ -1,6 +1,6 @@
 # 六篇回憶牆與近即時留言驗證紀錄
 
-驗證日期：2026-10-07（Asia/Taipei）。本次結果取代先前四篇版紀錄。Staging 已完成實際 Owner setup／provision、backend／索引／TTL 與 Rules／preview 發布，reader IAM 證明及三個 fresh API 200 均通過；production 未變更。最新修正 commit `4610994` 的三個 reader 與 preview Hosting 均已部署，最新 Browser 響應式驗證如下。
+驗證日期：2026-10-07（Asia/Taipei）。本次結果取代先前四篇版紀錄。Staging 已完成實際 Owner setup／provision、backend／索引／TTL 與 Rules／preview 發布；production 已完成正式公開 release，maintenance 已解除，最終 backend verifier、live HTTP／Rules 與 Codex Browser 回讀均通過。下列分別記錄 fixture、staging、正式專案發布前 preview 與 final live 的證據。
 
 Staging 來源目前為零篇投稿。已有私人 queue 與新鮮快照的實際驗證，尚未驗證真實 X 嵌入、真實新事件的 3–8 秒更新目標、CDN 命中率或計費運算時間。空快照回應大小不能代表六篇內容的傳輸量。
 
@@ -55,9 +55,9 @@ IAM 證明測試涵蓋完整 policy／explanation 一對一匹配、父層與條
 - 暫停留言時自己的新留言不播放，恢復後優先出現；fixture 新共用留言約 1.1 秒後顯示。此數字只驗證前端，不代表 staging 3–8 秒目標已通過。
 - 繁中／日文／英文名稱、說明與刷新文案已驗證。模擬登入後分享彈窗可開啟、初始焦點正確，返回頂部隱藏；Escape 關閉並還原投稿按鈕焦點。
 
-Console 曾出現 iframe MutationObserver 訊息；在不含任何產品 JavaScript、只載入相同 fixture iframe 的診斷頁亦重現，與本次網站 observer 參數無關。此工具／fixture 訊息已記錄，沒有框架錯誤遮罩；正式 X console 仍待 staging 驗收。
+Console 曾出現 iframe MutationObserver 訊息；在不含任何產品 JavaScript、只載入相同 fixture iframe 的診斷頁亦重現，與本次網站 observer 參數無關。此工具／fixture 訊息已記錄，沒有框架錯誤遮罩；正式專案 preview 的真實 X console 結果另列於下。
 
-上述 fixture 測試降低手機跳回起點及換批競態風險，修正信心度約 98%；真實 X iframe、行動裝置網址列、staging 新事件延遲及 CDN 仍待驗證。這是響應式模擬，不宣稱真實 iPhone／WebKit 驗收；staging 的實際 IAM 結果另列於下。
+上述 fixture 測試降低手機跳回起點及換批競態風險，修正信心度約 98%；正式專案 preview 的真實 X iframe 已另行驗證。這是響應式模擬，不宣稱真實 iPhone／WebKit 或真機網址列驗收；真實新事件延遲及 CDN 命中率仍未量測。
 
 ## Staging 已完成與待驗收
 
@@ -79,7 +79,53 @@ Rules 與 preview Hosting 已發布：[staging preview](https://kanata-memorial-
 - UTC 22:00:32 回讀確認五分鐘輪替將 gallery version 從 `1791323702542` 改為 `1791324002594`，revision 維持 0。Browser 的更新提示仍隱藏且文字為空，scrollTop 保持 1620.5；留言內容版本不變而 lease 已續發。
 - 實際 HEAD 回讀 `/`、`/index.html`、gallery v8 與繁中 locale v7 均 200／no-cache；`/admin/` 為 200／no-store。公開 API 一秒快取維持。
 
-來源為零篇，因此真實 X、新事件 3–8 秒更新、CDN 命中率及計費運算時間保持未驗收。正式發布仍需乾淨提交、annotated release tag、live baseline、maintenance 及成功 final backup；本次未變更 production。操作順序見 [發布手冊](public-delivery-release.md)。
+Staging 來源為零篇，因此此環境的真實 X、新事件 3–8 秒更新、CDN 命中率及計費運算時間保持未驗收。Production 已按 release guards 發布，結果另列於下，不以 staging 空資料替代正式七篇來源驗證。操作順序見 [發布手冊](public-delivery-release.md)。
+
+## Production 正式發布與 preview 實測（2026-10-07）
+
+| 項目 | 確認結果 |
+|---|---|
+| Release HEAD／tag | `6779976d00ff30acd51920c7ddfc59688e97aa9c`／`governance-production-20261006T220114Z`；發布時 HEAD clean、annotated tag 相符 |
+| 前版 baseline | `.production-backups/baseline-20261006T220128Z.json`；前版 live version `8bf6bc1ff95aeb12`、tag `governance-production-20261004T194403Z` |
+| Final backup | `.production-backups/20261006T220711Z-final.json`，SUCCESSFUL，UTC 2026-10-06 22:08:03.759 完成 |
+| Owner 作業 | `prepare-production` 與 backfill 均 `completed: true`；backfill 後 dry-run scanned 7、candidates 0、finished true，排序鍵已無待補候選 |
+| 私人快照 | worker／watchdog 已產生 fresh 快照；gallery revision 1、messages revision 0；來源七篇 eligible X 投稿 |
+| 最終 backend verifier | UTC 2026-10-06 22:24:40 通過，`.production-backups/backend-verification-20261006T222440Z.json`；28 Functions ACTIVE、13 indexes READY、兩個 TTL ACTIVE，完整 infrastructure／reader IAM 證明通過，`repaired: []` |
+| 正式發布 | 最終 Rules＋admin governance 部署成功；public release session 67762 exit 0、public Hosting 成功，`maintenanceEnabled: false` |
+
+最新兩篇以獨立來源資料核對為 `2107039903133692023`／`2106727069640237561`。正式專案的發布前 preview HTTP 共 17 次 GET 全部通過，八組 gallery 各六篇、無重複且 latest2 均符合此基準。實測未壓縮 JSON 為 version 270 bytes、gallery 1361 bytes、messages 613 bytes；公開 API 一秒快取，未提供 Age，不能據此宣稱 CDN 命中率。
+
+正式專案發布前 preview 使用 Codex @Browser 載入真實 X，確認六個 widgets 成功：
+
+- 桌面 1440×1000 切換手機 393×720；閱讀第 2 張時只把高度改為 852，scrollY 保持 2050、grid height 保持 3456，沒有跳回畫廊開始。
+- 切換繁中前後 scrollY 保持 2220.5，六個 widget IDs 全部保留；不是重新掛載嵌入。
+- 未登入原生刷新由六張換為六張，保留最新兩篇及其他重疊 widgets，僅新增一篇；第一張 top 60.21、scrollY 1427，定位至 navbar 下方。
+- 繼續閱讀第 3–4 張、scrollY 2705，未跳回起點；返回桌面為三欄且無水平溢出。Console warn／error 均為零。
+
+以上 Browser 與 17 GET 是發布前 preview 證據；final live 結果另列於下，不能互相替代。真機 iPhone／WebKit、新投稿事件的端到端 3–8 秒延遲、CDN 命中率及 Functions 計費運算時間仍未量測；API 失敗與人工 iframe 高度增長沿用 fixture 證據，沒有在 production 製造故障。
+
+### Final live HTTP／Rules
+
+UTC 2026-10-06 22:27:09 完成一次正式唯讀檢查，22:29:06 補驗兩個合法文件 ID 的匿名 GET；最終 `passed: true`，信心度 99%。證據為 `.production-backups/final-live-20261006T222906Z.json`。初次 GET probe 使用 Firestore 保留的 `__.*__` ID 而回 400，這是檢查工具錯誤；只補做受影響的兩項，不把 400 當作 Rules 拒絕。沒有寫入雲端、重新抽樣來源或擴大權限。
+
+- [正式網站](https://eienkanata.com/) 與 `kanata-memorial.web.app` 的 `/`、`/index.html` 均 200／no-cache；自訂域名的 ownership、host 與 certificate 狀態已核實。
+- 兩個公開域名的三個 API 均 fresh 200。Gallery 六篇、latest2／ID／postId 去重與安全 projection 通過；messages 兩篇、revision 0，gallery revision 1。Version／gallery／messages 分別為 270／1361／613 bytes，未壓縮；API cache 為 `public, max-age=0, s-maxage=1, must-revalidate`，nosniff 有效。當次 lease 有效至 UTC 22:32:02.226，沒有 Age，不據此推算命中率。
+- `admin.eienkanata.com` 與 `eienkanata-admin.web.app` 的根頁及 `/auth/action/` 均 200／no-store。Maintenance 為 false；28 Functions ACTIVE，三個 reader 均使用指定私人 bucket／獨立帳號且 maxInstances 為 1。
+- `fanart`／`messages` 的匿名 get／list 共四項均為 403／`RULES_DENIAL`，不是 API key 或其他驗證錯誤。Firestore ruleset 為 `02ddf661-6540-4fd9-bf89-32f2a2c3e28c`；既有 `kanata-memorial.firebasestorage.app` Storage ruleset 為 `3b85faed-0562-47a1-b711-e4926845e8e5`。
+- Public live release 為 `1791325488769000`，version `224b84e215741df3`，UTC 22:24:48.769 發布；admin release 為 `1791325434257000`，version `faeee9014835b330`，UTC 22:23:54.257 發布。上述版本對應本次 release tag 的程式與 Hosting artifact；後續文件提交不改動部署內容。
+
+### Final live Browser
+
+公開主站 [kanata-memorial.web.app](https://kanata-memorial.web.app/) 已在 release 成功後使用 Codex @Browser 驗證：六個真實 X widgets 均成功，latest2 與上述獨立來源基準一致；實際載入 gallery v8／public-feed v7／i18n v7。
+
+- 桌面 1440×1000 為三欄、沒有水平溢出。英文／日文／繁中文字正確，六個 widget IDs 全部保留。桌面語系切換時說明換行造成約 40px 的捲動位置變化，沒有跳回畫廊起點；不將此案例記成完全零位移。
+- 手機 393×720 閱讀第 2–3 張，scrollY 2185.5、grid height 3456。寬度不變、只把高度改為 852 後，scrollY 與 grid height 完全相同，六個 iframe IDs 保留；原生繼續向下閱讀第 3–4 張，scrollY 2782。
+- 底部原生點擊匿名刷新，按鈕 98×47.59375px；scrollY 4699→1427，第一張 top 60.2109。六張換為六張，五個重疊 widget IDs 保留，替換的一張建立新 widget；無登入要求，status／hint 為空。
+- 最終 console warn／error 均為零。截圖位於 `/tmp/kanata-wall-production-live-desktop.jpg`、`/tmp/kanata-wall-production-live-mobile.jpg`、`/tmp/kanata-wall-production-live-mobile-reading.jpg`。
+
+另直接開啟正式自訂網址 `https://eienkanata.com/#gallery-section`，一般視窗 1280×720 確認繁中名稱／說明、六張卡片及六個真實 iframe、最新兩篇一致、無水平溢出及 console warn／error。已恢復一般 viewport；截圖 `/tmp/kanata-wall-production-live.jpg`，分頁保留供使用者檢視。
+
+此驗證為真實 X 的響應式 viewport 模擬，未宣稱真機、真實新投稿事件 3–8 秒、CDN 命中率或計費運算時間通過。
 
 ## Out-of-Scope
 

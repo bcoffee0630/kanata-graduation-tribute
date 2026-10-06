@@ -57,7 +57,23 @@ worker queue 的名稱、invoker 與 runtime identity 必須以實際部署回�
 
 Rules 與 [preview Hosting](https://kanata-memorial-admin--admin-governance-bxf8cd81.web.app/) 已發布。Functions 101 tests、build／前端 142 tests、TypeScript build 與 Gitleaks dir 通過；本次原始投稿來源為零篇。Commit `4610994` 的三個 reader 與 Hosting 更新成功，最新 Browser 驗證手機／桌面空清單刷新不捲動、三語文字、視窗高度變化與無水平溢出；實際五分鐘輪替 version 改變、revision 維持 0，沒有錯誤更新提示且位置不變。Console 無 warn／error。
 
-不能以零篇來源或本機 fixture 宣稱真實 X、新事件 3–8 秒延遲、CDN 命中率或計費運算時間已通過。實測回應大小與快取標頭見 [驗證紀錄](public-delivery-validation.md)，空資料不能代表六篇傳輸量。Production 未變更。
+不能以 staging 零篇來源或本機 fixture 宣稱此環境的真實 X、新事件 3–8 秒延遲、CDN 命中率或計費運算時間已通過。實測回應大小與快取標頭見 [驗證紀錄](public-delivery-validation.md)，空資料不能代表正式六篇傳輸量；production 的七篇來源驗證另列於下。
+
+## 本次 production 狀態（2026-10-07）
+
+正式 release 使用 clean HEAD `6779976d00ff30acd51920c7ddfc59688e97aa9c` 與 annotated tag `governance-production-20261006T220114Z`。Baseline 為 `.production-backups/baseline-20261006T220128Z.json`，前版 live version `8bf6bc1ff95aeb12`、前版 tag `governance-production-20261004T194403Z`。Final backup `.production-backups/20261006T220711Z-final.json` 為 SUCCESSFUL，UTC 2026-10-06 22:08:03.759 完成。實際 Owner prepare／backfill 均成功；post-backfill dry-run scanned 7、candidates 0、finished true，worker／watchdog fresh 快照為 gallery revision 1／messages revision 0。
+
+UTC 22:24:40 最終 verifier `.production-backups/backend-verification-20261006T222440Z.json` 通過 28 Functions ACTIVE、13 indexes READY、兩個 TTL ACTIVE 及完整 infrastructure／reader IAM 證明，`repaired: []`。最終 Rules／admin governance 已部署，public release session 67762 exit 0、Hosting 發布成功且 `maintenanceEnabled: false`，正式公開服務已離開 maintenance。
+
+發布前 production preview 已用七篇真實 X 來源驗證最多六張、獨立比對 latest2、六個 widget 載入、匿名成功刷新定位第一張及重疊 widget 保留；手機只改高度不跳、切換繁中不重掛載、桌面三欄無溢出，console warn／error 為零。17 次 GET 與八組六篇 schema／去重／latest2 檢查全部通過，公開 API 一秒快取維持。數值與證據見 [驗證紀錄](public-delivery-validation.md)。
+
+Final live [公開主站](https://kanata-memorial.web.app/) 已用 Codex @Browser 驗證六個真實 X widgets、獨立 latest2、三語、桌面三欄、手機 height-only 變更位置不跳，以及匿名刷新後五個重疊 widgets 保留、第一張定位正確；console warn／error 為零。桌面語系切換的說明換行造成約 40px 位置變化，未跳回起點，不宣稱所有語系切換零位移。實測數字與截圖記錄見 [驗證紀錄](public-delivery-validation.md)。
+
+正式 live HTTP／Rules 檢查於 UTC 22:27:09 及兩項修正 probe 的 22:29:06 通過，sanitized manifest 為 `.production-backups/final-live-20261006T222906Z.json`。Public version `224b84e215741df3`（22:24:48.769 發布）、admin version `faeee9014835b330`（22:23:54.257 發布）均已回讀。`eienkanata.com`／public web.app 的根頁 no-cache、三個 API fresh 200／一秒快取、admin 兩域 no-store、原始 fanart／messages 匿名 get／list 403 均通過，maintenance 為 false。
+
+正式 [回憶牆](https://eienkanata.com/#gallery-section) 已用 Codex @Browser 確認六個真實 X 嵌入、最新兩篇、匿名刷新、三語、手機閱讀位置與 height-only viewport 變化；一般視窗已恢復並保留分頁。原始 baseline、final backup、backend verifier 與 live manifest 合併參照於 `.production-backups/governance-production-20261006T220114Z-memory-wall-release.json`。
+
+真機、新投稿事件 3–8 秒更新、CDN 命中率及計費運算時間仍未量測；失敗／人工增高案例保留既有 fixture 證據，不在 production 造故障。所有 Owner／維護／備份／發布 guards 與 Out-of-Scope 維持，不新增費用 gate。
 
 ## 成本評估與回滾
 
