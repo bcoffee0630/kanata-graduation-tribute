@@ -33,6 +33,17 @@ CLI 使用既有 Node.js 22，`npm run test:build` 共 171／171 通過，produc
 
 版本：style／gallery／danmaku CSS v7；gallery JS v9；danmaku／scroll-top JS v7；i18n JS 與語系 JSON v8。
 
+## 正式發布結果
+
+- Code commit：`51d8c48`；annotated tag：`governance-production-20261007T072549Z`。
+- Public preview：[floating-controls-validation](https://kanata-memorial--floating-controls-validation-mxdfcv2t.web.app/)，只發布公開 Hosting，使用真實六篇 X 嵌入與兩則留言。桌面 1280×720、手機 390×844 的操作及排版驗收通過，console error／warning 為 0。
+- Live 發布時間：2026-10-07 07:30:19.603 UTC。Public 由 `224b84e215741df3` 更新為 `17cecc720dcec90f`；admin 仍為 `faeee9014835b330`，release identity 完全未變。
+- 發布前 clean annotated tag、current live baseline 與再次 no-drift 核對均通過。只執行 `firebase deploy --only hosting:public`，沒有後端、Rules、admin 或維護鎖寫入。
+- [正式網站](https://eienkanata.com/) 根頁與十個變更資產的 SHA-256 均與本次來源相同，全部 `Cache-Control: no-cache`；version／gallery／messages API 維持一秒 CDN 快取、新鮮期限與六篇／100 則上限，回讀實際為六篇及兩則。
+- 正式 Codex @Browser：六個真實 X 元件 ready，刷新後第一排距視窗上緣約 68px，hover 顯示繁中 tooltip；留言浮動按鈕確實暫停既有動畫。390×844 兩個操作各 44px、無水平溢出、暫停偏好保留，console error／warning 為 0。驗收後恢復正常播放及預設 Browser 視窗尺寸。
+
+完整前後版本、回滾基線、preview 與 HTTP 證據保存在忽略追蹤的 `.production-backups/floating-controls-release.json`。本段是發布後文件補記，code release tag 保持指向實際部署的提交。
+
 ## Out-of-Scope
 
 後端、公開 API、快照與成本機制、IAM／Rules、每日配額、投稿視窗與教學、X 內容裁切及歷史搜尋不變。本次不操作維護鎖、Owner Password session、Billing 通知或站台停用；不執行外部／headless／真機測試，不建立正式測試投稿或檢舉。
