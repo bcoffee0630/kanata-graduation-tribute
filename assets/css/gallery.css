@@ -114,25 +114,6 @@
 .gallery-contribute p { color: #666; margin-bottom: 20px; }
 .gallery-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; }
 .gallery-actions .submit-btn { min-height: 44px; }
-.gallery-refresh {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 44px;
-    padding: 14px 28px;
-    border: 1px solid rgba(40, 148, 255, 0.35);
-    border-radius: 25px;
-    color: var(--kanata-blue-dark, #1a7acc);
-    background: #fff;
-    font: inherit;
-    cursor: pointer;
-}
-.gallery-refresh:hover { background: #eaf5ff; }
-.gallery-refresh[aria-disabled="true"] { cursor: wait; opacity: 0.7; }
-.gallery-refresh svg { width: 20px; height: 20px; flex-shrink: 0; }
-.gallery-refresh:focus-visible { outline: 3px solid var(--kanata-blue-light, #5aafff); outline-offset: 3px; }
-.gallery-contribute .gallery-refresh-hint { color: var(--kanata-blue-dark, #1a7acc); margin: 16px 0 0; }
 .gallery-section .login-prompt { border: 1px solid rgba(40, 148, 255, 0.2); }
 .gallery-section .login-prompt p { margin-bottom: 0; }
 .x-embed-retry:focus-visible { outline: 3px solid var(--kanata-blue-light, #5aafff); outline-offset: 3px; }

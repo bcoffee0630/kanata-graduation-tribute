@@ -230,12 +230,11 @@ const Danmaku = {
 
     setupControls() {
         const controls = document.getElementById('danmaku-controls');
-        if (!controls) return;
-
-        const playPauseBtn = controls.querySelector('.danmaku-play-pause');
+        const playPauseBtn = document.getElementById('danmaku-play-pause');
         if (playPauseBtn) {
             playPauseBtn.addEventListener('click', () => this.togglePause());
         }
+        this.renderControlState();
 
         // Create report button (hidden by default)
         if (this.usePublicSnapshot && window.Report) {
@@ -332,12 +331,31 @@ const Danmaku = {
 
     togglePause() {
         this.isPaused = !this.isPaused;
-        const btn = document.querySelector('.danmaku-play-pause');
-        btn.textContent = this.isPaused ? '▶' : '⏸';
-        btn.setAttribute('data-i18n', this.isPaused ? 'danmaku.play' : 'danmaku.pause');
-        btn.setAttribute('aria-pressed', String(this.isPaused));
+        this.renderControlState();
         this.updateAnimationPause();
         this.tryPriority();
+    },
+
+    renderControlState() {
+        const button = document.getElementById('danmaku-play-pause');
+        if (!button) return;
+        const pauseIcon = button.querySelector('[data-danmaku-icon="pause"]');
+        const playIcon = button.querySelector('[data-danmaku-icon="play"]');
+        if (pauseIcon) pauseIcon.toggleAttribute('hidden', this.isPaused);
+        if (playIcon) playIcon.toggleAttribute('hidden', !this.isPaused);
+        const key = this.isPaused ? 'danmaku.play_label' : 'danmaku.pause_label';
+        const labels = {
+            'zh-TW': this.isPaused ? '繼續留言' : '暫停留言',
+            ja: this.isPaused ? 'メッセージを再開' : 'メッセージを一時停止',
+            en: this.isPaused ? 'Resume messages' : 'Pause messages'
+        };
+        const translated = window.i18n?.t?.(key);
+        const label = typeof translated === 'string' && translated !== key && translated.trim()
+            ? translated : labels[window.i18n?.currentLang] || labels.en;
+        button.setAttribute('aria-pressed', String(this.isPaused));
+        button.setAttribute('aria-label', label);
+        const tooltip = document.getElementById('danmaku-play-pause-tooltip');
+        if (tooltip) tooltip.textContent = label;
     },
 
     spawnMessage() {
@@ -423,6 +441,7 @@ const Danmaku = {
     // Update messages when language changes
     onLanguageChange() {
         this.renderStatus();
+        this.renderControlState();
         const reportButton = document.querySelector('.danmaku-report-btn');
         if (reportButton) reportButton.title = this.getReportLabel();
     },

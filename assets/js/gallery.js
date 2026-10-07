@@ -64,17 +64,16 @@ const Gallery = {
         const label = this.t(this.isLoading ? 'refreshing' : 'refresh');
         this.refreshButton?.setAttribute('aria-label', label);
         this.refreshButton?.setAttribute('aria-disabled', String(!!this.isLoading));
-        const copy = this.refreshButton?.querySelector('span');
+        const copy = this.refreshButton?.querySelector('#gallery-refresh-tooltip');
         if (copy) copy.textContent = label;
-        else if (this.refreshButton) this.refreshButton.textContent = label;
         this.updateRefreshHint();
     },
 
     updateRefreshHint() {
         this.hasNewPosts = this.refreshConflict || this.hasContentUpdate(this.feedState, this.poolRevision, this.poolVersion);
         if (this.refreshHint) {
-            this.refreshHint.hidden = !this.hasNewPosts;
-            this.refreshHint.textContent = this.hasNewPosts ? this.t('updated_hint') : '';
+            this.refreshHint.hidden = true;
+            this.refreshHint.textContent = '';
         }
     },
 
@@ -377,7 +376,8 @@ const Gallery = {
     },
 
     scrollToFirst(epoch) {
-        if (!this.data.length || epoch !== this.navigationEpoch || document.querySelector('.modal.active')) return;
+        if (!this.data.length || this.refreshButton?.hidden || epoch !== this.navigationEpoch ||
+            document.querySelector('.modal.active')) return;
         const section = (this.section || this.container).getBoundingClientRect();
         if (section.bottom <= 0 || section.top >= window.innerHeight) return;
         const bounds = this.container.getBoundingClientRect();
@@ -512,6 +512,7 @@ const Gallery = {
     },
 
     setStatus(key) {
+        if (key === 'submission_notice' || key === 'updated_hint') key = '';
         // A feed response can arrive before the asynchronous locale has loaded.
         this.statusKey = key;
         if (this.status) this.status.textContent = key ? this.t(key) : '';

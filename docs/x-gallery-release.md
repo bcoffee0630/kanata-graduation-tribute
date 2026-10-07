@@ -77,7 +77,7 @@ Emulator fixture 演練以 `--project demo-kanata-governance`、Auth/Firestore e
 
 ## 純公開畫面增量發布
 
-公開 Toast 樣式與畫廊展示大小只更新前端，不需要維護鎖、資料匯入或後端／Rules 發布。先完成 Hosting build 測試、完整 E2E、真實 X 元件的雙欄／三欄切換驗收與 production Hosting build；參考作品可僅放入預覽瀏覽器記憶體，不寫入 staging 資料。
+公開樣式與操作只更新前端，不需要維護鎖、資料匯入或後端／Rules 發布。先完成相關 VM／Hosting build 測試、真實 X 元件與桌面／手機排版驗收及 production Hosting build。使用者指定 Codex @Browser 時，所有瀏覽器互動都在該工具內完成，不執行外部或獨立 headless E2E；視窗尺寸模擬不得宣稱真機／WebKit 驗收。最新浮動操作證據見 [驗證紀錄](floating-controls-validation.md)。
 
 將變更提交並建立符合既有格式的 annotated release tag。以 `requireProductionReleaseTag` 驗證乾淨 HEAD 與 tag，再以 ADC 唯讀取得目前 public Hosting live release／version，保存至忽略追蹤的 `.production-backups/` manifest，連同前一版與新版 tag／commit。發布前再次確認 live version 未變。
 
@@ -87,7 +87,9 @@ firebase deploy --only hosting:public --config firebase.production.json \
   --project kanata-memorial --non-interactive
 ```
 
-不要使用 `deploy:production --phase release` 執行這種純 UI 更新：該 phase 會額外寫入維護鎖狀態。發布後檢查真實畫廊、展示偏好、通知及兩份樣式的 `Cache-Control: no-cache`，將新 live release／version 寫回同一 manifest。
+先以 `firebase hosting:channel:deploy <channel> --only public --config firebase.production.json --project kanata-memorial --expires 1d --non-interactive` 驗證同一公開 build；不要使用可能更新 Functions／Rules 的 `deploy:preview` 流程。
+
+不要使用 `deploy:production --phase release` 執行這種純 UI 更新：該 phase 會額外寫入維護鎖狀態。發布後檢查真實回憶牆、留言、浮動操作與通知，回讀所有變更資產的來源及 `Cache-Control: no-cache`，將新 live release／version 寫回同一 manifest。
 
 若驗收失敗，使用 manifest 中發布前的確切版本回滾同一 public site：`firebase hosting:clone kanata-memorial@<previous-version-id> kanata-memorial:live --project kanata-memorial --non-interactive`。不依較早 baseline 猜測目前 live version，也不更動 admin、資料或維護鎖。
 

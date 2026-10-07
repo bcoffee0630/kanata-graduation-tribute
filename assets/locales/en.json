@@ -42,7 +42,9 @@
   },
   "danmaku": {
     "pause": "⏸",
-    "play": "▶"
+    "play": "▶",
+    "pause_label": "Pause messages",
+    "play_label": "Resume messages"
   },
   "auth": {
     "login": "Log In",

@@ -827,7 +827,7 @@ footer {
 }
 
 /* ==================== */
-/* Back to Top Button   */
+/* Floating Controls    */
 /* ==================== */
 .floating-controls {
     position: fixed;
@@ -856,6 +856,7 @@ footer {
     transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 .floating-control[hidden] { display: none; }
+.floating-control [hidden] { display: none; }
 .floating-control[aria-disabled="true"] { opacity: 0.65; cursor: progress; }
 .floating-control svg { width: 22px; height: 22px; }
 .floating-control:focus-visible { outline: 3px solid var(--kanata-blue-light); outline-offset: 3px; }

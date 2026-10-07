@@ -24,7 +24,7 @@ class I18n {
 
     async loadLanguage(lang) {
         try {
-            const response = await fetch(`assets/locales/${lang}.json?v=7`);
+            const response = await fetch(`assets/locales/${lang}.json?v=8`);
             if (!response.ok) {
                 throw new Error(`Failed to load language: ${lang}`);
             }

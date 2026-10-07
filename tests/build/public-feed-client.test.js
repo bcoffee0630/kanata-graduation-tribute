@@ -37,6 +37,60 @@ function danmaku(fetch) {
   return { ...app, feed };
 }
 
+function danmakuFloatingControl() {
+  const nodes = [];
+  const documentListeners = new Map();
+  const windowListeners = new Map();
+  const buttonListeners = new Map();
+  const node = () => ({
+    style: { setProperty() {} }, dataset: {}, classList: { add() {}, remove() {} },
+    setAttribute() {}, addEventListener() {}, remove() {},
+    set textContent(value) { this.innerHTML = value; },
+    appendChild(element) { nodes.push(element); },
+  });
+  const icon = hidden => ({
+    attributes: new Set(hidden ? ['hidden'] : []),
+    toggleAttribute(name, value) { if (value) this.attributes.add(name); else this.attributes.delete(name); },
+    get hidden() { return this.attributes.has('hidden'); },
+  });
+  const pauseIcon = icon(false), playIcon = icon(true), tooltip = node();
+  const button = {
+    attributes: new Map(),
+    querySelector: selector => ({ '[data-danmaku-icon="pause"]': pauseIcon, '[data-danmaku-icon="play"]': playIcon })[selector] ?? null,
+    setAttribute(name, value) { this.attributes.set(name, value); },
+    addEventListener: (name, handler) => buttonListeners.set(name, handler),
+    set textContent(_) { throw new Error('Playback control must retain its SVGs and tooltip'); },
+  };
+  const controls = { querySelector: () => null, after() {} };
+  let trackContainer;
+  const container = {
+    appendChild: element => { trackContainer = element; },
+    querySelector: () => trackContainer, querySelectorAll: () => nodes,
+  };
+  const document = {
+    hidden: false, createElement: node, querySelector: () => null,
+    addEventListener: (name, handler) => documentListeners.set(name, handler), removeEventListener() {},
+    getElementById: id => ({ 'danmaku-container': container, 'danmaku-controls': controls,
+      'danmaku-play-pause': button, 'danmaku-play-pause-tooltip': tooltip })[id] ?? null,
+  };
+  const translations = Object.fromEntries(['en', 'ja', 'zh-TW'].map(lang =>
+    [lang, JSON.parse(readFileSync(`assets/locales/${lang}.json`, 'utf8'))]));
+  const window = {
+    addEventListener: (name, handler) => windowListeners.set(name, handler),
+    i18n: { currentLang: 'en', t(key) { return key.split('.').reduce((value, part) => value?.[part], translations[this.currentLang]) ?? key; } },
+  };
+  runInNewContext(readFileSync('assets/js/danmaku.js', 'utf8'), {
+    document, window, console, AbortController, Date, URLSearchParams,
+    setTimeout, clearTimeout, setInterval, clearInterval,
+  });
+  const feed = window.Danmaku;
+  feed.loadSnapshot = vi.fn();
+  return { feed, window, document, button, pauseIcon, playIcon, tooltip, nodes,
+    click: () => buttonListeners.get('click')(),
+    changeLanguage: lang => { window.i18n.currentLang = lang; windowListeners.get('languageChanged')(); },
+    changeVisibility: hidden => { document.hidden = hidden; documentListeners.get('visibilitychange')(); } };
+}
+
 describe('incremental bullet messages', () => {
   it('keeps active animations and unfinished playback while prioritizing new messages', () => {
     const { feed, nodes } = danmaku();
@@ -56,17 +110,78 @@ describe('incremental bullet messages', () => {
 
   it('holds new messages while paused and does not lose an accepted message to an older response', () => {
     const { feed, nodes } = danmaku();
-    feed.isPaused = true;
+    feed.togglePause();
     feed.applyMessages([item('old')]);
     feed.onSubmission(item('own'));
     feed.applyMessages([item('old')]);
     expect(nodes).toHaveLength(0);
     expect(feed.priorityQueue.map(message => message.id)).toEqual(['own']);
     expect(feed.data.messages.map(message => message.id)).toContain('own');
-    feed.isPaused = false;
-    feed.tryPriority();
+    feed.togglePause();
     expect(nodes[0].dataset.messageId).toBe('own');
     feed.stop();
+  });
+
+  it('binds the moved floating button and preserves its icons while toggling animations and queued messages', async () => {
+    const app = danmakuFloatingControl(); const { feed, button, pauseIcon, playIcon, tooltip, nodes } = app;
+    await feed.init();
+    feed.validUntil = Date.now() + 300_000;
+    feed.applyMessages([item('old')]); feed.nextRegularAt = 0; feed.spawnMessage();
+    const active = nodes[0];
+    expect(button.attributes.get('aria-pressed')).toBe('false');
+    expect(button.attributes.get('aria-label')).toBe('Pause messages');
+    expect(tooltip.innerHTML).toBe('Pause messages');
+    expect(pauseIcon.hidden).toBe(false); expect(playIcon.hidden).toBe(true);
+
+    app.click();
+    expect(feed.isPaused).toBe(true); expect(active.style.animationPlayState).toBe('paused');
+    expect(button.attributes.get('aria-pressed')).toBe('true');
+    expect(button.attributes.get('aria-label')).toBe('Resume messages');
+    expect(pauseIcon.hidden).toBe(true); expect(playIcon.hidden).toBe(false);
+    expect(button.attributes.has('data-i18n')).toBe(false);
+    feed.applyMessages([item('new'), item('old')]);
+    expect(nodes).toHaveLength(1); expect(feed.priorityQueue.map(message => message.id)).toEqual(['new']);
+
+    app.changeLanguage('zh-TW');
+    expect(button.attributes.get('aria-label')).toBe('繼續留言'); expect(tooltip.innerHTML).toBe('繼續留言');
+    app.changeLanguage('ja');
+    expect(button.attributes.get('aria-label')).toBe('メッセージを再開'); expect(tooltip.innerHTML).toBe('メッセージを再開');
+    expect(nodes[0]).toBe(active); expect(active.style.animationPlayState).toBe('paused');
+    expect(pauseIcon.hidden).toBe(true); expect(playIcon.hidden).toBe(false);
+
+    app.click();
+    expect(feed.isPaused).toBe(false); expect(active.style.animationPlayState).toBe('running');
+    expect(nodes[0]).toBe(active); expect(nodes[1].dataset.messageId).toBe('new');
+    expect(button.attributes.get('aria-label')).toBe('メッセージを一時停止');
+    expect(tooltip.innerHTML).toBe('メッセージを一時停止');
+    expect(pauseIcon.hidden).toBe(false); expect(playIcon.hidden).toBe(true);
+    app.changeLanguage('zh-TW'); expect(tooltip.innerHTML).toBe('暫停留言');
+    app.changeLanguage('en'); expect(tooltip.innerHTML).toBe('Pause messages');
+    feed.destroy();
+  });
+
+  it('retains the user pause preference independently of background visibility and leaving the section', async () => {
+    const app = danmakuFloatingControl(); const { feed, nodes, button } = app;
+    await feed.init(); feed.validUntil = Date.now() + 300_000;
+    feed.applyMessages([item('old')]); feed.nextRegularAt = 0; feed.spawnMessage();
+    const active = nodes[0]; app.click();
+    const pausedAt = feed.pausedAt;
+    app.changeVisibility(true); vi.advanceTimersByTime(2000); app.changeVisibility(false);
+    expect(feed.isPaused).toBe(true); expect(feed.pausedAt).toBe(pausedAt);
+    expect(active.style.animationPlayState).toBe('paused');
+    button.hidden = true; button.hidden = false;
+    expect(feed.isPaused).toBe(true); expect(button.attributes.get('aria-label')).toBe('Resume messages');
+
+    app.changeVisibility(true); app.click();
+    expect(feed.isPaused).toBe(false); expect(active.style.animationPlayState).toBe('paused');
+    expect(button.attributes.get('aria-pressed')).toBe('false');
+    expect(button.attributes.get('aria-label')).toBe('Pause messages');
+    feed.applyMessages([item('new'), item('old')]);
+    expect(nodes).toHaveLength(1); expect(feed.priorityQueue.map(message => message.id)).toEqual(['new']);
+    app.changeVisibility(false);
+    expect(active.style.animationPlayState).toBe('running'); expect(nodes[1].dataset.messageId).toBe('new');
+    expect(feed.pausedAt).toBe(0);
+    feed.destroy();
   });
 
   it('stops circulating expired content and waits for an available track', () => {

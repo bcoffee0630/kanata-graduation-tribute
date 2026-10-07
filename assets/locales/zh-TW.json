@@ -42,7 +42,9 @@
   },
   "danmaku": {
     "pause": "⏸",
-    "play": "▶"
+    "play": "▶",
+    "pause_label": "暫停留言",
+    "play_label": "繼續留言"
   },
   "auth": {
     "login": "登入",

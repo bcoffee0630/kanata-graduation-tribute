@@ -1,5 +1,7 @@
 # 六篇回憶牆與近即時留言驗證紀錄
 
+後續純 UI 調整已將刷新與暫停移到右下角，並移除兩條畫面提示；目前操作與發布證據見 [區段浮動操作驗證](floating-controls-validation.md)。以下保留六篇／近即時資料機制的原發布紀錄。
+
 驗證日期：2026-10-07（Asia/Taipei）。本次結果取代先前四篇版紀錄。Staging 已完成實際 Owner setup／provision、backend／索引／TTL 與 Rules／preview 發布；production 已完成正式公開 release，maintenance 已解除，最終 backend verifier、live HTTP／Rules 與 Codex Browser 回讀均通過。下列分別記錄 fixture、staging、正式專案發布前 preview 與 final live 的證據。
 
 Staging 來源目前為零篇投稿。已有私人 queue 與新鮮快照的實際驗證，尚未驗證真實 X 嵌入、真實新事件的 3–8 秒更新目標、CDN 命中率或計費運算時間。空快照回應大小不能代表六篇內容的傳輸量。
