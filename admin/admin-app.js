@@ -24,6 +24,10 @@ const AdminApp = {
     mediaObjectUrls: [],
     userDetailRequest: 0,
     contributionDefaultsRequest: 0,
+    drawerRequest: 0,
+    actionPending: false,
+    drawerReturnFocus: null,
+    modalReturnFocus: null,
 
     async init() {
         try {
@@ -99,6 +103,7 @@ const AdminApp = {
             if (event.target === this.refs.modal) this.closeModal(null);
         });
         document.addEventListener('keydown', (event) => {
+            if (event.key === 'Tab' && this.refs.modal.classList.contains('is-open')) this.trapModalFocus(event);
             if (event.key === 'Escape') {
                 if (this.refs.modal.classList.contains('is-open')) this.closeModal(null);
                 else if (this.refs.drawer.classList.contains('is-open')) this.closeDrawer();
@@ -191,21 +196,92 @@ const AdminApp = {
         return element;
     },
 
-    xPostLink(item) {
-        if (item.deleted || item.sourceType !== 'x') return null;
+    xPostInfo(postUrl, expectedPostId = null) {
         try {
-            const url = new URL(item.postUrl);
-            const match = url.pathname.match(/^\/(?:[A-Za-z0-9_]{1,15}|i\/web)\/status\/(\d+)$/);
+            const url = new URL(postUrl);
+            const match = url.pathname.match(/^\/([A-Za-z0-9_]{1,15}|i\/web)\/status\/(\d+)$/);
             if (url.protocol !== 'https:' || url.hostname !== 'x.com' || url.port ||
-                url.username || url.password || !match || match[1] !== item.postId) return null;
-            const link = this.el('a', 'secondary-command', this.t('content.xOriginalLink'));
-            link.href = `${url.origin}${url.pathname}`;
-            link.target = '_blank';
-            // Open the original without loading third-party scripts in the admin session.
-            link.rel = 'noopener noreferrer';
-            return link;
+                url.username || url.password || !match || (expectedPostId !== null && match[2] !== expectedPostId)) return null;
+            return {
+                url: `${url.origin}${url.pathname}`,
+                handle: match[1] === 'i/web' ? '' : match[1],
+                postId: match[2]
+            };
         } catch {
             return null;
+        }
+    },
+
+    xPostOf(item) {
+        if (!item || item.deleted || item.sourceType !== 'x') return null;
+        return this.xPostInfo(item.postUrl, item.postId);
+    },
+
+    xPostLabel(info) {
+        return info.handle ? `@${info.handle} · ${info.postId}` : info.postId;
+    },
+
+    xPostLink(item) {
+        const info = this.xPostOf(item);
+        if (!info) return null;
+        const link = this.el('a', 'secondary-command', this.t('content.xOriginalLink'));
+        link.href = info.url;
+        link.target = '_blank';
+        // Open the original without loading third-party scripts in the admin session.
+        link.rel = 'noopener noreferrer';
+        return link;
+    },
+
+    xPostIconLink(info) {
+        const label = this.t('content.xOriginalLink');
+        const link = this.el('a', 'table-command');
+        link.href = info.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = label;
+        link.setAttribute('aria-label', label);
+        const iconNode = this.el('i');
+        iconNode.dataset.lucide = 'external-link';
+        link.append(iconNode);
+        return link;
+    },
+
+    contentTypeLabel(type) {
+        if (type === 'message') return this.t('content.messages');
+        if (type === 'fanart') return this.t('content.fanart');
+        const key = `audit.targets.${String(type).replace(/[^A-Za-z0-9]/g, '_')}`;
+        const translated = this.t(key);
+        return translated === key ? type || '' : translated;
+    },
+
+    providerLabel(providerId) {
+        // Locale lookups split on dots, so identifiers are flattened into single key segments.
+        const key = `users.providerNames.${String(providerId).replace(/[^A-Za-z0-9]/g, '_')}`;
+        const translated = this.t(key);
+        return translated === key ? providerId : translated;
+    },
+
+    auditActionLabel(action) {
+        if (!action) return this.t('common.unknown');
+        const key = `audit.actions.${String(action).replace(/[^A-Za-z0-9]/g, '_')}`;
+        const translated = this.t(key);
+        return translated === key ? action : translated;
+    },
+
+    async runAction(task) {
+        // Drawer commands stay disabled until the backend answers, so one click is one request.
+        if (this.actionPending) return undefined;
+        this.actionPending = true;
+        const controls = [...this.refs.drawer.querySelectorAll('.drawer-actions button, .drawer-actions a')];
+        const previous = controls.map((control) => control.disabled);
+        controls.forEach((control) => { control.disabled = true; });
+        this.refs.drawer.setAttribute('aria-busy', 'true');
+        try {
+            return await task();
+        } finally {
+            this.actionPending = false;
+            controls.forEach((control, index) => { control.disabled = previous[index]; });
+            this.refs.drawer.removeAttribute('aria-busy');
         }
     },
 
@@ -561,7 +637,12 @@ const AdminApp = {
     reportTable(cases) {
         return this.table([
             { label: this.t('table.status'), width: '105px', render: (item) => this.statusLabel(item.status) },
-            { label: this.t('reports.target'), render: (item) => this.cell(item.targetPreview || this.t('common.none'), `${item.targetType || ''} · ${item.targetId || ''}`) },
+            { label: this.t('reports.target'), render: (item) => {
+                const post = item.targetType === 'fanart' && item.targetPostUrl ? this.xPostInfo(item.targetPostUrl) : null;
+                const primary = item.targetPreview || (post ? this.xPostLabel(post) : this.t('common.none'));
+                return this.cell(primary, [this.contentTypeLabel(item.targetType), item.targetPreview && post ? this.xPostLabel(post) : '', item.targetId || '']
+                    .filter(Boolean).join(' · '));
+            } },
             { label: this.t('reports.targetAuthor'), width: '160px', render: (item) => this.cell(item.targetAuthorUid || this.t('common.unknown')) },
             { label: this.t('reports.reportCount'), width: '90px', render: (item) => String(item.reportCount || 0) },
             { label: this.t('reports.latestReport'), width: '160px', render: (item) => this.formatDate(item.latestAt) },
@@ -619,7 +700,7 @@ const AdminApp = {
             icon.dataset.lucide = 'history';
             const copy = this.el('div');
             copy.append(
-                this.el('strong', '', item.action || this.t('common.unknown')),
+                this.el('strong', '', this.auditActionLabel(item.action)),
                 this.el('span', '', `${item.actorEmail || item.actorUid || ''} · ${this.formatDate(item.createdAt)}`)
             );
             row.append(icon, copy);
@@ -671,110 +752,125 @@ const AdminApp = {
     },
 
     async openReportCase(item) {
-        const collection = item.targetType === 'message' ? 'messages' : 'fanart';
-        const [targetSnapshot, reportsSnapshot] = await Promise.all([
-            this.db.collection(collection).doc(item.targetId).get(),
-            this.db.collection('reportCases').doc(item.id).collection('reports').orderBy('createdAt', 'desc').get()
-        ]);
-        const target = targetSnapshot.exists ? targetSnapshot.data() : null;
-        const reports = reportsSnapshot.docs.map((document) => document.data());
         this.openDrawer(this.t('reports.caseDetails'));
+        const current = this.drawerGuard();
         const content = this.refs.drawerContent;
-        content.append(this.drawerSection([
-            this.statusLabel(item.status),
-            this.el('p', 'muted-text', item.id)
-        ]));
-        content.append(this.drawerSection([
-            this.el('h3', '', this.t('reports.reportReason')),
-            this.el('p', '', `${this.reportReason(item.latestReason)} · ${item.reportCount || 0}`),
-            this.el('p', 'muted-text', this.formatDate(item.latestAt))
-        ]));
-
-        const targetNodes = [this.el('h3', '', this.t('reports.target'))];
-        if (target && item.targetType === 'fanart') {
-            if (target.sourceType === 'x') {
-                const link = this.xPostLink(target);
-                if (link) targetNodes.push(link);
-            } else {
-                const image = await this.adminMediaImage(
-                    item.targetId,
-                    target.caption || this.t('content.fanart')
-                );
-                if (image) targetNodes.push(image);
+        content.append(this.loadingState());
+        try {
+            const collection = item.targetType === 'message' ? 'messages' : 'fanart';
+            const [targetSnapshot, reportsSnapshot] = await Promise.all([
+                this.db.collection(collection).doc(item.targetId).get(),
+                this.db.collection('reportCases').doc(item.id).collection('reports').orderBy('createdAt', 'desc').get()
+            ]);
+            if (!current()) return;
+            const target = targetSnapshot.exists ? targetSnapshot.data() : null;
+            const reports = reportsSnapshot.docs.map((document) => document.data());
+            const targetNodes = [this.el('h3', '', this.t('reports.target'))];
+            if (target && item.targetType === 'fanart') {
+                if (target.sourceType === 'x') {
+                    const link = this.xPostLink(target);
+                    if (link) targetNodes.push(link);
+                } else {
+                    const image = await this.adminMediaImage(
+                        item.targetId,
+                        target.caption || this.t('content.fanart')
+                    );
+                    if (!current()) return;
+                    if (image) targetNodes.push(image);
+                }
             }
-        }
-        targetNodes.push(this.el('p', '', target
-            ? (item.targetType === 'message' ? target.content : target.caption) || this.t('common.none')
-            : this.t('common.none')));
-        content.append(this.drawerSection(targetNodes));
+            targetNodes.push(this.el('p', '', target
+                ? (item.targetType === 'message' ? target.content : target.caption) || this.t('common.none')
+                : this.t('common.none')));
 
-        const authorSection = this.drawerSection([
-            this.el('h3', '', this.t('reports.targetAuthor')),
-            this.el('p', '', item.targetAuthorUid || this.t('common.unknown'))
-        ]);
-        if (item.targetAuthorUid) {
-            authorSection.append(this.command(this.t('actions.viewUser'), 'user-round-search', () => this.openUser(item.targetAuthorUid), 'secondary-command'));
-        }
-        content.append(authorSection);
+            content.replaceChildren();
+            content.append(this.drawerSection([
+                this.statusLabel(item.status),
+                this.el('p', 'muted-text', `${this.contentTypeLabel(item.targetType)} · ${item.id}`)
+            ]));
+            content.append(this.drawerSection([
+                this.el('h3', '', this.t('reports.reportReason')),
+                this.el('p', '', `${this.reportReason(item.latestReason)} · ${item.reportCount || 0}`),
+                this.el('p', 'muted-text', this.formatDate(item.latestAt))
+            ]));
+            content.append(this.drawerSection(targetNodes));
 
-        const reportSection = this.drawerSection([this.el('h3', '', this.t('reports.reporters'))]);
-        reports.forEach((report) => {
-            const entry = this.el('div', 'drawer-section');
-            entry.append(
-                this.el('p', '', `${this.reportReason(report.reason)} · ${report.reporterUid || ''}`),
-                this.el('p', '', report.details || ''),
-                this.el('p', 'muted-text', this.formatDate(report.createdAt))
-            );
-            if (report.reporterUid) {
-                entry.append(this.command(
-                    this.t('actions.viewUser'),
-                    'user-round-search',
-                    () => this.openUser(report.reporterUid),
+            const authorSection = this.drawerSection([
+                this.el('h3', '', this.t('reports.targetAuthor')),
+                this.el('p', '', item.targetAuthorUid || this.t('common.unknown'))
+            ]);
+            if (item.targetAuthorUid) {
+                authorSection.append(this.command(this.t('actions.viewUser'), 'user-round-search', () => this.openUser(item.targetAuthorUid), 'secondary-command'));
+            }
+            content.append(authorSection);
+
+            const reportSection = this.drawerSection([this.el('h3', '', this.t('reports.reporters'))]);
+            reports.forEach((report) => {
+                const entry = this.el('div', 'drawer-section');
+                entry.append(
+                    this.el('p', '', `${this.reportReason(report.reason)} · ${report.reporterUid || ''}`),
+                    this.el('p', '', report.details || ''),
+                    this.el('p', 'muted-text', this.formatDate(report.createdAt))
+                );
+                if (report.reporterUid) {
+                    entry.append(this.command(
+                        this.t('actions.viewUser'),
+                        'user-round-search',
+                        () => this.openUser(report.reporterUid),
+                        'secondary-command'
+                    ));
+                }
+                reportSection.append(entry);
+            });
+            content.append(reportSection);
+
+            const actions = this.el('div', 'drawer-actions');
+            if (item.status === 'open') actions.append(this.command(this.t('reports.startReview'), 'scan-eye', () => this.updateCase(item.id, 'reviewing'), 'secondary-command'));
+            if (target && !target.deleted) {
+                const action = target.hidden ? 'restore' : 'hide';
+                actions.append(this.command(
+                    action === 'restore' ? this.t('content.restore') : this.t('content.hide'),
+                    action === 'restore' ? 'eye' : 'eye-off',
+                    () => this.moderate(item.targetType, item.targetId, action),
                     'secondary-command'
                 ));
             }
-            reportSection.append(entry);
-        });
-        content.append(reportSection);
-
-        const actions = this.el('div', 'drawer-actions');
-        if (item.status === 'open') actions.append(this.command(this.t('reports.startReview'), 'scan-eye', () => this.updateCase(item.id, 'reviewing'), 'secondary-command'));
-        if (target && !target.deleted) {
-            const action = target.hidden ? 'restore' : 'hide';
-            actions.append(this.command(
-                action === 'restore' ? this.t('content.restore') : this.t('content.hide'),
-                action === 'restore' ? 'eye' : 'eye-off',
-                () => this.moderate(item.targetType, item.targetId, action),
-                'secondary-command'
-            ));
+            if (item.status !== 'resolved' && item.status !== 'dismissed') {
+                actions.append(this.command(this.t('reports.resolve'), 'circle-check', () => this.updateCase(item.id, 'resolved'), 'primary-command'));
+                actions.append(this.command(this.t('reports.dismiss'), 'circle-x', () => this.updateCase(item.id, 'dismissed'), 'secondary-command'));
+            }
+            if (item.targetAuthorUid) {
+                actions.append(this.command(this.t('users.mute'), 'volume-x', () => this.restrictUser(item.targetAuthorUid, 'mute'), 'secondary-command'));
+                actions.append(this.command(this.t('users.ban'), 'user-x', () => this.restrictUser(item.targetAuthorUid, 'ban'), 'danger-command'));
+            }
+            content.append(actions);
+        } catch (error) {
+            if (!current()) return;
+            console.error('Failed to open report case:', error);
+            content.replaceChildren(this.errorState(() => this.openReportCase(item)));
+            this.toast(this.humanError(error, 'errors.load'), true);
         }
-        if (item.status !== 'resolved' && item.status !== 'dismissed') {
-            actions.append(this.command(this.t('reports.resolve'), 'circle-check', () => this.updateCase(item.id, 'resolved'), 'primary-command'));
-            actions.append(this.command(this.t('reports.dismiss'), 'circle-x', () => this.updateCase(item.id, 'dismissed'), 'secondary-command'));
-        }
-        if (item.targetAuthorUid) {
-            actions.append(this.command(this.t('users.mute'), 'volume-x', () => this.restrictUser(item.targetAuthorUid, 'mute'), 'secondary-command'));
-            actions.append(this.command(this.t('users.ban'), 'user-x', () => this.restrictUser(item.targetAuthorUid, 'ban'), 'danger-command'));
-        }
-        content.append(actions);
         this.refreshIcons(this.refs.drawer);
     },
 
     async updateCase(caseId, status) {
+        if (this.actionPending) return;
         const result = await this.openModal({
             title: status === 'dismissed' ? this.t('reports.dismiss') : status === 'reviewing' ? this.t('reports.startReview') : this.t('reports.resolve'),
             submitLabel: this.t('common.confirm'),
             fields: [{ name: 'note', label: this.t('reports.resolutionNote'), type: 'textarea', required: false }]
         });
         if (!result) return;
-        try {
-            await this.call('resolveReportCase', { caseId, status, note: result.note || '' });
-            this.toast(this.t('common.saved'));
-            this.closeDrawer();
-            await this.renderView();
-        } catch (error) {
-            this.toast(this.humanError(error), true);
-        }
+        await this.runAction(async () => {
+            try {
+                await this.call('resolveReportCase', { caseId, status, note: result.note || '' });
+                this.toast(this.t('common.saved'));
+                this.closeDrawer();
+                await this.renderView();
+            } catch (error) {
+                this.toast(this.humanError(error), true);
+            }
+        });
     },
 
     async renderContent() {
@@ -827,6 +923,10 @@ const AdminApp = {
             this.command(this.t('common.refresh'), 'refresh-cw', () => this.renderView(), 'secondary-command')
         );
         fragment.append(toolbar);
+        if (this.state.contentVisibility !== 'all') {
+            // Visibility is filtered after the newest-50 query; say so instead of implying none exist.
+            fragment.append(this.el('p', 'toolbar-hint', this.t('content.filterScopeHint')));
+        }
 
         const collection = this.state.contentType === 'message' ? 'messages' : 'fanart';
         const authorField = this.state.contentType === 'message' ? 'authorId' : 'artistId';
@@ -849,13 +949,20 @@ const AdminApp = {
         const type = this.state.contentType;
         const table = this.table([
             { label: this.t('table.status'), width: '120px', render: (item) => this.statusLabel(item.deleted ? 'removed' : item.hidden ? item.moderation?.status || 'admin_hidden' : 'visible') },
-            { label: this.t('content.content'), render: (item) => this.cell(type === 'message' ? item.content : item.caption, item.id) },
+            { label: this.t('content.content'), render: (item) => {
+                if (type === 'message') return this.cell(item.content, item.id);
+                const post = this.xPostOf(item);
+                const postLabel = post ? this.xPostLabel(post) : '';
+                return this.cell(item.caption || postLabel, [item.caption ? postLabel : '', item.id].filter(Boolean).join(' · '));
+            } },
             { label: this.t('content.author'), width: '170px', render: (item) => this.cell(type === 'message' ? item.author : item.artist, item[authorField]) },
             { label: this.t('content.reportCount'), width: '90px', render: (item) => String(item.reportCount || 0) },
             { label: this.t('content.createdAt'), width: '165px', render: (item) => this.formatDate(item.createdAt) },
             {
-                label: this.t('table.actions'), width: '76px', render: (item) => {
+                label: this.t('table.actions'), width: type === 'fanart' ? '105px' : '76px', render: (item) => {
                     const actions = this.el('div', 'row-actions');
+                    const post = type === 'fanart' ? this.xPostOf(item) : null;
+                    if (post) actions.append(this.xPostIconLink(post));
                     actions.append(this.iconButton('eye', this.t('actions.view'), () => this.openContent(type, item)));
                     return actions;
                 }
@@ -867,29 +974,42 @@ const AdminApp = {
 
     async openContent(type, item) {
         this.openDrawer(this.t('content.details'));
+        const current = this.drawerGuard();
+        const content = this.refs.drawerContent;
+        content.append(this.loadingState());
+        let image = null;
+        if (type === 'fanart' && item.sourceType !== 'x') {
+            try {
+                image = await this.adminMediaImage(item.id, item.caption || this.t('content.fanart'));
+            } catch (error) {
+                // Legacy media is optional context; the record and its actions remain usable.
+                console.error('Failed to load legacy fanart media:', error);
+            }
+            if (!current()) return;
+        }
+        content.replaceChildren();
         const status = item.deleted ? 'removed' : item.hidden ? item.moderation?.status || 'admin_hidden' : 'visible';
-        this.refs.drawerContent.append(this.drawerSection([
+        content.append(this.drawerSection([
             this.statusLabel(status),
-            this.el('p', 'muted-text', item.id)
+            this.el('p', 'muted-text', `${this.contentTypeLabel(type)} · ${item.id}`)
         ]));
         if (type === 'fanart') {
-            if (item.sourceType === 'x') {
-                const link = this.xPostLink(item);
-                if (link) this.refs.drawerContent.append(this.drawerSection([link]));
-            } else {
-                const image = await this.adminMediaImage(
-                    item.id,
-                    item.caption || this.t('content.fanart')
-                );
-                if (image) this.refs.drawerContent.append(this.drawerSection([image]));
+            const post = this.xPostOf(item);
+            if (post) {
+                content.append(this.drawerSection([
+                    this.el('p', 'muted-text', this.xPostLabel(post)),
+                    this.xPostLink(item)
+                ]));
+            } else if (image) {
+                content.append(this.drawerSection([image]));
             }
         }
-        this.refs.drawerContent.append(this.drawerSection([
+        content.append(this.drawerSection([
             this.el('h3', '', this.t('content.content')),
             this.el('p', '', (type === 'message' ? item.content : item.caption) || this.t('common.none'))
         ]));
         const uid = type === 'message' ? item.authorId : item.artistId;
-        this.refs.drawerContent.append(this.drawerSection([
+        content.append(this.drawerSection([
             this.el('h3', '', this.t('content.author')),
             this.el('p', '', `${type === 'message' ? item.author : item.artist || ''}`),
             this.el('p', 'muted-text', uid || this.t('common.unknown')),
@@ -909,11 +1029,12 @@ const AdminApp = {
                 actions.append(this.command(this.t('content.remove'), 'trash-2', () => this.moderate(type, item.id, 'remove'), 'danger-command'));
             }
         }
-        this.refs.drawerContent.append(actions);
+        content.append(actions);
         this.refreshIcons(this.refs.drawer);
     },
 
     async moderate(type, contentId, action) {
+        if (this.actionPending) return;
         const result = await this.openModal({
             title: this.t(`content.${action}`),
             description: action === 'remove' ? this.t('content.removeWarning') : '',
@@ -922,14 +1043,16 @@ const AdminApp = {
             fields: [{ name: 'reason', label: this.t('content.reason'), type: 'textarea', required: true, minLength: 3 }]
         });
         if (!result) return;
-        try {
-            await this.call('moderateContent', { contentType: type, contentId, action, reason: result.reason });
-            this.toast(this.t('common.saved'));
-            this.closeDrawer();
-            await this.renderView();
-        } catch (error) {
-            this.toast(this.humanError(error), true);
-        }
+        await this.runAction(async () => {
+            try {
+                await this.call('moderateContent', { contentType: type, contentId, action, reason: result.reason });
+                this.toast(this.t('common.saved'));
+                this.closeDrawer();
+                await this.renderView();
+            } catch (error) {
+                this.toast(this.humanError(error), true);
+            }
+        });
     },
 
     async renderUsers(append = false) {
@@ -963,7 +1086,7 @@ const AdminApp = {
         const rows = this.state.userResults;
         const table = this.table([
             { label: this.t('users.user'), render: (user) => this.cell(user.displayName || user.email || user.uid, user.email || user.uid) },
-            { label: this.t('users.providers'), width: '170px', render: (user) => (user.providers || []).map((provider) => provider.providerId).join(', ') || this.t('common.none') },
+            { label: this.t('users.providers'), width: '170px', render: (user) => (user.providers || []).map((provider) => this.providerLabel(provider.providerId)).join(', ') || this.t('common.none') },
             { label: this.t('users.lastSignIn'), width: '170px', render: (user) => this.formatDate(user.lastSignInAt) },
             {
                 label: this.t('users.restriction'), width: '120px', render: (user) => this.statusLabel(
@@ -984,10 +1107,18 @@ const AdminApp = {
         this.state.userPageToken = data.pageToken;
         if (data.pageToken && !this.state.userQuery) {
             const footer = this.el('div', 'section-heading');
-            footer.append(this.el('span'), this.command(this.t('common.loadMore'), 'chevron-down', () => {
-                this.toast(this.t('common.loading'));
-                this.renderUsers(true);
-            }, 'secondary-command'));
+            const loadMore = this.command(this.t('common.loadMore'), 'chevron-down', async () => {
+                loadMore.disabled = true;
+                try {
+                    await this.renderUsers(true);
+                    this.refreshIcons(this.refs.main);
+                } catch (error) {
+                    console.error('Failed to load more users:', error);
+                    loadMore.disabled = false;
+                    this.toast(this.humanError(error, 'errors.load'), true);
+                }
+            }, 'secondary-command');
+            footer.append(this.el('span'), loadMore);
             fragment.append(footer);
         }
         this.refs.main.replaceChildren(fragment);
@@ -999,6 +1130,9 @@ const AdminApp = {
         const requestId = ++this.userDetailRequest;
         const current = () => requestId === this.userDetailRequest && actorUid === this.state.user?.uid &&
             actorRole === this.state.role && this.state.role;
+        this.openDrawer(this.t('users.details'), requestId);
+        this.state.detailUserUid = uid;
+        this.refs.drawerContent.append(this.loadingState());
         try {
             const data = await this.call('getUser', { uid });
             if (!current()) return;
@@ -1007,8 +1141,7 @@ const AdminApp = {
             const displayState = restrictionState === 'banned'
                 ? 'banned'
                 : user.disabled ? 'disabled' : restrictionState;
-            this.openDrawer(this.t('users.details'), requestId);
-            this.state.detailUserUid = uid;
+            this.refs.drawerContent.replaceChildren();
             this.refs.drawerContent.append(this.drawerSection([
                 this.statusLabel(displayState),
                 this.el('p', '', user.displayName || user.email || uid),
@@ -1017,13 +1150,22 @@ const AdminApp = {
             ]));
             this.refs.drawerContent.append(this.drawerSection([
                 this.el('h3', '', this.t('users.providers')),
-                this.el('p', '', (user.providers || []).map((provider) => `${provider.providerId}: ${provider.uid}`).join('\n') || this.t('common.none')),
+                this.el('p', '', (user.providers || []).map((provider) => `${this.providerLabel(provider.providerId)}: ${provider.uid}`).join('\n') || this.t('common.none')),
                 this.el('p', 'muted-text', `${this.t('users.lastSignIn')}: ${this.formatDate(user.lastSignInAt)}`)
             ]));
             this.refs.drawerContent.append(this.userContributionSection(uid, data.contributionLimits, user));
             const recent = this.drawerSection([this.el('h3', '', this.t('users.recentContent'))]);
             [...(data.messages || []), ...(data.fanart || [])].slice(0, 12).forEach((item) => {
-                recent.append(this.el('p', '', item.content || item.caption || this.t('common.none')));
+                const post = item.content === undefined ? this.xPostOf(item) : null;
+                const entry = this.el('p', '', item.content || item.caption || (post ? this.xPostLabel(post) : this.t('common.none')));
+                if (post) {
+                    const link = this.el('a', 'inline-link', this.t('content.xOriginalLink'));
+                    link.href = post.url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    entry.append(' · ', link);
+                }
+                recent.append(entry);
             });
             this.refs.drawerContent.append(recent);
             const actions = this.el('div', 'drawer-actions');
@@ -1056,11 +1198,15 @@ const AdminApp = {
             this.refs.drawerContent.append(actions);
             this.refreshIcons(this.refs.drawer);
         } catch (error) {
-            if (current()) this.toast(this.humanError(error, 'errors.load'), true);
+            if (!current()) return;
+            this.refs.drawerContent.replaceChildren(this.errorState(() => this.openUser(uid)));
+            this.refreshIcons(this.refs.drawer);
+            this.toast(this.humanError(error, 'errors.load'), true);
         }
     },
 
     async restrictUser(uid, action) {
+        if (this.actionPending) return;
         let fields = [];
         if (action === 'mute') {
             const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -1083,20 +1229,22 @@ const AdminApp = {
             fields
         });
         if (!result) return;
-        try {
-            await this.call('setUserRestriction', {
-                uid,
-                action,
-                reason: result.reason || '',
-                expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : null,
-                hideExisting: result.hideExisting === true
-            });
-            this.toast(this.t('users.restrictionSaved'));
-            this.closeDrawer();
-            await this.renderView();
-        } catch (error) {
-            this.toast(this.humanError(error), true);
-        }
+        await this.runAction(async () => {
+            try {
+                await this.call('setUserRestriction', {
+                    uid,
+                    action,
+                    reason: result.reason || '',
+                    expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : null,
+                    hideExisting: result.hideExisting === true
+                });
+                this.toast(this.t('users.restrictionSaved'));
+                this.closeDrawer();
+                await this.renderView();
+            } catch (error) {
+                this.toast(this.humanError(error), true);
+            }
+        });
     },
 
     contributionField(labelText, input) {
@@ -1362,6 +1510,7 @@ const AdminApp = {
     },
 
     async inviteAdmin() {
+        if (this.actionPending) return;
         const result = await this.openModal({
             title: this.t('admins.invite'),
             submitLabel: this.t('admins.invite'),
@@ -1374,15 +1523,17 @@ const AdminApp = {
             ]
         });
         if (!result) return;
-        try {
-            await this.call('inviteAdmin', result);
-            this.syncAuthLanguage();
-            await this.auth.sendPasswordResetEmail(result.email, this.passwordResetSettings());
-            this.toast(this.t('admins.inviteSent'));
-            await this.renderView();
-        } catch (error) {
-            this.toast(this.humanError(error), true);
-        }
+        await this.runAction(async () => {
+            try {
+                await this.call('inviteAdmin', result);
+                this.syncAuthLanguage();
+                await this.auth.sendPasswordResetEmail(result.email, this.passwordResetSettings());
+                this.toast(this.t('admins.inviteSent'));
+                await this.renderView();
+            } catch (error) {
+                this.toast(this.humanError(error), true);
+            }
+        });
     },
 
     openAdmin(admin) {
@@ -1412,7 +1563,7 @@ const AdminApp = {
             admin.disabled ? 'secondary-command' : 'danger-command'
         ));
         actions.append(this.command(this.t('admins.revoke'), 'log-out', () => this.updateAdmin(admin, { revokeSessions: true }), 'secondary-command'));
-        actions.append(this.command(this.t('admins.reset'), 'mail', async () => {
+        actions.append(this.command(this.t('admins.reset'), 'mail', () => this.runAction(async () => {
             try {
                 this.syncAuthLanguage();
                 await this.auth.sendPasswordResetEmail(admin.email, this.passwordResetSettings());
@@ -1420,32 +1571,49 @@ const AdminApp = {
             } catch (error) {
                 this.toast(this.humanError(error), true);
             }
-        }, 'secondary-command'));
+        }), 'secondary-command'));
         this.refs.drawerContent.append(actions);
         this.refreshIcons(this.refs.drawer);
     },
 
+    adminChangeCopy(admin, changes) {
+        const name = admin.displayName && admin.email && admin.displayName !== admin.email
+            ? `${admin.displayName} (${admin.email})` : admin.displayName || admin.email || admin.id;
+        if (changes.role) {
+            const role = this.t(changes.role === 'owner' ? 'admins.owner' : 'admins.moderator');
+            return { title: this.t('admins.confirmRoleTitle', { role }), description: this.t('admins.confirmRole', { name, role }) };
+        }
+        if (changes.disabled === true) return { title: this.t('admins.disable'), description: this.t('admins.confirmDisable', { name }) };
+        if (changes.disabled === false) return { title: this.t('admins.enable'), description: this.t('admins.confirmEnable', { name }) };
+        const self = admin.id === this.state.user?.uid;
+        return { title: this.t('admins.revoke'), description: this.t(self ? 'admins.confirmRevokeSelf' : 'admins.confirmRevoke', { name }) };
+    },
+
     async updateAdmin(admin, changes) {
+        if (this.actionPending) return;
+        const copy = this.adminChangeCopy(admin, changes);
         const result = await this.openModal({
-            title: this.t('admins.title'),
-            description: `${admin.displayName || admin.email} · ${admin.email || ''}`,
+            title: copy.title,
+            description: copy.description,
             submitLabel: this.t('common.confirm'),
             danger: changes.disabled === true,
             fields: []
         });
         if (!result) return;
-        try {
-            await this.call('updateAdminAccount', { uid: admin.id, ...changes });
-            this.toast(this.t('admins.updated'));
-            if (admin.id === this.state.user?.uid && changes.revokeSessions === true) {
-                await this.auth.signOut();
-                return;
+        await this.runAction(async () => {
+            try {
+                await this.call('updateAdminAccount', { uid: admin.id, ...changes });
+                this.toast(this.t('admins.updated'));
+                if (admin.id === this.state.user?.uid && changes.revokeSessions === true) {
+                    await this.auth.signOut();
+                    return;
+                }
+                this.closeDrawer();
+                await this.renderView();
+            } catch (error) {
+                this.toast(this.humanError(error), true);
             }
-            this.closeDrawer();
-            await this.renderView();
-        } catch (error) {
-            this.toast(this.humanError(error), true);
-        }
+        });
     },
 
     async renderAudit() {
@@ -1454,9 +1622,9 @@ const AdminApp = {
         const fragment = document.createDocumentFragment();
         fragment.append(this.heading('audit.title', 'audit.subtitle'));
         const table = this.table([
-            { label: this.t('audit.action'), width: '170px', render: (item) => this.cell(item.action, item.id) },
+            { label: this.t('audit.action'), width: '170px', render: (item) => this.cell(this.auditActionLabel(item.action), item.action || item.id) },
             { label: this.t('audit.actor'), width: '200px', render: (item) => this.cell(item.actorEmail || item.actorUid, item.actorRole) },
-            { label: this.t('audit.target'), render: (item) => this.cell(`${item.targetType || ''}: ${item.targetId || ''}`) },
+            { label: this.t('audit.target'), render: (item) => this.cell(item.targetId || this.t('common.none'), this.contentTypeLabel(item.targetType)) },
             { label: this.t('audit.reason'), render: (item) => item.reason || this.t('common.none') },
             { label: this.t('audit.createdAt'), width: '170px', render: (item) => this.formatDate(item.createdAt) }
         ], items);
@@ -1470,28 +1638,47 @@ const AdminApp = {
         return section;
     },
 
+    drawerGuard() {
+        const request = this.drawerRequest;
+        return () => request === this.drawerRequest && this.refs.drawer.classList.contains('is-open');
+    },
+
     openDrawer(title, userRequestId = null) {
         if (userRequestId !== this.userDetailRequest) this.userDetailRequest++;
+        this.drawerRequest++;
         this.state.detailUserUid = null;
         this.releaseMediaObjectUrls();
+        const wasOpen = this.refs.drawer.classList.contains('is-open');
+        // Remember the opener only on first open; nested "view user" keeps the original return target.
+        if (!wasOpen) this.drawerReturnFocus = document.activeElement;
         this.refs.drawerTitle.textContent = title;
         this.refs.drawerContent.replaceChildren();
         this.refs.drawer.classList.add('is-open');
         this.refs.drawer.setAttribute('aria-hidden', 'false');
         this.refs.drawerBackdrop.classList.add('is-visible');
+        if (!wasOpen || !this.refs.drawer.contains(document.activeElement)) {
+            document.getElementById('drawer-close').focus({ preventScroll: true });
+        }
     },
 
     closeDrawer() {
         this.userDetailRequest++;
+        this.drawerRequest++;
         this.state.detailUserUid = null;
         this.releaseMediaObjectUrls();
+        const wasOpen = this.refs.drawer.classList.contains('is-open');
+        const focusInside = this.refs.drawer.contains(document.activeElement);
         this.refs.drawer.classList.remove('is-open');
         this.refs.drawer.setAttribute('aria-hidden', 'true');
         this.refs.drawerBackdrop.classList.remove('is-visible');
+        const returnFocus = this.drawerReturnFocus;
+        this.drawerReturnFocus = null;
+        if (wasOpen && focusInside && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
     },
 
     openModal(config) {
         if (this.modalResolver) this.closeModal(null);
+        this.modalReturnFocus = document.activeElement;
         this.refs.modalTitle.textContent = config.title;
         this.refs.modalForm.replaceChildren();
         if (config.description) this.refs.modalForm.append(this.el('p', 'muted-text', config.description));
@@ -1559,11 +1746,30 @@ const AdminApp = {
         return new Promise((resolve) => { this.modalResolver = resolve; });
     },
 
+    trapModalFocus(event) {
+        const controls = [...this.refs.modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')]
+            .filter((element) => element.getClientRects().length);
+        if (!controls.length) return;
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && (document.activeElement === first || !this.refs.modal.contains(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !this.refs.modal.contains(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+        }
+    },
+
     closeModal(result) {
+        const wasOpen = this.refs.modal.classList.contains('is-open');
         this.refs.modal.classList.remove('is-open');
         this.refs.modal.setAttribute('aria-hidden', 'true');
         const resolver = this.modalResolver;
         this.modalResolver = null;
+        const returnFocus = this.modalReturnFocus;
+        this.modalReturnFocus = null;
+        if (wasOpen && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
         if (resolver) resolver(result);
     }
 };

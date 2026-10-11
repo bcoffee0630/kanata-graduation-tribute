@@ -645,6 +645,29 @@ textarea:focus-visible {
     grid-template-columns: minmax(130px, 170px) minmax(180px, 1fr) repeat(2, minmax(145px, 175px)) auto auto;
 }
 
+.toolbar-hint {
+    margin: -6px 0 14px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.inline-link {
+    color: var(--brand-blue-dark);
+    font-weight: 700;
+}
+
+.primary-command:disabled,
+.secondary-command:disabled,
+.danger-command:disabled,
+.table-command:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.detail-drawer[aria-busy="true"] .drawer-actions {
+    cursor: progress;
+}
+
 .tab-control {
     display: inline-flex;
     padding: 3px;

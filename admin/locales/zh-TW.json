@@ -40,19 +40,21 @@
   },
   "content": {
     "xOriginalLink": "前往 X 查看原貼文",
-    "title": "投稿管理", "subtitle": "查看、隱藏、恢復或永久移除用戶投稿。", "messages": "留言", "fanart": "創作",
+    "title": "投稿管理", "subtitle": "查看、隱藏、恢復或永久移除用戶投稿。", "messages": "留言", "fanart": "畫廊投稿",
     "visibility": "顯示狀態", "authorUid": "投稿者 UID", "dateFrom": "起始日期", "dateTo": "結束日期",
     "content": "內容", "author": "投稿者", "createdAt": "投稿時間",
     "reportCount": "舉報數", "noContent": "目前沒有符合條件的投稿。", "details": "投稿詳情",
     "hide": "隱藏內容", "restore": "恢復內容", "remove": "永久移除", "reason": "處置原因",
-    "removeWarning": "此操作會清除留言內文、X 貼文連結或 Storage 圖片，且無法復原。"
+    "removeWarning": "此操作會清除留言內文、X 貼文連結或 Storage 圖片，且無法復原。",
+    "filterScopeHint": "顯示狀態只篩選最近 50 筆投稿；較早的內容請用投稿者 UID 或日期縮小範圍。"
   },
   "users": {
     "title": "用戶管理", "subtitle": "使用完整 UID 或 Email 查詢帳號與投稿紀錄。", "searchPlaceholder": "輸入完整 UID 或 Email",
     "user": "用戶", "providers": "登入來源", "lastSignIn": "最後登入", "restriction": "限制狀態", "noUsers": "找不到用戶。",
     "details": "用戶詳情", "recentContent": "近期投稿", "mute": "期限禁言", "ban": "封鎖帳號", "clear": "解除限制",
     "expiresAt": "禁言截止時間", "reason": "限制原因", "hideExisting": "同時隱藏該用戶既有投稿",
-    "restrictionSaved": "用戶限制已更新。"
+    "restrictionSaved": "用戶限制已更新。",
+    "providerNames": { "google_com": "Google", "github_com": "GitHub", "password": "密碼（Email）" }
   },
   "quota": {
     "title": "投稿上限",
@@ -94,11 +96,32 @@
     "name": "顯示名稱", "email": "Email", "role": "角色", "status": "狀態", "lastLogin": "最後登入",
     "owner": "Owner", "moderator": "Moderator", "disable": "停用帳號", "enable": "啟用帳號",
     "revoke": "撤銷工作階段", "reset": "寄送密碼重設信", "noAdmins": "尚未建立管理員。",
-    "inviteSent": "管理員已建立，密碼設定信已寄出。", "updated": "管理員設定已更新。"
+    "inviteSent": "管理員已建立，密碼設定信已寄出。", "updated": "管理員設定已更新。",
+    "confirmRoleTitle": "改為 {role}", "confirmRole": "確定要將 {name} 的角色改為 {role} 嗎？", "confirmDisable": "停用後 {name} 將無法登入治理中心，現有工作階段也會失效。", "confirmEnable": "確定要重新啟用 {name} 嗎？對方需重新登入。", "confirmRevoke": "撤銷後 {name} 的所有裝置都需要重新登入。", "confirmRevokeSelf": "這會撤銷你自己的所有工作階段，確認後你將立即登出。"
   },
   "audit": {
     "title": "稽核紀錄", "subtitle": "所有治理異動皆由後端建立，客戶端無法修改。", "action": "操作",
-    "actor": "操作者", "target": "目標", "reason": "原因", "createdAt": "時間", "noAudit": "尚無稽核紀錄。"
+    "actor": "操作者", "target": "目標", "reason": "原因", "createdAt": "時間", "noAudit": "尚無稽核紀錄。",
+    "targets": { "user": "用戶", "admin": "管理員", "reportCase": "舉報案件", "contributionLimits": "投稿上限", "system": "系統", "publicSnapshots": "公開快照" },
+    "actions": {
+      "admin_bootstrap": "啟用第一位 Owner",
+      "admin_invite": "邀請管理員",
+      "admin_update": "更新管理員",
+      "content_hide": "隱藏內容",
+      "content_restore": "恢復內容",
+      "content_remove": "永久移除內容",
+      "content_hide_restricted": "隨限制隱藏內容",
+      "report_reviewing": "開始審查案件",
+      "report_resolved": "標記案件已處理",
+      "report_dismissed": "駁回案件",
+      "user_mute": "期限禁言",
+      "user_ban": "封鎖帳號",
+      "user_clear": "解除限制",
+      "user_mute_expired": "禁言到期",
+      "contribution_defaults_update": "更新預設投稿上限",
+      "contribution_user_update": "更新用戶投稿額度",
+      "fanart_import_curated": "匯入精選 X 貼文"
+    }
   },
   "table": { "status": "狀態", "content": "內容", "author": "投稿者", "count": "數量", "date": "時間", "actions": "操作" },
   "actions": { "view": "查看", "viewUser": "查看用戶", "save": "儲存", "submit": "送出", "more": "更多" },

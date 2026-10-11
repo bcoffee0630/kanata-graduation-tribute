@@ -830,12 +830,14 @@ footer {
 /* Floating Controls    */
 /* ==================== */
 .floating-controls {
+    --floating-size: 50px;
+    --floating-gap: 12px;
     position: fixed;
     bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     right: calc(20px + env(safe-area-inset-right, 0px));
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--floating-gap);
     z-index: 900;
 }
 .floating-control {
@@ -853,11 +855,45 @@ footer {
     color: white;
     box-shadow: 0 4px 20px rgba(40, 148, 255, 0.3);
     cursor: pointer;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease,
+        display 0.2s allow-discrete;
 }
-.floating-control[hidden] { display: none; }
+/* Hidden controls fade out while display is held, and leave the flow so the remaining stack never jumps. */
+.floating-control[hidden] {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}
+/* A leaving contextual action fades in its own slot above back-to-top, crossfading with its replacement. */
+.floating-control:not(.back-to-top)[hidden] {
+    bottom: calc(var(--floating-size, 50px) + var(--floating-gap, 12px));
+}
 .floating-control [hidden] { display: none; }
-.floating-control[aria-disabled="true"] { opacity: 0.65; cursor: progress; }
+/* Restoring display replays the entrance, so contextual swaps need no extra script. */
+.floating-control:not([hidden]) { animation: floating-control-in 0.2s ease-out; }
+@keyframes floating-control-in {
+    from { opacity: 0; transform: scale(0.8); }
+}
+.floating-control[aria-disabled="true"] { cursor: progress; }
+.gallery-refresh[aria-disabled="true"] svg { animation: floating-control-spin 0.9s linear infinite; }
+@keyframes floating-control-spin { to { transform: rotate(360deg); } }
+/* New posts in the shared feed: a quiet dot instead of an inline notice. */
+.gallery-refresh.has-update::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: var(--gold, #FFD700);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
 .floating-control svg { width: 22px; height: 22px; }
 .floating-control:focus-visible { outline: 3px solid var(--kanata-blue-light); outline-offset: 3px; }
 .floating-control:hover { box-shadow: 0 6px 24px rgba(40, 148, 255, 0.45); }
@@ -879,11 +915,12 @@ footer {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0s linear 0.15s;
 }
 .floating-control:focus-visible .floating-tooltip,
-.floating-control.tooltip-visible .floating-tooltip { opacity: 1; visibility: visible; }
+.floating-control.tooltip-visible .floating-tooltip { opacity: 1; visibility: visible; transition-delay: 0s; }
 @media (hover: hover) {
-    .floating-control:hover .floating-tooltip { opacity: 1; visibility: visible; }
+    .floating-control:hover .floating-tooltip { opacity: 1; visibility: visible; transition-delay: 0s; }
 }
 .floating-control.tooltip-dismissed .floating-tooltip { opacity: 0; visibility: hidden; }
 
@@ -1075,6 +1112,7 @@ footer {
         font-size: 40px;
     }
 
+    .floating-controls { --floating-size: 46px; }
     .floating-control { width: 46px; height: 46px; }
 
 }
@@ -1125,7 +1163,8 @@ footer {
     .floating-controls {
         right: calc(15px + env(safe-area-inset-right, 0px));
         bottom: calc(15px + env(safe-area-inset-bottom, 0px));
-        gap: 10px;
+        --floating-size: 44px;
+        --floating-gap: 10px;
     }
     .floating-control { width: 44px; height: 44px; }
     .floating-control svg { width: 20px; height: 20px; }
@@ -1150,4 +1189,7 @@ footer {
     .feather-container {
         display: none;
     }
+
+    .gallery-refresh[aria-disabled="true"] svg { animation: none; }
+    .floating-control[aria-disabled="true"] { opacity: 0.65; }
 }

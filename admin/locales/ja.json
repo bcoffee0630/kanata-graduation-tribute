@@ -40,19 +40,21 @@
   },
   "content": {
     "xOriginalLink": "X で元の投稿を見る",
-    "title": "投稿管理", "subtitle": "ユーザー投稿の確認、非表示、復元、完全削除を行います。", "messages": "メッセージ", "fanart": "ファンアート",
+    "title": "投稿管理", "subtitle": "ユーザー投稿の確認、非表示、復元、完全削除を行います。", "messages": "メッセージ", "fanart": "ギャラリー投稿",
     "visibility": "表示状態", "authorUid": "投稿者 UID", "dateFrom": "開始日", "dateTo": "終了日",
     "content": "内容", "author": "投稿者", "createdAt": "投稿日時",
     "reportCount": "報告数", "noContent": "条件に一致する投稿はありません。", "details": "投稿詳細",
     "hide": "非表示にする", "restore": "表示を復元", "remove": "完全に削除", "reason": "対応理由",
-    "removeWarning": "メッセージ本文、X の投稿リンク、または Storage 画像が削除されます。この操作は取り消せません。"
+    "removeWarning": "メッセージ本文、X の投稿リンク、または Storage 画像が削除されます。この操作は取り消せません。",
+    "filterScopeHint": "表示状態の絞り込みは最新 50 件のみが対象です。古い投稿は投稿者 UID や日付で範囲を絞ってください。"
   },
   "users": {
     "title": "ユーザー管理", "subtitle": "完全な UID またはメールアドレスでアカウントを検索します。", "searchPlaceholder": "完全な UID またはメールアドレス",
     "user": "ユーザー", "providers": "ログイン方法", "lastSignIn": "最終ログイン", "restriction": "制限状態", "noUsers": "ユーザーが見つかりません。",
     "details": "ユーザー詳細", "recentContent": "最近の投稿", "mute": "期限付きミュート", "ban": "アカウントをブロック", "clear": "制限を解除",
     "expiresAt": "ミュート終了日時", "reason": "制限理由", "hideExisting": "このユーザーの既存投稿も非表示にする",
-    "restrictionSaved": "ユーザー制限を更新しました。"
+    "restrictionSaved": "ユーザー制限を更新しました。",
+    "providerNames": { "google_com": "Google", "github_com": "GitHub", "password": "パスワード（メール）" }
   },
   "quota": {
     "title": "投稿上限",
@@ -94,11 +96,32 @@
     "name": "表示名", "email": "メール", "role": "ロール", "status": "状態", "lastLogin": "最終ログイン",
     "owner": "Owner", "moderator": "Moderator", "disable": "アカウントを無効化", "enable": "アカウントを有効化",
     "revoke": "セッションを取り消す", "reset": "パスワードリセットを送信", "noAdmins": "管理者はまだいません。",
-    "inviteSent": "管理者を作成し、パスワード設定メールを送信しました。", "updated": "管理者設定を更新しました。"
+    "inviteSent": "管理者を作成し、パスワード設定メールを送信しました。", "updated": "管理者設定を更新しました。",
+    "confirmRoleTitle": "{role} に変更", "confirmRole": "{name} のロールを {role} に変更しますか？", "confirmDisable": "無効化すると {name} はガバナンスセンターにログインできなくなり、現在のセッションも失効します。", "confirmEnable": "{name} を再度有効にしますか？再ログインが必要です。", "confirmRevoke": "取り消すと {name} はすべての端末で再ログインが必要になります。", "confirmRevokeSelf": "自分のすべてのセッションを取り消します。確認するとすぐにログアウトします。"
   },
   "audit": {
     "title": "監査ログ", "subtitle": "すべての管理操作はバックエンドで記録され、クライアントから変更できません。", "action": "操作",
-    "actor": "実行者", "target": "対象", "reason": "理由", "createdAt": "日時", "noAudit": "監査ログはまだありません。"
+    "actor": "実行者", "target": "対象", "reason": "理由", "createdAt": "日時", "noAudit": "監査ログはまだありません。",
+    "targets": { "user": "ユーザー", "admin": "管理者", "reportCase": "通報案件", "contributionLimits": "投稿上限", "system": "システム", "publicSnapshots": "公開スナップショット" },
+    "actions": {
+      "admin_bootstrap": "最初の Owner を有効化",
+      "admin_invite": "管理者を招待",
+      "admin_update": "管理者を更新",
+      "content_hide": "コンテンツを非表示",
+      "content_restore": "コンテンツを復元",
+      "content_remove": "コンテンツを完全削除",
+      "content_hide_restricted": "制限に伴い非表示",
+      "report_reviewing": "審査を開始",
+      "report_resolved": "案件を対応済みに",
+      "report_dismissed": "案件を却下",
+      "user_mute": "期限付きミュート",
+      "user_ban": "アカウントを凍結",
+      "user_clear": "制限を解除",
+      "user_mute_expired": "ミュート期限切れ",
+      "contribution_defaults_update": "既定の投稿上限を更新",
+      "contribution_user_update": "ユーザーの投稿枠を更新",
+      "fanart_import_curated": "厳選 X 投稿をインポート"
+    }
   },
   "table": { "status": "状態", "content": "内容", "author": "投稿者", "count": "件数", "date": "日時", "actions": "操作" },
   "actions": { "view": "表示", "viewUser": "ユーザーを表示", "save": "保存", "submit": "送信", "more": "その他" },

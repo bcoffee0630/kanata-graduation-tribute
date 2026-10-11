@@ -8,16 +8,18 @@
     <!-- Open Graph -->
     <meta property="og:title" content="天音かなた卒業記念 | Amane Kanata Memorial">
     <meta property="og:description" content="Forever Kanata - 永遠にかなた">
-    <meta property="og:image" content="images/kanata-header.png">
-    <meta property="og:url" content="https://bcoffee0630.github.io/kanata-graduation-tribute/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://eienkanata.com/images/kanata-header.png">
+    <meta property="og:url" content="https://eienkanata.com/">
+    <meta name="twitter:card" content="summary_large_image">
 
     <title>天音かなた 卒業メモリアル</title>
 
     <link rel="icon" type="image/png" href="shooting-star.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=7">
-    <link rel="stylesheet" href="assets/css/gallery.css?v=7">
+    <link rel="stylesheet" href="assets/css/style.css?v=9">
+    <link rel="stylesheet" href="assets/css/gallery.css?v=8">
     <link rel="stylesheet" href="assets/css/danmaku.css?v=7">
-    <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/modal.css?v=2">
     <link rel="stylesheet" href="assets/css/toast.css?v=3">
 
     <!-- Google Fonts -->
@@ -39,8 +41,8 @@
                 <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
                 <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
                 <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
-                <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
-                <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
+                <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer" data-i18n="nav.youtube">YouTube</a></li>
+                <li><a href="https://x.com/amanekanatach" target="_blank" rel="noopener noreferrer" data-i18n="nav.twitter">X</a></li>
             </ul>
         </div>
 
@@ -95,8 +97,8 @@
             <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
             <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
             <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
-            <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" data-i18n="nav.youtube">YouTube</a></li>
-            <li><a href="https://x.com/amanekanatach" target="_blank" data-i18n="nav.twitter">Twitter</a></li>
+            <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer" data-i18n="nav.youtube">YouTube</a></li>
+            <li><a href="https://x.com/amanekanatach" target="_blank" rel="noopener noreferrer" data-i18n="nav.twitter">X</a></li>
         </ul>
     </div>
 
@@ -158,7 +160,7 @@
                     <p data-i18n="sections.contribute_art">思い出を共有しませんか？Xの投稿リンクで参加できます。</p>
                     <div class="gallery-actions">
                     <button id="submit-fanart-btn" class="submit-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                         <span data-i18n="sections.submit_art_button">Xの投稿を共有</span>
                     </button>
                     </div>
@@ -171,11 +173,11 @@
     </main>
 
     <!-- Message Modal -->
-    <div id="message-modal" class="modal">
+    <div id="message-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="message-modal-title" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 data-i18n="modal.message_title">メッセージを投稿</h3>
-                <button class="modal-close">&times;</button>
+                <h3 id="message-modal-title" data-i18n="modal.message_title">メッセージを投稿</h3>
+                <button type="button" class="modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="message-form">
@@ -223,7 +225,7 @@
                         <ol>
                             <li data-i18n="modal.tutorial_open">作者の元の投稿を開きます。</li>
                             <li data-i18n="modal.tutorial_copy">共有ボタンから「リンクをコピー」を選びます。</li>
-                            <li data-i18n="modal.tutorial_paste">下に貼り付けます。プレビューで確認できます。</li>
+                            <li data-i18n="modal.tutorial_paste">下に貼り付けると、プレビューが自動で表示されます。</li>
                         </ol>
                         <p data-i18n="modal.tutorial_note">公開されている投稿のリンクを使用してください。作者名はXの埋め込みに表示されます。</p>
                     </aside>
@@ -309,7 +311,7 @@
             <div class="share-section">
                 <p class="share-text" data-i18n="footer.share_text">この想いを共有する</p>
                 <div class="share-buttons">
-                    <button id="share-twitter" class="share-btn share-twitter" aria-label="Share on Twitter/X">
+                    <button id="share-twitter" class="share-btn share-twitter" aria-label="Share on X">
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                     </button>
                     <button id="share-native" class="share-btn share-native" aria-label="Share">
@@ -320,8 +322,8 @@
             <div class="credits">
                 <p data-i18n="footer.credits_title">Credits:</p>
                 <ul>
-                    <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank">誰も見てない夢を見ろ - 天音かなた</a></li>
-                    <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank">Star icons created by Freepik - Flaticon</a></li>
+                    <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank" rel="noopener noreferrer">誰も見てない夢を見ろ - 天音かなた</a></li>
+                    <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank" rel="noopener noreferrer">Star icons created by Freepik - Flaticon</a></li>
                 </ul>
             </div>
             <!-- Copyright & Non-commercial Notice -->
@@ -343,7 +345,7 @@
     <!-- Contextual reading controls -->
     <div id="floating-controls" class="floating-controls">
         <button id="gallery-refresh" type="button" class="floating-control gallery-refresh" aria-label="投稿を更新" aria-describedby="gallery-refresh-tooltip" aria-controls="gallery-grid" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 6a8 8 0 0 1 13.3 3L20 12M4 12l.6 3A8 8 0 0 0 17.9 18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
             <span id="gallery-refresh-tooltip" class="floating-tooltip" role="tooltip">投稿を更新</span>
         </button>
         <button id="danmaku-play-pause" type="button" class="floating-control danmaku-play-pause" aria-label="メッセージを一時停止" aria-describedby="danmaku-play-pause-tooltip" aria-controls="danmaku-container" aria-pressed="false" hidden>
@@ -365,21 +367,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
 
     <!-- Core Scripts -->
-    <script src="assets/js/i18n.js?v=8"></script>
+    <script src="assets/js/i18n.js?v=9"></script>
     <script src="assets/js/counter.js"></script>
     <script src="assets/js/toast.js"></script>
 
     <!-- Firebase Integration -->
     <script src="assets/js/firebase-init.js"></script>
     <script src="assets/js/auth.js"></script>
-    <script src="assets/js/x-embed.js"></script>
-    <script src="assets/js/submit.js?v=6"></script>
-    <script src="assets/js/report.js?v=6"></script>
+    <script src="assets/js/x-embed.js?v=3"></script>
+    <script src="assets/js/submit.js?v=7"></script>
+    <script src="assets/js/report.js?v=7"></script>
 
     <!-- Features -->
     <script src="assets/js/public-feed.js?v=7"></script>
-    <script src="assets/js/gallery.js?v=9"></script>
-    <script src="assets/js/danmaku.js?v=7"></script>
+    <script src="assets/js/gallery.js?v=10"></script>
+    <script src="assets/js/danmaku.js?v=8"></script>
     <script src="assets/js/effects.js"></script>
     <script src="assets/js/animations.js"></script>
     <script src="assets/js/scroll-top.js?v=7"></script>
@@ -576,7 +578,7 @@
             shareTwitterBtn.addEventListener('click', () => {
                 const text = encodeURIComponent('天音かなた卒業記念 #天音かなた #かなたん');
                 const url = encodeURIComponent(shareData.url);
-                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=550,height=420');
+                window.open(`https://x.com/intent/post?text=${text}&url=${url}`, '_blank', 'width=550,height=420');
             });
         }
 

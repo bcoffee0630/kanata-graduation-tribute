@@ -40,19 +40,21 @@
   },
   "content": {
     "xOriginalLink": "View original post on X",
-    "title": "Submissions", "subtitle": "Review, hide, restore, or permanently remove user submissions.", "messages": "Messages", "fanart": "Fan art",
+    "title": "Submissions", "subtitle": "Review, hide, restore, or permanently remove user submissions.", "messages": "Messages", "fanart": "Gallery submissions",
     "visibility": "Visibility", "authorUid": "Author UID", "dateFrom": "Submitted from", "dateTo": "Submitted through",
     "content": "Content", "author": "Author", "createdAt": "Submitted",
     "reportCount": "Reports", "noContent": "No submissions match the current filters.", "details": "Submission details",
     "hide": "Hide content", "restore": "Restore content", "remove": "Permanently remove", "reason": "Moderation reason",
-    "removeWarning": "This permanently clears the message, X post link, or Storage image and cannot be undone."
+    "removeWarning": "This permanently clears the message, X post link, or Storage image and cannot be undone.",
+    "filterScopeHint": "Visibility filters apply to the latest 50 submissions only; narrow older items by author UID or date."
   },
   "users": {
     "title": "Users", "subtitle": "Find accounts and submissions by exact UID or email.", "searchPlaceholder": "Enter an exact UID or email",
     "user": "User", "providers": "Providers", "lastSignIn": "Last sign-in", "restriction": "Restriction", "noUsers": "No users found.",
     "details": "User details", "recentContent": "Recent submissions", "mute": "Temporary mute", "ban": "Block account", "clear": "Clear restriction",
     "expiresAt": "Mute expiration", "reason": "Restriction reason", "hideExisting": "Also hide this user's existing submissions",
-    "restrictionSaved": "User restriction updated."
+    "restrictionSaved": "User restriction updated.",
+    "providerNames": { "google_com": "Google", "github_com": "GitHub", "password": "Password (email)" }
   },
   "quota": {
     "title": "Contribution limits",
@@ -94,11 +96,32 @@
     "name": "Display name", "email": "Email", "role": "Role", "status": "Status", "lastLogin": "Last login",
     "owner": "Owner", "moderator": "Moderator", "disable": "Disable account", "enable": "Enable account",
     "revoke": "Revoke sessions", "reset": "Send password reset", "noAdmins": "No administrators have been created.",
-    "inviteSent": "Administrator created and password setup email sent.", "updated": "Administrator settings updated."
+    "inviteSent": "Administrator created and password setup email sent.", "updated": "Administrator settings updated.",
+    "confirmRoleTitle": "Change to {role}", "confirmRole": "Change the role of {name} to {role}?", "confirmDisable": "{name} will no longer be able to sign in to the governance center, and current sessions will end.", "confirmEnable": "Re-enable {name}? They will need to sign in again.", "confirmRevoke": "{name} will need to sign in again on every device.", "confirmRevokeSelf": "This revokes all of your own sessions. You will be signed out immediately."
   },
   "audit": {
     "title": "Audit log", "subtitle": "All governance changes are written by the backend and cannot be changed by clients.", "action": "Action",
-    "actor": "Actor", "target": "Target", "reason": "Reason", "createdAt": "Time", "noAudit": "No audit records yet."
+    "actor": "Actor", "target": "Target", "reason": "Reason", "createdAt": "Time", "noAudit": "No audit records yet.",
+    "targets": { "user": "User", "admin": "Administrator", "reportCase": "Report case", "contributionLimits": "Contribution limits", "system": "System", "publicSnapshots": "Public snapshots" },
+    "actions": {
+      "admin_bootstrap": "Enable first Owner",
+      "admin_invite": "Invite administrator",
+      "admin_update": "Update administrator",
+      "content_hide": "Hide content",
+      "content_restore": "Restore content",
+      "content_remove": "Permanently remove content",
+      "content_hide_restricted": "Hide content with restriction",
+      "report_reviewing": "Start case review",
+      "report_resolved": "Resolve case",
+      "report_dismissed": "Dismiss case",
+      "user_mute": "Timed mute",
+      "user_ban": "Ban account",
+      "user_clear": "Clear restriction",
+      "user_mute_expired": "Mute expired",
+      "contribution_defaults_update": "Update default limits",
+      "contribution_user_update": "Update user allowance",
+      "fanart_import_curated": "Import curated X posts"
+    }
   },
   "table": { "status": "Status", "content": "Content", "author": "Author", "count": "Count", "date": "Time", "actions": "Actions" },
   "actions": { "view": "View", "viewUser": "View user", "save": "Save", "submit": "Submit", "more": "More" },

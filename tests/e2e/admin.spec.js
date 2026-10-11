@@ -108,7 +108,7 @@ test('fan art preview never sends an administrator token to a stored image URL',
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('heading', { name: '治理總覽' })).toBeVisible();
   await page.getByRole('button', { name: '投稿管理' }).click();
-  await page.getByRole('button', { name: '創作', exact: true }).click();
+  await page.getByRole('button', { name: '畫廊投稿', exact: true }).click();
   await expect(page.getByText('Untrusted image URL preview')).toBeVisible();
   await page.getByRole('button', { name: '查看' }).first().click();
   await expect(page.getByRole('heading', { name: '投稿詳情' })).toBeVisible();
@@ -133,10 +133,16 @@ test('X moderation uses safe original links without loading embeds or sending ad
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('heading', { name: '治理總覽' })).toBeVisible();
   await page.getByRole('button', { name: '投稿管理' }).click();
-  await page.getByRole('button', { name: '創作', exact: true }).click();
-  await page.getByRole('row').filter({ hasText: 'X link moderation preview' })
-    .filter({ hasNotText: 'Untrusted' }).getByRole('button', { name: '查看' }).click();
-  const original = page.getByRole('link', { name: '前往 X 查看原貼文' });
+  await page.getByRole('button', { name: '畫廊投稿', exact: true }).click();
+  const trustedRow = page.getByRole('row').filter({ hasText: 'X link moderation preview' })
+    .filter({ hasNotText: 'Untrusted' });
+  const rowLink = trustedRow.getByRole('link', { name: '前往 X 查看原貼文' });
+  await expect(rowLink).toHaveAttribute('href', 'https://x.com/example/status/1900000000000000006');
+  await expect(rowLink).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(trustedRow).toContainText('@example · 1900000000000000006');
+  await expect(page.getByRole('row').filter({ hasText: 'Untrusted X link moderation preview' }).getByRole('link')).toHaveCount(0);
+  await trustedRow.getByRole('button', { name: '查看' }).click();
+  const original = page.locator('#drawer-content').getByRole('link', { name: '前往 X 查看原貼文' });
   await expect(original).toHaveAttribute('href', 'https://x.com/example/status/1900000000000000006');
   await expect(original).toHaveAttribute('rel', 'noopener noreferrer');
   await page.locator('#drawer-close').click();

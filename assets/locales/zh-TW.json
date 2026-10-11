@@ -8,7 +8,7 @@
     "messages": "留言",
     "gallery": "回憶牆",
     "youtube": "YouTube",
-    "twitter": "Twitter"
+    "twitter": "X"
   },
   "sections": {
     "intro_title": "最強最完美的PP天使",
@@ -38,6 +38,7 @@
     "back_to_top": "返回頂部",
     "submission_notice": "你的貼文已加入回憶牆最前面。",
     "refresh": "刷新貼文",
+    "new_posts": "有新的投稿",
     "updated_hint": "回憶牆已更新，點擊刷新即可查看。"
   },
   "danmaku": {
@@ -68,7 +69,7 @@
     "tutorial_title": "如何分享 X 貼文",
     "tutorial_open": "開啟原作者的貼文。",
     "tutorial_copy": "點選分享按鈕，選擇「複製連結」。",
-    "tutorial_paste": "貼上下方欄位，可點選預覽確認。",
+    "tutorial_paste": "貼到下方欄位，會自動顯示預覽供您確認。",
     "tutorial_note": "請使用公開貼文的連結。原作者會由 X 嵌入元件署名。",
     "close": "關閉"
   },

@@ -90,14 +90,21 @@ const Submit = {
             this.updateCaptionCount();
             this.updateFanartSubmitState();
         });
+        // A pasted share link is the common path, so preview it without an extra tap.
+        document.getElementById('fanart-post-url')?.addEventListener('paste', () => {
+            setTimeout(() => {
+                const input = document.getElementById('fanart-post-url');
+                if (!this.isFanartSubmitting && this.fanartModal?.classList.contains('active') &&
+                    window.XPost.parseUrl(input?.value)) this.previewPost();
+            }, 0);
+        });
         document.getElementById('fanart-preview-btn')?.addEventListener('click', () => this.previewPost());
         document.addEventListener('keydown', (event) => this.handleModalKey(event));
         window.addEventListener('languageChanged', () => {
             this.renderQuota();
             this.updateFanartSubmitState();
             if (this.preview) this.previewPost();
-            const close = this.fanartModal?.querySelector('.modal-close');
-            close?.setAttribute('aria-label', window.i18n?.t('modal.close') || 'Close');
+            this.updateCloseLabels();
         });
         window.addEventListener('authStateChanged', (event) => {
             const uid = event.detail?.user?.uid || null;
@@ -114,7 +121,15 @@ const Submit = {
 
         // Confirmation checkbox validation
         this.setupConfirmationCheckboxes();
-        this.fanartModal?.querySelector('.modal-close')?.setAttribute('aria-label', window.i18n?.t('modal.close') || 'Close');
+        this.updateCloseLabels();
+    },
+
+    updateCloseLabels() {
+        const translated = window.i18n?.t('modal.close');
+        const label = translated && translated !== 'modal.close' ? translated : 'Close';
+        [this.messageModal, this.fanartModal].forEach(modal => {
+            modal?.querySelector('.modal-close')?.setAttribute('aria-label', label);
+        });
     },
 
     setupConfirmationCheckboxes() {

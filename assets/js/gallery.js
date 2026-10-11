@@ -14,7 +14,6 @@ const Gallery = {
         this.container = document.getElementById('gallery-grid');
         this.status = document.getElementById('gallery-status');
         this.refreshButton = document.getElementById('gallery-refresh');
-        this.refreshHint = document.getElementById('gallery-refresh-hint');
         this.section = document.getElementById('gallery-section');
         if (!this.container) return;
         this.refreshButton?.addEventListener('click', () => this.refresh({ manual: true }));
@@ -51,7 +50,7 @@ const Gallery = {
         return translated && translated !== `gallery.${key}` ? translated : {
             no_content: 'まだ投稿がありません', load_error: '投稿を読み込めませんでした。',
             submitter: '投稿者', anonymous: '匿名', retry: '再読み込み',
-            refresh: 'ほかの投稿を見る', refreshing: '投稿を読み込み中…',
+            refresh: 'ほかの投稿を見る', refreshing: '投稿を読み込み中…', new_posts: '新しい投稿があります',
             updated_hint: '思い出ウォールが更新されました。更新してご覧ください。',
             submission_notice: '共有しました。あなたの投稿を先頭に表示しています。',
             cached_notice: '読み込みを少し休んで、取得済みの投稿を表示しています。',
@@ -61,20 +60,18 @@ const Gallery = {
     },
 
     updateLabels() {
-        const label = this.t(this.isLoading ? 'refreshing' : 'refresh');
+        this.updateRefreshHint();
+        const label = this.t(this.isLoading ? 'refreshing' : this.hasNewPosts ? 'new_posts' : 'refresh');
         this.refreshButton?.setAttribute('aria-label', label);
         this.refreshButton?.setAttribute('aria-disabled', String(!!this.isLoading));
         const copy = this.refreshButton?.querySelector('#gallery-refresh-tooltip');
         if (copy) copy.textContent = label;
-        this.updateRefreshHint();
     },
 
     updateRefreshHint() {
         this.hasNewPosts = this.refreshConflict || this.hasContentUpdate(this.feedState, this.poolRevision, this.poolVersion);
-        if (this.refreshHint) {
-            this.refreshHint.hidden = true;
-            this.refreshHint.textContent = '';
-        }
+        // A quiet dot on the floating refresh control replaces the removed inline update notice.
+        this.refreshButton?.classList?.toggle('has-update', Boolean(this.hasNewPosts) && !this.isLoading);
     },
 
     isNewerVersion(candidate, version) {
@@ -108,7 +105,7 @@ const Gallery = {
             this.confirmedAt = state.confirmedAt;
             this.validUntil = state.validUntil;
         }
-        this.updateRefreshHint();
+        this.updateLabels();
     },
 
     shuffled(values) {
@@ -515,7 +512,10 @@ const Gallery = {
         if (key === 'submission_notice' || key === 'updated_hint') key = '';
         // A feed response can arrive before the asynchronous locale has loaded.
         this.statusKey = key;
-        if (this.status) this.status.textContent = key ? this.t(key) : '';
+        if (!this.status) return;
+        this.status.textContent = key ? this.t(key) : '';
+        // Informational feedback stays neutral; only failures use the error color.
+        if (this.status.dataset) this.status.dataset.tone = ['load_error', 'unavailable'].includes(key) ? 'error' : 'info';
     },
 
     showError() {

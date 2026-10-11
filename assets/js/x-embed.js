@@ -2,6 +2,33 @@
 (() => {
     const hosts = new Set(['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com', 'mobile.twitter.com']);
     let widgetPromise = null;
+    const icons = {
+        x: { fill: 'currentColor', path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z' },
+        retry: { stroke: 'currentColor', path: 'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5' }
+    };
+
+    function icon(name) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('fill', icons[name].fill || 'none');
+        if (icons[name].stroke) {
+            svg.setAttribute('stroke', icons[name].stroke);
+            svg.setAttribute('stroke-width', '2');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', icons[name].path);
+        svg.append(path);
+        return svg;
+    }
+
+    function labelled(element, name, label) {
+        const copy = document.createElement('span');
+        copy.textContent = label;
+        element.replaceChildren(icon(name), copy);
+    }
 
     function parseUrl(value) {
         try {
@@ -78,11 +105,12 @@
         link.href = post.postUrl;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.textContent = text('open_original');
+        link.className = 'x-embed-open';
+        labelled(link, 'x', text('open_original'));
         const retry = document.createElement('button');
         retry.type = 'button';
         retry.className = 'x-embed-retry';
-        retry.textContent = text('retry');
+        labelled(retry, 'retry', text('retry'));
         fallback.append(link, retry);
         let frame = document.createElement('div');
         frame.className = 'x-embed-frame';
@@ -91,6 +119,9 @@
         function setLoading() {
             container.dataset.embedState = 'loading';
             container.setAttribute('aria-busy', 'true');
+            // Labels follow the active language whenever the embed is (re)rendered.
+            link.querySelector('span').textContent = text('open_original');
+            retry.querySelector('span').textContent = text('retry');
             status.textContent = text('embed_loading');
             status.hidden = false;
             fallback.hidden = true;

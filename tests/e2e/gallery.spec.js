@@ -86,7 +86,8 @@ test('six compact posts use shared batch URLs and retain accessible share, refre
     await expect(page.locator('#load-more-btn, #gallery-display-controls, #gallery-size-toggle, #gallery-shuffle')).toHaveCount(0);
     await expect(page.locator('.gallery-contribute')).toHaveCount(1);
     await expect(page.locator('.gallery-actions #submit-fanart-btn')).toBeAttached();
-    await expect(page.locator('.gallery-actions #gallery-refresh')).toBeVisible();
+    await expect(page.locator('#floating-controls #gallery-refresh')).toBeAttached();
+    await expect(page.locator('.gallery-actions #gallery-refresh')).toHaveCount(0);
     await expect(page.locator('#submit-fanart-btn')).toBeHidden();
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatch(/\/api\/gallery\/batches\/[0-7](?:\?version=[^&]+)?$/);
@@ -353,7 +354,7 @@ test('a missing accepted item preserves the successful submission surface', asyn
     })).toBe(true);
 });
 
-test('changed versions show a refresh hint and clear candidates without replacing what is being read', async ({ page }) => {
+test('changed versions mark the refresh control and clear candidates without replacing what is being read', async ({ page }) => {
     await openGallery(page);
     await expect.poll(() => page.evaluate(() => PublicFeedWatcher.getState('gallery')?.version)).toBe('1');
     await page.evaluate(item => Gallery.onSubmission(item), itemsAt(99, 1)[0]);
@@ -374,17 +375,18 @@ test('changed versions show a refresh hint and clear candidates without replacin
         return route.fulfill({ json: updated });
     });
     await page.evaluate(() => PublicFeedWatcher.check());
-    await expect(page.locator('#gallery-refresh-hint')).toBeVisible();
+    await expect(page.locator('#gallery-refresh')).toHaveClass(/has-update/);
+    await expect(page.locator('#gallery-refresh')).toHaveAttribute('aria-label', '有新的投稿');
     expect(requests).toBe(0);
     expect(await page.evaluate(() => Gallery.pool.size)).toBe(0);
     expect(await page.evaluate(() => Gallery.ownItems.size)).toBe(0);
     expect(await page.evaluate(() => [...document.querySelectorAll('.gallery-item')].every((card, index) => card === window.savedCards[index]) && window.scrollY === window.savedPosition)).toBe(true);
     await page.locator('#gallery-refresh').click();
-    expect(requests).toBe(1);
-    await expect(page.locator('#gallery-refresh-hint')).toBeHidden();
+    await expect.poll(() => requests).toBe(1);
+    await expect(page.locator('#gallery-refresh')).not.toHaveClass(/has-update/);
 });
 
-test('version conflicts preserve cards and offer a refresh hint without an extra request', async ({ page }) => {
+test('version conflicts preserve cards and mark the refresh control without an extra request', async ({ page }) => {
     await openGallery(page);
     let requests = 0;
     await page.route('**/api/gallery/batches/*', route => { requests++; return route.fulfill({ status: 409, json: { reason: 'version_changed', items: [] } }); });
@@ -392,7 +394,7 @@ test('version conflicts preserve cards and offer a refresh hint without an extra
     await page.evaluate(() => Gallery.refresh({ manual: true }));
     expect(requests).toBe(1);
     expect(await page.evaluate(() => [...document.querySelectorAll('.gallery-item')].every((card, index) => card === window.savedCards[index]))).toBe(true);
-    await expect(page.locator('#gallery-refresh-hint')).toBeVisible();
+    await expect(page.locator('#gallery-refresh')).toHaveClass(/has-update/);
 });
 
 test('local rate-limit fallback keeps the latest pair and changes the other cached candidates', async ({ page }) => {

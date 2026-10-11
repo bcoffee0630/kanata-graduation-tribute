@@ -8,7 +8,7 @@
     "messages": "Messages",
     "gallery": "Memory Wall",
     "youtube": "YouTube",
-    "twitter": "Twitter"
+    "twitter": "X"
   },
   "sections": {
     "intro_title": "The Strongest and Most Perfect PP Angel",
@@ -38,6 +38,7 @@
     "back_to_top": "Back to top",
     "submission_notice": "Your post was added at the front of the wall.",
     "refresh": "Refresh posts",
+    "new_posts": "New posts available",
     "updated_hint": "The Memory Wall has been updated. Refresh to view it."
   },
   "danmaku": {
@@ -68,7 +69,7 @@
     "tutorial_title": "How to share an X post",
     "tutorial_open": "Open the original artist’s post.",
     "tutorial_copy": "Choose “Copy link” from the share button.",
-    "tutorial_paste": "Paste it below. You can preview it before submitting.",
+    "tutorial_paste": "Paste it below. A preview appears automatically so you can check it.",
     "tutorial_note": "Use a public post link. The original artist is credited by the X embed.",
     "close": "Close"
   },

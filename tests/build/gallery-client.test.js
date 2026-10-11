@@ -18,8 +18,13 @@ function floatingRefresh(withTooltip = true) {
   const icon = { tagName: 'svg' };
   const tooltip = { tagName: 'span', id: 'gallery-refresh-tooltip', textContent: '' };
   const attributes = new Map();
+  const classes = new Set();
   const button = {
     children: withTooltip ? [icon, tooltip] : [icon],
+    classList: {
+      toggle: (name, force) => { if (force) classes.add(name); else classes.delete(name); return force; },
+      contains: name => classes.has(name),
+    },
     setAttribute: (name, value) => attributes.set(name, value),
     getAttribute: name => attributes.get(name),
     querySelector(selector) {
@@ -127,10 +132,11 @@ describe('gallery public response and refresh contract', () => {
     expect(gallery.scrollToFirst).not.toHaveBeenCalled();
   });
 
-  it('retains conflict bookkeeping without an inline update notice after a 409 or locale change', async () => {
+  it('retains conflict bookkeeping as a refresh-control dot without an inline notice after a 409 or locale change', async () => {
     const { gallery, fetch, window, dispatch } = runtime();
     gallery.status = { textContent: 'Previous feedback' };
-    gallery.refreshHint = { hidden: false, textContent: 'Previous update hint' };
+    const { button } = floatingRefresh();
+    gallery.refreshButton = button;
     gallery.scrollToFirst = vi.fn();
     const before = gallery.data;
     const retained = { article: {}, embed: {} };
@@ -141,17 +147,48 @@ describe('gallery public response and refresh contract', () => {
     expect(gallery.hasNewPosts).toBe(true);
     expect(gallery.statusKey).toBe('');
     expect(gallery.status.textContent).toBe('');
-    expect(gallery.refreshHint.hidden).toBe(true);
-    expect(gallery.refreshHint.textContent).toBe('');
+    expect(button.classList.contains('has-update')).toBe(true);
     window.i18n = { currentLang: 'en', t: key => key };
     dispatch('languageChanged');
     expect(gallery.status.textContent).toBe('');
-    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(button.classList.contains('has-update')).toBe(true);
     expect(gallery.data).toBe(before);
     expect(gallery.cards.get('1')).toBe(retained);
     expect(gallery.isLoading).toBe(false);
     expect(fetch).toHaveBeenCalledOnce();
     expect(gallery.scrollToFirst).not.toHaveBeenCalled();
+  });
+
+  it('labels the refresh control for new posts, hides the dot while loading and clears it after refreshing', async () => {
+    const { gallery, fetch } = runtime();
+    const { button, tooltip } = floatingRefresh();
+    gallery.refreshButton = button;
+    gallery.scrollToFirst = vi.fn();
+    gallery.poolRevision = 0;
+    gallery.onFeedState({ version: '2', revision: 1 });
+    expect(button.classList.contains('has-update')).toBe(true);
+    expect(button.getAttribute('aria-label')).toBe('新しい投稿があります');
+    expect(tooltip.textContent).toBe('新しい投稿があります');
+    let release;
+    fetch.mockImplementation(() => new Promise(resolve => { release = resolve; }));
+    const pending = gallery.refresh({ manual: true });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    expect(button.classList.contains('has-update')).toBe(false);
+    expect(tooltip.textContent).toBe('投稿を読み込み中…');
+    release(response(envelope(items(11, 12, 13, 14, 15, 16), { version: '2', revision: 1 })));
+    await pending;
+    expect(gallery.hasNewPosts).toBe(false);
+    expect(button.classList.contains('has-update')).toBe(false);
+    expect(tooltip.textContent).toBe('ほかの投稿を見る');
+  });
+
+  it('colors only failures as errors and keeps informational feedback neutral', () => {
+    const { gallery } = runtime();
+    gallery.status = { textContent: '', dataset: {} };
+    for (const [key, tone] of [['load_error', 'error'], ['unavailable', 'error'], ['cached_notice', 'info'], ['unchanged_notice', 'info'], ['', 'info']]) {
+      gallery.setStatus(key);
+      expect(gallery.status.dataset.tone).toBe(tone);
+    }
   });
 
   it('keeps cache, unchanged and unavailable feedback visible while suppressing the two removed notices', () => {
@@ -272,7 +309,8 @@ describe('gallery public response and refresh contract', () => {
 
   it('invalidates rotated samples at revision zero without a hint or changing the reading surface', async () => {
     const { gallery, fetch } = runtime();
-    gallery.refreshHint = { hidden: false, textContent: '' };
+    const { button } = floatingRefresh();
+    gallery.refreshButton = button;
     fetch.mockResolvedValue(response(envelope(items(1, 2, 3, 4, 5, 6))));
     await gallery.refresh({ initial: true });
     expect(gallery.poolRevision).toBe(0);
@@ -290,23 +328,22 @@ describe('gallery public response and refresh contract', () => {
     expect(gallery.cards.get('1')).toBe(retained);
     expect(gallery.render).not.toHaveBeenCalled();
     expect(gallery.hasNewPosts).toBe(false);
-    expect(gallery.refreshHint.hidden).toBe(true);
-    expect(gallery.refreshHint.textContent).toBe('');
+    expect(button.classList.contains('has-update')).toBe(false);
     expect(fetch).toHaveBeenCalledOnce();
   });
 
-  it('keeps empty rotation and source revision changes visually quiet while retaining update bookkeeping', async () => {
+  it('keeps empty rotation quiet and marks only source revision changes on the refresh control', async () => {
     const { gallery, fetch } = runtime();
     gallery.data = [];
-    gallery.refreshHint = { hidden: false, textContent: '' };
+    const { button } = floatingRefresh();
+    gallery.refreshButton = button;
     fetch.mockResolvedValue(response(envelope([])));
     await gallery.refresh({ initial: true });
     const state = { version: '2', revision: 0, generatedAt: Date.now(), confirmedAt: Date.now(), validUntil: Date.now() + 240_000 };
     gallery.onFeedState(state);
-    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(button.classList.contains('has-update')).toBe(false);
     gallery.onFeedState({ ...state, version: '3', revision: 1 });
-    expect(gallery.refreshHint.hidden).toBe(true);
-    expect(gallery.refreshHint.textContent).toBe('');
+    expect(button.classList.contains('has-update')).toBe(true);
     expect(gallery.hasNewPosts).toBe(true);
     expect(gallery.data).toEqual([]);
     expect(fetch).toHaveBeenCalledOnce();
@@ -314,9 +351,9 @@ describe('gallery public response and refresh contract', () => {
     gallery.scrollToFirst = vi.fn();
     await gallery.refresh({ manual: true });
     expect(gallery.poolRevision).toBe(1);
-    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(button.classList.contains('has-update')).toBe(false);
     gallery.onFeedState({ ...state, version: '4', revision: 1 });
-    expect(gallery.refreshHint.hidden).toBe(true);
+    expect(button.classList.contains('has-update')).toBe(false);
     expect(gallery.hasNewPosts).toBe(false);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
