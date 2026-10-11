@@ -76,6 +76,12 @@
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "share_text": "この想いを共有する",
+    "post_text": "天音かなた卒業記念 #天音かなた #かなたん",
+    "share_x": "Xで共有",
+    "share_native": "共有",
+    "copy_link": "リンクをコピー",
+    "link_copied": "リンクをコピーしました。",
+    "copy_failed": "リンクをコピーできませんでした。",
     "credits_title": "クレジット：",
     "disclaimer": "このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。",
     "copyright_notice": "使用している画像・映像の著作権：",

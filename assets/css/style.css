@@ -741,15 +741,27 @@ footer {
     height: 20px;
 }
 
+.share-btn svg[hidden] {
+    display: none;
+}
+
+.share-btn:focus-visible {
+    outline: 3px solid var(--kanata-blue-light);
+    outline-offset: 3px;
+}
+
+/* X brand black, outlined so it still reads on the dark footer. */
 .share-twitter {
-    background: #1da1f2;
+    background: #0f1419;
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    text-decoration: none;
 }
 
 .share-twitter:hover {
-    background: #0d8bd9;
+    background: #000;
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(29, 161, 242, 0.4);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
 .share-native {
@@ -763,9 +775,12 @@ footer {
     transform: translateY(-3px);
 }
 
-/* Hide native share on desktop if Web Share API not supported */
-.share-native.hidden {
-    display: none;
+/* Off-screen field for the legacy copy fallback. */
+.share-copy-buffer {
+    position: fixed;
+    top: 0;
+    left: -9999px;
+    opacity: 0;
 }
 
 .credits {
