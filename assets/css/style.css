@@ -427,13 +427,14 @@ body.nav-open .site-nav {
         transparent 70%
     );
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
 }
 
 /* Gradient overlay for emotional depth */
 .header-bg::after {
     content: '';
     position: absolute;
+    z-index: 1;
     top: 0;
     right: 0;
     bottom: 0;
@@ -444,6 +445,68 @@ body.nav-open .site-nav {
         rgba(26, 111, 204, 0.25) 100%
     );
 }
+
+/* Official video fills the hero like background-size: cover, fading in over the poster once it plays. */
+.header-video {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    container-type: size;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    pointer-events: none;
+}
+.header-video.is-playing { opacity: 1; }
+/* The bleed keeps YouTube's title bar and paused suggestions outside short heroes, as wide ones already do. */
+.header-video iframe {
+    --video-bleed: 140px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100cqw, calc((100cqh + var(--video-bleed)) * 16 / 9));
+    height: max(calc(100cqh + var(--video-bleed)), 56.25cqw);
+    transform: translate(-50%, -50%);
+    border: 0;
+    pointer-events: none;
+}
+
+.hero-video-controls {
+    position: absolute;
+    right: calc(20px + env(safe-area-inset-right, 0px));
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 2;
+}
+.hero-video-control {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    background: rgba(16, 36, 58, 0.45);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.hero-video-control[hidden],
+.hero-video-control [hidden] { display: none; }
+.hero-video-control svg { width: 20px; height: 20px; }
+.hero-video-control:hover { background: rgba(40, 148, 255, 0.6); border-color: rgba(255, 255, 255, 0.6); }
+.hero-video-control:focus-visible { outline: 3px solid var(--kanata-blue-light); outline-offset: 3px; }
+.hero-video-control .floating-tooltip { right: auto; left: 50%; top: auto; bottom: calc(100% + 10px); transform: translateX(-50%); }
+.hero-video-control:last-child .floating-tooltip { left: auto; right: 0; transform: none; }
+.hero-video-control:focus-visible .floating-tooltip { opacity: 1; visibility: visible; transition-delay: 0s; }
+@media (hover: hover) {
+    .hero-video-control:hover .floating-tooltip { opacity: 1; visibility: visible; transition-delay: 0s; }
+}
+.hero-video-control.tooltip-dismissed .floating-tooltip { opacity: 0; visibility: hidden; }
 
 .header-content {
     text-align: center;
@@ -841,6 +904,26 @@ footer {
     line-height: 1.6;
 }
 
+.video-notice {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 600px;
+    margin: 0 auto 10px;
+    line-height: 1.6;
+}
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 16px;
+    margin-top: 6px;
+}
+.footer-links a {
+    color: var(--kanata-blue-light);
+    text-decoration: none;
+}
+.footer-links a:hover { color: var(--gold); text-decoration: underline; }
+
 /* ==================== */
 /* Floating Controls    */
 /* ==================== */
@@ -1183,6 +1266,7 @@ footer {
     }
     .floating-control { width: 44px; height: 44px; }
     .floating-control svg { width: 20px; height: 20px; }
+    .hero-video-controls { right: calc(15px + env(safe-area-inset-right, 0px)); bottom: 15px; }
 
 }
 

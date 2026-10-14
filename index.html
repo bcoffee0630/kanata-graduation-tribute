@@ -16,7 +16,7 @@
     <title>天音かなた 卒業メモリアル</title>
 
     <link rel="icon" type="image/png" href="shooting-star.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=10">
+    <link rel="stylesheet" href="assets/css/style.css?v=11">
     <link rel="stylesheet" href="assets/css/gallery.css?v=8">
     <link rel="stylesheet" href="assets/css/danmaku.css?v=7">
     <link rel="stylesheet" href="assets/css/modal.css?v=2">
@@ -107,7 +107,22 @@
 
     <!-- 主要 Header -->
     <header class="main-header">
-        <div class="header-bg"></div>
+        <!-- The image stays as the poster and fallback until the official YouTube video is playing. -->
+        <div class="header-bg">
+            <div class="header-video" aria-hidden="true"><div id="header-video-player"></div></div>
+        </div>
+        <div class="hero-video-controls">
+            <button id="header-video-mute" type="button" class="hero-video-control" aria-label="音声をオンにする" aria-describedby="header-video-mute-tooltip" hidden>
+                <svg data-video-icon="muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6M17 9l6 6"/></svg>
+                <svg data-video-icon="sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                <span id="header-video-mute-tooltip" class="floating-tooltip" role="tooltip">音声をオンにする</span>
+            </button>
+            <button id="header-video-play-pause" type="button" class="hero-video-control" aria-label="動画を一時停止" aria-describedby="header-video-play-pause-tooltip" hidden>
+                <svg data-video-icon="pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                <svg data-video-icon="play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden><path d="m8 5 11 7-11 7z"/></svg>
+                <span id="header-video-play-pause-tooltip" class="floating-tooltip" role="tooltip">動画を一時停止</span>
+            </button>
+        </div>
         <div class="header-content">
             <h1 data-i18n="header_title">天音かなた 卒業記念</h1>
             <div class="counter-container">
@@ -323,7 +338,12 @@
             <div class="credits">
                 <p data-i18n="footer.credits_title">Credits:</p>
                 <ul>
-                    <li>Header: <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank" rel="noopener noreferrer">誰も見てない夢を見ろ - 天音かなた</a></li>
+                    <li>
+                        <span data-i18n="footer.credit_video">背景動画：</span>
+                        <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank" rel="noopener noreferrer">誰も見てない夢を見ろ / 天音かなた(official)</a>
+                        /
+                        <span data-i18n="footer.credit_video_source">公式YouTubeチャンネル：</span><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer">Kanata Ch. 天音かなた</a>
+                    </li>
                     <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank" rel="noopener noreferrer">Star icons created by Freepik - Flaticon</a></li>
                 </ul>
             </div>
@@ -335,6 +355,14 @@
                 <p class="copyright-text">
                     <span data-i18n="footer.copyright_notice">使用している画像・映像の著作権：</span>
                     © COVER Corp. / hololive production
+                </p>
+                <p class="video-notice">
+                    <span data-i18n="footer.video_notice">背景動画はYouTubeの埋め込みプレーヤーで再生しており、当サイトでは動画の複製・再配布を行っていません。再生時にはYouTubeの利用規約およびGoogleのプライバシーポリシーが適用されます。</span>
+                    <span class="footer-links">
+                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" data-i18n="footer.youtube_terms">YouTube利用規約</a>
+                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" data-i18n="footer.google_privacy">Googleプライバシーポリシー</a>
+                        <a href="https://hololivepro.com/terms/" target="_blank" rel="noopener noreferrer" data-i18n="footer.fan_guidelines">ホロライブプロダクション 二次創作ガイドライン</a>
+                    </span>
                 </p>
                 <p class="non-commercial" data-i18n="footer.non_commercial">
                     当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。
@@ -368,7 +396,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
 
     <!-- Core Scripts -->
-    <script src="assets/js/i18n.js?v=10"></script>
+    <script src="assets/js/i18n.js?v=11"></script>
     <script src="assets/js/counter.js"></script>
     <script src="assets/js/toast.js"></script>
 
@@ -385,6 +413,7 @@
     <script src="assets/js/danmaku.js?v=8"></script>
     <script src="assets/js/effects.js"></script>
     <script src="assets/js/animations.js"></script>
+    <script src="assets/js/header-video.js?v=1"></script>
     <script src="assets/js/scroll-top.js?v=7"></script>
     <script src="assets/js/share.js?v=1"></script>
 

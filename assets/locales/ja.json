@@ -47,6 +47,12 @@
     "pause_label": "メッセージを一時停止",
     "play_label": "メッセージを再開"
   },
+  "header_video": {
+    "mute": "音声をオフにする",
+    "unmute": "音声をオンにする",
+    "pause": "動画を一時停止",
+    "play": "動画を再生"
+  },
   "auth": {
     "login": "ログイン",
     "logout": "ログアウト",
@@ -83,8 +89,14 @@
     "link_copied": "リンクをコピーしました。",
     "copy_failed": "リンクをコピーできませんでした。",
     "credits_title": "クレジット：",
+    "credit_video": "背景動画：",
+    "credit_video_source": "公式YouTubeチャンネル：",
     "disclaimer": "このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。",
     "copyright_notice": "使用している画像・映像の著作権：",
+    "video_notice": "背景動画はYouTubeの埋め込みプレーヤーで再生しており、当サイトでは動画の複製・再配布を行っていません。再生時にはYouTubeの利用規約およびGoogleのプライバシーポリシーが適用されます。",
+    "youtube_terms": "YouTube利用規約",
+    "google_privacy": "Googleプライバシーポリシー",
+    "fan_guidelines": "ホロライブプロダクション 二次創作ガイドライン",
     "non_commercial": "当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。"
   },
   "submit": {

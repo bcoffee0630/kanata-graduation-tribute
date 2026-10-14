@@ -47,6 +47,12 @@
     "pause_label": "暫停留言",
     "play_label": "繼續留言"
   },
+  "header_video": {
+    "mute": "關閉聲音",
+    "unmute": "開啟聲音",
+    "pause": "暫停影片",
+    "play": "播放影片"
+  },
   "auth": {
     "login": "登入",
     "logout": "登出",
@@ -82,9 +88,15 @@
     "copy_link": "複製連結",
     "link_copied": "已複製連結。",
     "copy_failed": "無法複製連結。",
-    "credits_title": "圖片來源：",
+    "credits_title": "素材來源：",
+    "credit_video": "首頁背景影片：",
+    "credit_video_source": "官方 YouTube 頻道：",
     "disclaimer": "此網站為非官方粉絲紀念網站，與 COVER 株式會社無任何關聯。",
     "copyright_notice": "本站使用之圖片及影像素材版權屬於：",
+    "video_notice": "首頁背景影片透過 YouTube 嵌入播放器播放，本站未複製或重新散布影片。播放時適用 YouTube 服務條款及 Google 隱私權政策。",
+    "youtube_terms": "YouTube 服務條款",
+    "google_privacy": "Google 隱私權政策",
+    "fan_guidelines": "hololive production 二次創作指引",
     "non_commercial": "本站不進行任何營利活動，包含但不限於廣告、贊助、周邊販售或收費紀念品等。"
   },
   "submit": {

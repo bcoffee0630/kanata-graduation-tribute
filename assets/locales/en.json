@@ -47,6 +47,12 @@
     "pause_label": "Pause messages",
     "play_label": "Resume messages"
   },
+  "header_video": {
+    "mute": "Mute video",
+    "unmute": "Unmute video",
+    "pause": "Pause video",
+    "play": "Play video"
+  },
   "auth": {
     "login": "Log In",
     "logout": "Log Out",
@@ -83,8 +89,14 @@
     "link_copied": "Link copied.",
     "copy_failed": "The link could not be copied.",
     "credits_title": "Credits:",
+    "credit_video": "Background video: ",
+    "credit_video_source": "Official YouTube channel: ",
     "disclaimer": "This is an unofficial fan memorial website and is not affiliated with COVER Corp. in any way.",
     "copyright_notice": "Images and videos used on this site are copyrighted by:",
+    "video_notice": "The background video plays through the embedded YouTube player; this site does not copy or redistribute it. The YouTube Terms of Service and Google Privacy Policy apply during playback.",
+    "youtube_terms": "YouTube Terms of Service",
+    "google_privacy": "Google Privacy Policy",
+    "fan_guidelines": "hololive production Derivative Works Guidelines",
     "non_commercial": "This site does not engage in any commercial activities, including but not limited to advertisements, sponsorships, merchandise sales, or paid memorabilia."
   },
   "submit": {
