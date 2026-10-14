@@ -1,6 +1,6 @@
 # 首頁背景影片驗證
 
-驗證日期：2026-10-15（Asia/Taipei）。只更新公開前端；後台、後端、Rules 與資料不變。尚未發布。
+驗證日期：2026-10-15（Asia/Taipei）。只更新公開前端；後台、後端、Rules 與資料不變。
 
 ## 實作
 
@@ -24,3 +24,12 @@
 - 靜態伺服器沒有 Firebase 設定與 API，console 只有 `/__/firebase/init.json` 及 `/api/*` 的 404，與本次變更無關。iOS／Android 實機的靜音自動播放與低電量模式行為需實機確認；API 被阻擋與 reduced-motion 由 VM 測試涵蓋。
 
 版本：style CSS v11；i18n JS 與語系 JSON v11；header-video JS v1。
+
+## 正式發布結果
+
+- 經擁有者同意略過預覽（已檢視本機靜態版本），依 [純公開畫面增量發布](x-gallery-release.md#純公開畫面增量發布) 只發布 `hosting:public`。發布前確認 live version 與上次發布紀錄一致、無漂移。
+- Code commit：`4b5cb38`；annotated tag：`governance-production-20261014T222438Z`。
+- Live 發布時間：2026-10-14 22:25:49 UTC。Public 由 `36a85ddfc9182d02` 更新為 `1b27794c82e04b4f`；admin 維持 `0409bf142ca37ca0`。
+- 七個變更檔案（根頁、style CSS、header-video／i18n JS、三份語系檔）的 SHA-256 與來源相同且為 `no-cache`。正式站桌面 1280×720：影片靜音自動播放並淡入、兩顆控制鈕顯示、頁尾素材來源已更新，回憶牆六篇與留言正常載入，無 console error、無水平溢出。
+
+前後版本保存在忽略追蹤的 `.production-backups/hero-video-release.json`；若需回滾，將 public Hosting 回復至其中的 `before` 版本。
