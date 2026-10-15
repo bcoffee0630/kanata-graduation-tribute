@@ -53,12 +53,19 @@ html[lang="zh-TW"] {
 }
 
 html[lang="en"] {
-    font-family: 'Roboto', 'Arial', sans-serif;
+    font-family: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Zen Maru Gothic for headings - warm, rounded feel */
-h1, h2, .forever-kanata, .counter-number {
+h1, h2, .counter-number {
     font-family: 'Zen Maru Gothic', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
+}
+
+/* Chinese headings use a Traditional Chinese rounded face, so glyphs follow Taiwanese forms. */
+html[lang="zh-TW"] h1,
+html[lang="zh-TW"] h2,
+html[lang="zh-TW"] .counter-number {
+    font-family: 'Chiron GoRound TC', 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
 }
 
 body {
@@ -748,10 +755,12 @@ footer {
 }
 
 .forever-kanata {
+    /* Pencil-like hand for the one closing line, like a note written to her. */
+    font-family: 'Klee One', 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
     font-size: 2.8em;
     text-align: center;
     margin-bottom: 35px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.15em;
     padding: 20px 0;
     position: relative;
