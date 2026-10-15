@@ -36,3 +36,13 @@
 - 靜態伺服器沒有 Firebase 設定與 API，console 只有 `/__/firebase/init.json` 及 `/api/*` 的 404，與本次變更無關。
 
 版本：style CSS v18；modal CSS v3；i18n JS 與語系 JSON v12；share JS v2。
+
+## 正式發布結果
+
+- 依 [純公開畫面增量發布](x-gallery-release.md#純公開畫面增量發布) 只發布 `hosting:public`。發布前確認 live version 與上次發布紀錄一致、無漂移。
+- 先發布預覽頻道 `intro-footer-seo`（1 天到期）驗證同一 build：回憶牆六篇與留言正常載入，robots／sitemap 回應 200，無 console error、無水平溢出。
+- Code commit：`36d2a56`；annotated tag：`governance-production-20261015T111012Z`。
+- Live 發布時間：2026-10-15 11:11:17 UTC。Public 由 `1b27794c82e04b4f` 更新為 `a6e8884708caae75`；admin 維持 `0409bf142ca37ca0`。
+- 十個變更檔案（根頁、style／modal CSS、i18n／share JS、三份語系檔、robots.txt、sitemap.xml）的 SHA-256 與來源相同；根頁、style CSS、JS 與語系檔為 `no-cache`，modal CSS、robots.txt 與 sitemap.xml 為預設 `max-age=3600`（modal CSS 以 `?v=3` 更新快取）。正式站三語標題、hero 標題與介紹區正確，無未翻譯鍵，JSON-LD 與 canonical 存在，回憶牆六篇與留言正常載入，無 console error、無水平溢出。
+
+前後版本保存在忽略追蹤的 `.production-backups/intro-footer-seo-release.json`；若需回滾，將 public Hosting 回復至其中的 `before` 版本。
