@@ -16,3 +16,12 @@
 - 內建瀏覽器確認：中文 h1／介紹／回憶牆標題使用 Chiron GoRound TC，日英維持 Zen Maru Gothic；三語頁尾標語為 Klee One 600；中文導覽列計算粗細為 500 且 Noto Sans TC 500 已載入；英文內文為 Noto Sans，未載入 Roboto。
 
 版本：style CSS v20。
+
+## 正式發布結果
+
+- 依 [純公開畫面增量發布](x-gallery-release.md#純公開畫面增量發布) 只發布 `hosting:public`；發布前確認 live version 與上次發布紀錄一致。先以預覽頻道 `font-refresh`（1 天到期）驗證同一 build：兩個新字體皆載入，回憶牆六篇與留言正常，無 console error、無水平溢出。
+- Code commit：`5e71e68`；annotated tag：`governance-production-20261015T150726Z`。
+- Live 發布時間：2026-10-15 15:08:31 UTC。Public 由 `a6e8884708caae75` 更新為 `fd275d1d0e9a6397`；admin 維持 `0409bf142ca37ca0`。
+- 根頁與 style CSS 的 SHA-256 與來源相同且為 `no-cache`。正式站中文標題為 Chiron GoRound TC、日英為 Zen Maru Gothic，三語頁尾標語為 Klee One，內文為 Noto Sans JP／TC／Noto Sans 且未載入 Roboto；回憶牆六篇正常，無 console error、無水平溢出。
+
+前後版本保存在忽略追蹤的 `.production-backups/font-refresh-release.json`；若需回滾，將 public Hosting 回復至其中的 `before` 版本。
