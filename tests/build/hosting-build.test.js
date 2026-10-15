@@ -56,6 +56,8 @@ describe('production Hosting allowlists', () => {
     execFileSync('node', ['scripts/build-hosting.mjs', '--production'], { stdio: 'pipe' });
 
     expect(existsSync('.hosting-public/index.html')).toBe(true);
+    expect(readFileSync('.hosting-public/robots.txt', 'utf8')).toContain('Sitemap: https://eienkanata.com/sitemap.xml');
+    expect(readFileSync('.hosting-public/sitemap.xml', 'utf8')).toContain('<loc>https://eienkanata.com/</loc>');
     expect(existsSync('.hosting-public/admin/index.html')).toBe(false);
     expect(existsSync('.hosting-public/auth/action/index.html')).toBe(false);
     expect(existsSync('.hosting-admin/index.html')).toBe(true);

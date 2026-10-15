@@ -32,7 +32,7 @@ function runtime({ href = 'https://eienkanata.com/?utm_source=test#gallery-secti
     i18n: lang,
   };
   const document = {
-    title: '天音彼方 畢業紀念 - Day 288',
+    title: '天音彼方 粉絲紀念站 | Amane Kanata Fan Tribute - Day 288',
     getElementById: id => ({ 'share-twitter': xLink, 'share-native': nativeButton }[id] || null),
     querySelector: selector => selector === 'meta[property="og:url"]' ? { content: 'https://eienkanata.com/' } : null,
     createElement: () => ({ setAttribute() {}, select() {}, remove() {} }),
@@ -72,12 +72,12 @@ describe('footer sharing', () => {
 
   it('passes the current localized title, post text and canonical URL to the device share sheet', async () => {
     const share = vi.fn(async () => {});
-    const { nativeButton } = runtime({ share, lang: { t: key => key === 'footer.post_text' ? '天音彼方畢業紀念 #天音かなた' : key } });
+    const { nativeButton } = runtime({ share, lang: { t: key => key === 'footer.post_text' ? '謝謝你，天音彼方 #天音かなた' : key } });
     expect(nativeButton.getAttribute('aria-label')).toBe('Share');
     expect(nativeButton.icons.share.hidden).toBe(false);
     await nativeButton.listeners.get('click')();
     expect(share).toHaveBeenCalledWith({
-      title: '天音彼方 畢業紀念 - Day 288', text: '天音彼方畢業紀念 #天音かなた', url: 'https://eienkanata.com/',
+      title: '天音彼方 粉絲紀念站 | Amane Kanata Fan Tribute - Day 288', text: '謝謝你，天音彼方 #天音かなた', url: 'https://eienkanata.com/',
     });
   });
 
@@ -117,10 +117,10 @@ describe('footer sharing', () => {
 
   it('retranslates labels and the intent text when the language changes', () => {
     const { window, xLink, nativeButton, dispatch } = runtime();
-    window.i18n = { t: key => ({ 'footer.share_x': '分享到 X', 'footer.copy_link': '複製連結', 'footer.post_text': '天音彼方畢業紀念' }[key] || key) };
+    window.i18n = { t: key => ({ 'footer.share_x': '分享到 X', 'footer.copy_link': '複製連結', 'footer.post_text': '謝謝你，天音彼方' }[key] || key) };
     dispatch('languageChanged');
     expect(xLink.getAttribute('aria-label')).toBe('分享到 X');
     expect(nativeButton.getAttribute('aria-label')).toBe('複製連結');
-    expect(new URL(xLink.href).searchParams.get('text')).toBe('天音彼方畢業紀念');
+    expect(new URL(xLink.href).searchParams.get('text')).toBe('謝謝你，天音彼方');
   });
 });

@@ -4,7 +4,7 @@
     const nativeButton = document.getElementById('share-native');
     if (!xLink && !nativeButton) return;
     const fallbackCopy = {
-        post_text: '天音かなた卒業記念 #天音かなた #かなたん',
+        post_text: '天音かなたさんへ、ありがとう #天音かなた #かなたん',
         share_x: 'Share on X', share_native: 'Share', copy_link: 'Copy link',
         link_copied: 'Link copied.', copy_failed: 'The link could not be copied.'
     };

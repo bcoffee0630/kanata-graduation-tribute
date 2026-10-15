@@ -91,7 +91,7 @@ function assertSafeOutput(output) {
 
 function buildPreview() {
   const output = prepareOutput('.hosting-preview');
-  for (const file of ['404.html', 'index-maintenance.html', 'index.html', 'shooting-star.png']) {
+  for (const file of ['404.html', 'index-maintenance.html', 'index.html', 'robots.txt', 'shooting-star.png', 'sitemap.xml']) {
     copyRequired(output, file);
   }
   for (const directory of ['admin', 'assets', 'images']) copyRequired(output, directory);
@@ -100,7 +100,7 @@ function buildPreview() {
 
 function buildPublic() {
   const output = prepareOutput('.hosting-public');
-  for (const file of ['404.html', 'index.html', 'shooting-star.png']) copyRequired(output, file);
+  for (const file of ['404.html', 'index.html', 'robots.txt', 'shooting-star.png', 'sitemap.xml']) copyRequired(output, file);
   for (const directory of ['assets', 'images']) copyRequired(output, directory);
   return { name: basename(output), files: assertSafeOutput(output) };
 }

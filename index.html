@@ -3,23 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="天音かなた卒業記念サイト | Amane Kanata Memorial Website">
+    <meta name="description" content="2025年12月27日にホロライブを卒業した天音かなたさんへ、へい民が想いと思い出を残す非公式ファンサイト。An unofficial fan tribute to Amane Kanata (hololive 4th gen, graduated 2025/12/27). 天音彼方非官方粉絲紀念站。">
+    <meta name="theme-color" content="#2894FF">
+    <link rel="canonical" href="https://eienkanata.com/">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="天音かなた卒業記念 | Amane Kanata Memorial">
-    <meta property="og:description" content="Forever Kanata - 永遠にかなた">
+    <meta property="og:site_name" content="天音かなた ファンメモリアル">
+    <meta property="og:title" content="天音かなた ファンメモリアル | Amane Kanata Fan Tribute">
+    <meta property="og:description" content="天音かなたさんへ、へい民からの想いと思い出。An unofficial fan tribute to Amane Kanata.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://eienkanata.com/images/kanata-header.png">
+    <meta property="og:image:width" content="1920">
+    <meta property="og:image:height" content="700">
+    <meta property="og:image:alt" content="天音かなた ファンメモリアル">
     <meta property="og:url" content="https://eienkanata.com/">
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:locale:alternate" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="天音かなた ファンメモリアル | Amane Kanata Fan Tribute">
+    <meta name="twitter:description" content="天音かなたさんへ、へい民からの想いと思い出。An unofficial fan tribute to Amane Kanata.">
+    <meta name="twitter:image" content="https://eienkanata.com/images/kanata-header.png">
 
-    <title>天音かなた 卒業メモリアル</title>
+    <title>天音かなた ファンメモリアル | Amane Kanata Fan Tribute</title>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "天音かなた ファンメモリアル",
+        "alternateName": ["Amane Kanata Fan Tribute", "天音彼方 粉絲紀念站", "eienkanata"],
+        "url": "https://eienkanata.com/",
+        "inLanguage": ["ja", "zh-TW", "en"],
+        "description": "An unofficial, non-commercial fan tribute to Amane Kanata, who graduated from hololive on 2025-12-27.",
+        "about": {
+            "@type": "Person",
+            "name": "天音かなた",
+            "alternateName": ["Amane Kanata", "天音彼方"],
+            "sameAs": [
+                "https://hololive.hololivepro.com/talents/amane-kanata/",
+                "https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg",
+                "https://x.com/amanekanatach"
+            ]
+        }
+    }
+    </script>
 
     <link rel="icon" type="image/png" href="shooting-star.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=11">
+    <link rel="stylesheet" href="assets/css/style.css?v=18">
     <link rel="stylesheet" href="assets/css/gallery.css?v=8">
     <link rel="stylesheet" href="assets/css/danmaku.css?v=7">
-    <link rel="stylesheet" href="assets/css/modal.css?v=2">
+    <link rel="stylesheet" href="assets/css/modal.css?v=3">
     <link rel="stylesheet" href="assets/css/toast.css?v=3">
 
     <!-- Google Fonts -->
@@ -27,7 +61,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body id="top">
     <!-- 統一導航欄 - Unified Navigation Bar -->
     <nav class="site-nav">
         <!-- 左側：漢堡按鈕 (手機版) + 導航連結 (桌面版) -->
@@ -38,7 +72,8 @@
             </button>
             <!-- Desktop: Nav Links -->
             <ul class="nav-links">
-                <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
+                <li><a href="#top" data-i18n="nav.home">ホーム</a></li>
+                <li><a href="#intro" data-i18n="nav.about">紹介</a></li>
                 <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
                 <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
                 <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer" data-i18n="nav.youtube">YouTube</a></li>
@@ -94,7 +129,8 @@
     <!-- 手機版導航選單 (從 nav bar 下滑出) -->
     <div class="mobile-nav">
         <ul class="nav-links">
-            <li><a href="#intro" data-i18n="nav.home">ホーム</a></li>
+            <li><a href="#top" data-i18n="nav.home">ホーム</a></li>
+            <li><a href="#intro" data-i18n="nav.about">紹介</a></li>
             <li><a href="#danmaku-section" data-i18n="nav.messages">メッセージ</a></li>
             <li><a href="#gallery-section" data-i18n="nav.gallery">思い出ウォール</a></li>
             <li><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer" data-i18n="nav.youtube">YouTube</a></li>
@@ -137,13 +173,14 @@
 
     <!-- 主要內容 -->
     <main>
-        <!-- 紀念介紹區塊 -->
-        <section id="intro" class="content-section intro-section reveal-on-scroll">
+        <!-- 介紹區塊：讓第一次來的人知道她是誰。只寫公開事實，不談畢業原因。 -->
+        <section id="intro" class="content-section intro-section reveal-on-scroll" aria-labelledby="intro-title">
             <div class="container">
-                <h2 data-i18n="sections.intro_title">永遠に、かなたと共に</h2>
-                <p data-i18n="sections.intro_text">
-                    このサイトは、天音かなたさんの思い出を共有し、彼女と過ごした時間を永遠に記憶するためのファンメモリアルです。かなたんが残してくれた歌声、笑顔、そして数え切れない思い出は、私たちの心の中で生き続けます。
-                </p>
+                <h2 id="intro-title" data-i18n="sections.intro_title">最強で最高のPP天使</h2>
+                <p class="intro-summary" data-i18n="about.summary">天音かなたさんは、ホロライブ4期生として2019年12月27日に初配信を行い、活動6周年となる2025年12月27日にホロライブを卒業しました。</p>
+                <div class="intro-divider" aria-hidden="true">✦</div>
+                <p class="intro-tribute" data-i18n="sections.intro_text">「へい民」は天音かなたさんのファンの愛称です。ここは、へい民のみんなが天音かなたさんとの思い出を共有するためのメモリアルサイトです。
+かなたんの歌声、笑顔、そして数え切れない思い出は、これからもずっとへい民の心に残り続けます。</p>
             </div>
         </section>
 
@@ -321,7 +358,7 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p class="forever-kanata" data-i18n="footer.forever_kanata">永遠にかなた</p>
+            <p class="forever-kanata" data-i18n="footer.forever_kanata">絶対的アイドル</p>
             <!-- Share Section -->
             <div class="share-section">
                 <p class="share-text" data-i18n="footer.share_text">この想いを共有する</p>
@@ -335,39 +372,61 @@
                     </button>
                 </div>
             </div>
-            <div class="credits">
-                <p data-i18n="footer.credits_title">Credits:</p>
-                <ul>
-                    <li>
-                        <span data-i18n="footer.credit_video">背景動画：</span>
-                        <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank" rel="noopener noreferrer">誰も見てない夢を見ろ / 天音かなた(official)</a>
-                        /
-                        <span data-i18n="footer.credit_video_source">公式YouTubeチャンネル：</span><a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer">Kanata Ch. 天音かなた</a>
-                    </li>
-                    <li><a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank" rel="noopener noreferrer">Star icons created by Freepik - Flaticon</a></li>
-                </ul>
+            <!-- Where the site stands, then credits, rights and terms in labeled columns. -->
+            <div class="footer-notice">
+                <p class="disclaimer" data-i18n="footer.disclaimer">非公式・非営利のファンメモリアルサイトであり、COVER株式会社とは一切関係ありません。</p>
+                <p class="official-note" data-i18n="footer.official_note">公式情報はホロライブ公式サイトおよび公式チャンネルをご確認ください。</p>
             </div>
-            <!-- Copyright & Non-commercial Notice -->
-            <div class="copyright-notice">
-                <p class="disclaimer" data-i18n="footer.disclaimer">
-                    このサイトは非公式のファンメモリアルであり、COVER株式会社とは一切関係ありません。
-                </p>
-                <p class="copyright-text">
-                    <span data-i18n="footer.copyright_notice">使用している画像・映像の著作権：</span>
-                    © COVER Corp. / hololive production
-                </p>
-                <p class="video-notice">
-                    <span data-i18n="footer.video_notice">背景動画はYouTubeの埋め込みプレーヤーで再生しており、当サイトでは動画の複製・再配布を行っていません。再生時にはYouTubeの利用規約およびGoogleのプライバシーポリシーが適用されます。</span>
-                    <span class="footer-links">
-                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" data-i18n="footer.youtube_terms">YouTube利用規約</a>
-                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" data-i18n="footer.google_privacy">Googleプライバシーポリシー</a>
-                        <a href="https://hololivepro.com/terms/" target="_blank" rel="noopener noreferrer" data-i18n="footer.fan_guidelines">ホロライブプロダクション 二次創作ガイドライン</a>
-                    </span>
-                </p>
-                <p class="non-commercial" data-i18n="footer.non_commercial">
-                    当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。
-                </p>
+            <div class="footer-columns">
+                <section class="footer-column" aria-labelledby="footer-credits-title">
+                    <h3 id="footer-credits-title" data-i18n="footer.credits_title">クレジット</h3>
+                    <ul>
+                        <li>
+                            <span class="credit-label" data-i18n="footer.credit_video">背景動画</span>
+                            <a href="https://www.youtube.com/watch?v=IdXhY6zGC4s" target="_blank" rel="noopener noreferrer">誰も見てない夢を見ろ / 天音かなた(official)</a>
+                        </li>
+                        <li>
+                            <span class="credit-label" data-i18n="footer.credit_video_source">公式YouTubeチャンネル</span>
+                            <a href="https://www.youtube.com/channel/UCZlDXzGoo7d44bwdNObFacg" target="_blank" rel="noopener noreferrer">Kanata Ch. 天音かなた</a>
+                        </li>
+                        <li>
+                            <span class="credit-label" data-i18n="footer.credit_profile">プロフィール情報</span>
+                            <a href="https://hololive.hololivepro.com/talents/amane-kanata/" target="_blank" rel="noopener noreferrer" data-i18n="footer.credit_profile_link">ホロライブ公式サイト タレントページ</a>
+                        </li>
+                        <li>
+                            <span class="credit-label" data-i18n="footer.credit_icons">サイトアイコン</span>
+                            <a href="https://www.flaticon.com/free-icons/star" title="star icons" target="_blank" rel="noopener noreferrer">Star icons created by Freepik - Flaticon</a>
+                        </li>
+                        <li>
+                            <span class="credit-label" data-i18n="footer.credit_ui_icons">UIアイコン</span>
+                            <a href="https://feathericons.com/" target="_blank" rel="noopener noreferrer">Feather Icons</a> (MIT)
+                            ·
+                            <a href="https://lucide.dev/" target="_blank" rel="noopener noreferrer">Lucide</a> (ISC)
+                        </li>
+                    </ul>
+                </section>
+                <section class="footer-column" aria-labelledby="footer-rights-title">
+                    <h3 id="footer-rights-title" data-i18n="footer.rights_title">著作権・ご利用について</h3>
+                    <p class="copyright-text">
+                        <span data-i18n="footer.copyright_notice">使用している画像・映像の著作権：</span>
+                        <span class="copyright-holder">© COVER Corp. / hololive production</span>
+                    </p>
+                    <p data-i18n="footer.video_notice">背景動画はYouTubeの埋め込みプレーヤーで再生しており、当サイトでは動画の複製・再配布を行っていません。再生時にはYouTubeの利用規約およびGoogleのプライバシーポリシーが適用されます。</p>
+                    <p data-i18n="footer.non_commercial">当サイトでは広告、スポンサーシップ、グッズ販売、有料記念品等の営利活動は一切行っておりません。</p>
+                </section>
+                <section class="footer-column" aria-labelledby="footer-links-title">
+                    <h3 id="footer-links-title" data-i18n="footer.links_title">関連規約</h3>
+                    <ul>
+                        <li><a href="https://hololivepro.com/terms/" target="_blank" rel="noopener noreferrer" data-i18n="footer.fan_guidelines">ホロライブプロダクション 二次創作ガイドライン</a></li>
+                        <li><a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" data-i18n="footer.youtube_terms">YouTube利用規約</a></li>
+                        <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" data-i18n="footer.google_privacy">Googleプライバシーポリシー</a></li>
+                    </ul>
+                </section>
             </div>
+            <p class="footer-contact">
+                <span data-i18n="footer.contact">内容・著作権に関するご連絡：</span>
+                <a href="https://github.com/bcoffee0630/kanata-graduation-tribute/issues" target="_blank" rel="noopener noreferrer" data-i18n="footer.contact_link">GitHub Issues</a>
+            </p>
         </div>
     </footer>
 
@@ -396,7 +455,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
 
     <!-- Core Scripts -->
-    <script src="assets/js/i18n.js?v=11"></script>
+    <script src="assets/js/i18n.js?v=12"></script>
     <script src="assets/js/counter.js"></script>
     <script src="assets/js/toast.js"></script>
 
@@ -415,7 +474,7 @@
     <script src="assets/js/animations.js"></script>
     <script src="assets/js/header-video.js?v=1"></script>
     <script src="assets/js/scroll-top.js?v=7"></script>
-    <script src="assets/js/share.js?v=1"></script>
+    <script src="assets/js/share.js?v=2"></script>
 
     <!-- Mobile Navigation & Language Dropdown -->
     <script>

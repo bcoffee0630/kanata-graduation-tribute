@@ -1,10 +1,11 @@
 {
-  "site_title": "天音彼方 畢業紀念",
+  "site_title": "天音彼方 粉絲紀念站 | Amane Kanata Fan Tribute",
   "header_title": "天音彼方 畢業紀念",
   "day_counter_prefix": "自畢業日 2025/12/27 後過了",
   "day_counter_unit": "天",
   "nav": {
     "home": "首頁",
+    "about": "介紹",
     "messages": "留言",
     "gallery": "回憶牆",
     "youtube": "YouTube",
@@ -12,7 +13,7 @@
   },
   "sections": {
     "intro_title": "最強最完美的PP天使",
-    "intro_text": "這是一個為了分享天音彼方的回憶，並永遠銘記與她共度時光的嘿民紀念網站。彼方留給我們的歌聲、笑容，以及無數的回憶，將陪伴我們繼續前進。",
+    "intro_text": "「嘿民（へい民）」是天音彼方的粉絲名，這裡是讓嘿民們分享與天音彼方有關的回憶的紀念網站。\n彼方的歌聲、笑容，以及無數回憶，都會一直留在嘿民的心裡。",
     "fan_messages": "嘿民的心意",
     "gallery_title": "回憶牆",
     "contribute_message": "想傳達您的心意嗎？請點擊下方按鈕。",
@@ -20,6 +21,9 @@
     "contribute_button": "傳達心意",
     "submit_message_button": "投稿留言",
     "submit_art_button": "分享 X 貼文"
+  },
+  "about": {
+    "summary": "天音彼方是 Hololive 四期生，於 2019 年 12 月 27 日首次直播，並在出道六週年的 2025 年 12 月 27 日從 Hololive 畢業。"
   },
   "gallery": {
     "no_content": "目前還沒有投稿",
@@ -82,22 +86,31 @@
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "share_text": "分享這份心意",
-    "post_text": "天音彼方畢業紀念 #天音かなた #かなたん",
+    "post_text": "謝謝你，天音彼方 #天音かなた #かなたん",
     "share_x": "分享到 X",
     "share_native": "分享",
     "copy_link": "複製連結",
     "link_copied": "已複製連結。",
     "copy_failed": "無法複製連結。",
-    "credits_title": "素材來源：",
-    "credit_video": "首頁背景影片：",
-    "credit_video_source": "官方 YouTube 頻道：",
-    "disclaimer": "此網站為非官方粉絲紀念網站，與 COVER 株式會社無任何關聯。",
+    "credits_title": "素材來源",
+    "credit_video": "首頁背景影片",
+    "credit_video_source": "官方 YouTube 頻道",
+    "disclaimer": "非官方、非營利的粉絲紀念網站，與 COVER 株式會社無任何關聯。",
     "copyright_notice": "本站使用之圖片及影像素材版權屬於：",
     "video_notice": "首頁背景影片透過 YouTube 嵌入播放器播放，本站未複製或重新散布影片。播放時適用 YouTube 服務條款及 Google 隱私權政策。",
     "youtube_terms": "YouTube 服務條款",
     "google_privacy": "Google 隱私權政策",
     "fan_guidelines": "hololive production 二次創作指引",
-    "non_commercial": "本站不進行任何營利活動，包含但不限於廣告、贊助、周邊販售或收費紀念品等。"
+    "non_commercial": "本站不進行任何營利活動，包含但不限於廣告、贊助、周邊販售或收費紀念品等。",
+    "credit_profile": "個人資料",
+    "credit_profile_link": "Hololive 官方網站成員介紹頁",
+    "official_note": "官方資訊請以 Hololive 官方網站及官方頻道為準。",
+    "credit_icons": "網站圖示",
+    "credit_ui_icons": "介面圖示",
+    "rights_title": "版權與使用",
+    "links_title": "相關條款",
+    "contact": "內容或版權相關疑慮：",
+    "contact_link": "GitHub Issues"
   },
   "submit": {
     "submitting": "送出中…",

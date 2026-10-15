@@ -1,18 +1,19 @@
 {
-  "site_title": "Amane Kanata Graduation Memorial",
+  "site_title": "Amane Kanata Fan Tribute | 天音かなた",
   "header_title": "Amane Kanata Graduation Memorial",
   "day_counter_prefix": "Since graduation on 2025/12/27",
   "day_counter_unit": "days",
   "nav": {
     "home": "Home",
+    "about": "About",
     "messages": "Messages",
     "gallery": "Memory Wall",
     "youtube": "YouTube",
     "twitter": "X"
   },
   "sections": {
-    "intro_title": "The Strongest and Most Perfect PP Angel",
-    "intro_text": "This is a Heimin memorial dedicated to sharing memories of Amane Kanata and preserving the time we spent with her forever. Her voice, her smile, and countless memories she left us will continue walking alongside us.",
+    "intro_title": "The Strongest, Most Perfect PP Tenshi",
+    "intro_text": "Heimin (へい民) is the name of Amane Kanata's fans, and this is a tribute site where Heimin can share their memories of her.\nKanata's voice, her smile, and countless memories will always stay in the hearts of Heimin.",
     "fan_messages": "Messages From Heimin",
     "gallery_title": "Memory Wall",
     "contribute_message": "Want to share your thoughts? Click the button below.",
@@ -20,6 +21,9 @@
     "contribute_button": "Share Your Thoughts",
     "submit_message_button": "Submit Message",
     "submit_art_button": "Share an X post"
+  },
+  "about": {
+    "summary": "Amane Kanata debuted as part of Hololive's 4th generation with her first stream on December 27, 2019, and graduated from Hololive on December 27, 2025, her sixth anniversary."
   },
   "gallery": {
     "no_content": "No submissions yet",
@@ -82,22 +86,31 @@
   "footer": {
     "forever_kanata": "絶対的アイドル",
     "share_text": "Share this memory",
-    "post_text": "Amane Kanata Graduation Memorial #天音かなた #かなたん",
+    "post_text": "Thank you, Amane Kanata #天音かなた #かなたん",
     "share_x": "Share on X",
     "share_native": "Share",
     "copy_link": "Copy link",
     "link_copied": "Link copied.",
     "copy_failed": "The link could not be copied.",
-    "credits_title": "Credits:",
-    "credit_video": "Background video: ",
-    "credit_video_source": "Official YouTube channel: ",
-    "disclaimer": "This is an unofficial fan memorial website and is not affiliated with COVER Corp. in any way.",
+    "credits_title": "Credits",
+    "credit_video": "Background video",
+    "credit_video_source": "Official YouTube channel",
+    "disclaimer": "An unofficial, non-commercial fan tribute site, not affiliated with COVER Corp. in any way.",
     "copyright_notice": "Images and videos used on this site are copyrighted by:",
     "video_notice": "The background video plays through the embedded YouTube player; this site does not copy or redistribute it. The YouTube Terms of Service and Google Privacy Policy apply during playback.",
     "youtube_terms": "YouTube Terms of Service",
     "google_privacy": "Google Privacy Policy",
     "fan_guidelines": "hololive production Derivative Works Guidelines",
-    "non_commercial": "This site does not engage in any commercial activities, including but not limited to advertisements, sponsorships, merchandise sales, or paid memorabilia."
+    "non_commercial": "This site does not engage in any commercial activities, including but not limited to advertisements, sponsorships, merchandise sales, or paid memorabilia.",
+    "credit_profile": "Profile information",
+    "credit_profile_link": "Hololive official talent page",
+    "official_note": "For official information, please refer to the Hololive official website and channels.",
+    "credit_icons": "Site icon",
+    "credit_ui_icons": "UI icons",
+    "rights_title": "Copyright & use",
+    "links_title": "Related terms",
+    "contact": "Content or copyright concerns: ",
+    "contact_link": "GitHub Issues"
   },
   "submit": {
     "submitting": "Submitting…",

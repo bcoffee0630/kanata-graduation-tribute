@@ -579,6 +579,27 @@
 /* ==================== */
 /* Responsive           */
 /* ==================== */
+/* Narrow desktops share the nav bar with six links, so account controls go icon-only as on phones. */
+@media (min-width: 769px) and (max-width: 960px) {
+    .login-btn span {
+        display: none;
+    }
+
+    .login-btn {
+        padding: 8px 10px;
+    }
+
+    .user-trigger .user-name,
+    .user-trigger .dropdown-arrow {
+        display: none;
+    }
+
+    .user-trigger {
+        padding: 4px;
+        border-radius: 50%;
+    }
+}
+
 @media (max-width: 768px) {
     .modal {
         padding: 10px;
